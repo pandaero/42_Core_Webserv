@@ -6,7 +6,7 @@
 /*   By: pandalaf <pandalaf@student.42wolfsburg.    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/03/20 09:38:38 by pandalaf          #+#    #+#             */
-/*   Updated: 2023/03/20 09:46:52 by pandalaf         ###   ########.fr       */
+/*   Updated: 2023/03/20 22:30:05 by pandalaf         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -49,9 +49,40 @@ Url & Url::operator=(const Url & other)
 	return (*this);
 }
 
-Url::Url(std::string)
+Url::Url(std::string link)
 {
-	//PARSE and fill fields
+	if (link.empty())
+		throw invalidUrlException();
+	std::pair<bool, std::string>	anchor;
+	if (link.find('#') != std::string::npos)
+	{
+		anchor.first = true;
+		anchor.second = link.substr(link.find('#'), link.end());
+	}
+	else
+		anchor.first = false;
+
+	std::pair<bool, std::string>	parameters;
+	if (link.find('?') != std::string::npos)
+	{
+		parameters.first = true;
+		if (anchor.first == true)
+			parameters.second = link.substr(link.find('?'), link.find('#'));
+		else
+			parameters.second = link.substr(link.find('?'), link.end());
+	}
+	else
+		parameters.first = false;
+
+
+
+
+	std::string::iterator	firstColonIt = link.find(':');
+	scheme = link.substr(firstColonIt);
+	for (std::string::iterator it = link.begin(); it != link.end(); ++it)
+	{
+		
+	}
 	//IF NOT VALID THROW exception
 }
 
