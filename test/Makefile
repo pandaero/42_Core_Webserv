@@ -6,7 +6,7 @@
 #    By: pandalaf <pandalaf@student.42wolfsburg.    +#+  +:+       +#+         #
 #                                                 +#+#+#+#+#+   +#+            #
 #    Created: 2023/03/22 10:20:16 by pandalaf          #+#    #+#              #
-#    Updated: 2023/03/24 18:38:38 by pandalaf         ###   ########.fr        #
+#    Updated: 2023/03/24 18:42:47 by pandalaf         ###   ########.fr        #
 #                                                                              #
 # **************************************************************************** #
 
@@ -28,6 +28,13 @@ SRC_DIR		:= ../src/
 
 # Test objects folder
 BUILD		:= build/
+
+# OS-Protection
+ifeq ($(shell uname), Linux)
+	BUILD_DIR	:= $(BUILD)
+else
+	BUILD_DIR	:= $(patsubst %/, %, $(BUILD))
+endif
 
 # URL tester
 URL_TEST		:= url
@@ -62,8 +69,8 @@ $(addprefix $(BUILD), %.o): $(addprefix $(SRC_DIR), %.cpp) $(addprefix $(INC_DIR
 	$(CC) $(CFLAGS) -c $< -o $@
 
 # Build directory
-$(patsubst %/, %, $(BUILD)):
-	mkdir -p $(BUILD)
+$(BUILD_DIR):
+	mkdir -p $@
 
 # Remove intermediate files
 clean:
