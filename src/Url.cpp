@@ -6,7 +6,7 @@
 /*   By: pandalaf <pandalaf@student.42wolfsburg.    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/03/20 09:38:38 by pandalaf          #+#    #+#             */
-/*   Updated: 2023/03/24 18:11:39 by pandalaf         ###   ########.fr       */
+/*   Updated: 2023/03/24 20:28:15 by pandalaf         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -18,7 +18,7 @@ std::ostream &	operator<<(std::ostream & outStream, const Url & url)
 	return (outStream);
 }
 
-Url::Url(std::string raw, std::vector<std::pair<bool, std::string> > properties):
+Url::Url(std::string raw, std::vector<std::string> properties):
 	_rawString(raw),
 	_properties(properties)
 {
@@ -50,7 +50,7 @@ Url & Url::operator=(const Url & other)
 	}
 	return (*this);
 }
-
+#include <iostream>
 Url::Url(std::string locator):
 	_rawString(),
 	_properties()
@@ -60,37 +60,30 @@ Url::Url(std::string locator):
 	if (locator.find("//") == std::string::npos)
 		throw invalidUrlException();
 
-	std::pair<bool, std::string>				defaultPair(false, "");
-	std::vector<std::pair<bool, std::string> >	properties(6);
+	std::vector<std::string>	properties(6);
 	for (int i = 0; i < 6; ++i)
-		properties.push_back(defaultPair);
+		properties.push_back("");
 
-	std::string::iterator	locIt = locator.begin();
 	size_t	i = 0;
 
-	while (locIt != locator.end() && *locIt++ != ':')
+	while (i < locator.size() && locator[i] != ':')
 		++i;
-	properties[SCHEME].first = true;
-	properties[SCHEME].second = locator.substr(0, i);
-	++i;
+	properties[SCHEME] = locator.substr(0, i);
 
-	if (*locIt++ != '/')
+
+	if (locator[++i] != '/')
 		throw invalidUrlException();
-	++i;
-
-	if (*locIt++ != '/')
+	
+	if (locator[i++] != '/')
 		throw invalidUrlException();
-	++i;
-
-	if (*locIt == '/')
+	
+	if (locator[++i] == '/')
 	{
-		++i;
 		size_t	pathStart = i;
-		while (++locIt != locator.end() && (*locIt != '/' && locator.find('/', i) != std::string::npos ))
+		while (i < locator.size() && (locator[i] != '/' && locator.find('/', i) != std::string::npos))
 			++i;
-		properties[PATH].first = true;
-		properties[PATH].second = locator.substr(pathStart, i);
-		if (locIt == locator.end())
+		properties[PATH] = locator.substr(pathStart, i);
+		if (i == locator.size())
 		{
 			new (this) Url(locator, properties);
 			return;
@@ -99,29 +92,23 @@ Url::Url(std::string locator):
 	else
 	{
 		size_t	domainStart = i;
-		while (++locIt != locator.end() && *locIt != ':' && *locIt != '/')
+		while (i < locator.size() && locator[i] != ':' && locator[i] != '/')
 			++i;
-		++i;
-		properties[DOMAIN].first = true;
-		properties[DOMAIN].second = locator.substr(domainStart, i - domainStart);
-		std::string::iterator	endCheck = locIt;
-		++endCheck;
-		if (locIt == locator.end() || *endCheck == '/')
+		properties[DOMAIN] = locator.substr(domainStart, i - domainStart);
+		size_t	j = i + 1;
+		if (i == locator.size() || locator[j] == '/')
 		{
 			new (this) Url(locator, properties);
 			return;
 		}
-		if (*locIt == ':')
+		if (locator[i] == ':')
 		{
 			++i;
 			size_t	portStart = i;
-			while (++locIt != locator.end() && *locIt != '/')
+			while (i < locator.size() && locator[i] != '/')
 				++i;
-			properties[PORT].first = true;
-			properties[PORT].second = locator.substr(portStart, i - portStart);
-			std::string::iterator	endCheck = locIt;
-			++endCheck;
-			if (locIt == locator.end() || endCheck == locator.end())
+			properties[PORT] = locator.substr(portStart, i - portStart);
+			if (i > locator.size())
 			{
 				new (this) Url(locator, properties);
 				return;
@@ -129,52 +116,46 @@ Url::Url(std::string locator):
 		}
 	}
 	
-	if (*locIt == '/')
+	if (locator[i] == '/')
 	{
 		++i;
 		size_t	pathStart = i;
-		while (locIt++ != locator.end() && *locIt != '?' && *locIt != '#')
+		while (i != locator.size() && locator[i] != '?' && locator[i] != '#')
 			++i;
-		properties[PATH].first = true;
-		properties[PATH].second = locator.substr(pathStart, i - pathStart);
-		if (locIt == locator.end())
+		properties[PATH] = locator.substr(pathStart, i);
+		if (i == locator.size())
 		{
 			new (this) Url(locator, properties);
 			return;
 		}
-		if (*locIt == '?')
+		if (locator[i] == '?')
 		{
 			++i;
 			size_t	paramStart = i;
-			while (++locIt != locator.end() && *locIt != '#')
+			while (i < locator.size() && locator[i] != '#')
 				++i;
-			properties[PARAMETERS].first = true;
-			properties[PARAMETERS].second = locator.substr(paramStart, i - paramStart);
-			if (locIt == locator.end())
+			properties[PARAMETERS] = locator.substr(paramStart, i - paramStart);
+			if (i == locator.size())
 			{
 				new (this) Url(locator, properties);
 				return;
 			}
-			if (*locIt == '#')
+			if (locator[i] == '#')
 			{
-				++i;
 				size_t	anchorStart = i;
-				while (++locIt != locator.end())
+				while (i < locator.size())
 					++i;
-				properties[ANCHOR].first = true;
-				properties[ANCHOR].second = locator.substr(anchorStart, i - anchorStart);
+				properties[ANCHOR] = locator.substr(anchorStart, i);
 				new (this) Url(locator, properties);
 				return;
 			}
 		}
-		if (*locIt == '#')
+		if (locator[i] == '#')
 		{
-			++i;
 			size_t	anchorStart = i;
-			while (++locIt != locator.end())
+			while (i < locator.size())
 				++i;
-			properties[ANCHOR].first = true;
-			properties[ANCHOR].second = locator.substr(anchorStart, i - anchorStart);
+			properties[ANCHOR] = locator.substr(anchorStart, i);
 			new (this) Url(locator, properties);
 			return;
 		}
@@ -187,7 +168,7 @@ std::string	Url::getStr() const
 	return (_rawString);
 }
 
-std::vector<std::pair<bool, std::string> >	Url::getProperties() const
+std::vector<std::string>	Url::getProperties() const
 {
 	return (_properties);
 }
