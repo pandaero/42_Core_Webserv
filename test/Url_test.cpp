@@ -6,270 +6,191 @@
 
 int	main()
 {
-	std::vector<std::string>									validStr;
-	std::vector<std::vector<std::pair<bool, std::string> > >	expected;
+	std::vector<std::string>				validStr;
+	std::vector<std::vector<std::string> >	expected;
 	
-	std::vector<std::pair<bool, std::string> >	defaultPairVector(6);
+	std::vector<std::string>	defaultVector(6);
 	for (int i = 0; i < 6; ++i)
-		defaultPairVector.push_back(std::make_pair(false, ""));
+		defaultVector.push_back("");
 
-	std::vector<std::pair<bool, std::string> >	reUsePairVector(6);
+	std::vector<std::string>	reUsePairVector(6);
 	
 	validStr.push_back("http://www.domain.com");
 	{
-		reUsePairVector = defaultPairVector;
-		reUsePairVector[SCHEME].first = true;
-		reUsePairVector[SCHEME].second = "http";
-		reUsePairVector[DOMAJN].first = true;
-		reUsePairVector[DOMAJN].second = "www.domain.com";
+		reUsePairVector = defaultVector;
+		reUsePairVector[SCHEME] = "http";
+		reUsePairVector[DOMAJN] = "www.domain.com";
 	}
 	expected.push_back(reUsePairVector);
 	validStr.push_back("http://www.domain.com:8080/");
 	{
-		reUsePairVector = defaultPairVector;
-		reUsePairVector[SCHEME].first = true;
-		reUsePairVector[SCHEME].second = "http";
-		reUsePairVector[DOMAJN].first = true;
-		reUsePairVector[DOMAJN].second = "www.domain.com";
-		reUsePairVector[PORT].first = true;
-		reUsePairVector[PORT].second = "8080";
+		reUsePairVector = defaultVector;
+		reUsePairVector[SCHEME] = "http";
+		reUsePairVector[DOMAJN] = "www.domain.com";
+		reUsePairVector[PORT] = "8080";
 	}
 	expected.push_back(reUsePairVector);
 	validStr.push_back("http://www.domain.com:8080/hello.html?key=1#hello");
 	{
-		reUsePairVector = defaultPairVector;
-		reUsePairVector[SCHEME].first = true;
-		reUsePairVector[SCHEME].second = "http";
-		reUsePairVector[DOMAJN].first = true;
-		reUsePairVector[DOMAJN].second = "www.domain.com";
-		reUsePairVector[PORT].first = true;
-		reUsePairVector[PORT].second = "8080";
-		reUsePairVector[PATH].first = true;
-		reUsePairVector[PATH].second = "hello.html";
-		reUsePairVector[PARAMETERS].first = true;
-		reUsePairVector[PARAMETERS].second = "key=1";
-		reUsePairVector[ANCHOR].first = true;
-		reUsePairVector[ANCHOR].second = "hello";
+		reUsePairVector = defaultVector;
+		reUsePairVector[SCHEME] = "http";
+		reUsePairVector[DOMAJN] = "www.domain.com";
+		reUsePairVector[PORT] = "8080";
+		reUsePairVector[PATH] = "hello.html";
+		reUsePairVector[PARAMETERS] = "key=1";
+		reUsePairVector[ANCHOR] = "hello";
 	}
 	expected.push_back(reUsePairVector);
 	validStr.push_back("http://www.domain.com:8080/hello.html#hello");
 	{
-		reUsePairVector = defaultPairVector;
-		reUsePairVector[SCHEME].first = true;
-		reUsePairVector[SCHEME].second = "http";
-		reUsePairVector[DOMAJN].first = true;
-		reUsePairVector[DOMAJN].second = "www.domain.com";
-		reUsePairVector[PORT].first = true;
-		reUsePairVector[PORT].second = "8080";
-		reUsePairVector[PATH].first = true;
-		reUsePairVector[PATH].second = "hello.html";
-		reUsePairVector[ANCHOR].first = true;
-		reUsePairVector[ANCHOR].second = "hello";
+		reUsePairVector = defaultVector;
+		reUsePairVector[SCHEME] = "http";
+		reUsePairVector[DOMAJN] = "www.domain.com";
+		reUsePairVector[PORT] = "8080";
+		reUsePairVector[PATH] = "hello.html";
+		reUsePairVector[ANCHOR] = "hello";
 	}
 	expected.push_back(reUsePairVector);
 
 	validStr.push_back("http://www.domain.com:8080/hello.html?key=1");
 	{
-		reUsePairVector = defaultPairVector;
-		reUsePairVector[SCHEME].first = true;
-		reUsePairVector[SCHEME].second = "http";
-		reUsePairVector[DOMAJN].first = true;
-		reUsePairVector[DOMAJN].second = "www.domain.com";
-		reUsePairVector[PORT].first = true;
-		reUsePairVector[PORT].second = "8080";
-		reUsePairVector[PATH].first = true;
-		reUsePairVector[PATH].second = "hello.html";
-		reUsePairVector[PARAMETERS].first = true;
-		reUsePairVector[PARAMETERS].second = "key=1";
+		reUsePairVector = defaultVector;
+		reUsePairVector[SCHEME] = "http";
+		reUsePairVector[DOMAJN] = "www.domain.com";
+		reUsePairVector[PORT] = "8080";
+		reUsePairVector[PATH] = "hello.html";
+		reUsePairVector[PARAMETERS] = "key=1";
 	}
 	expected.push_back(reUsePairVector);
 	validStr.push_back("http://www.domain.com:8080/hello.html");
 	{
-		reUsePairVector = defaultPairVector;
-		reUsePairVector[SCHEME].first = true;
-		reUsePairVector[SCHEME].second = "http";
-		reUsePairVector[DOMAJN].first = true;
-		reUsePairVector[DOMAJN].second = "www.domain.com";
-		reUsePairVector[PORT].first = true;
-		reUsePairVector[PORT].second = "8080";
-		reUsePairVector[PATH].first = true;
-		reUsePairVector[PATH].second = "hello.html";
+		reUsePairVector = defaultVector;
+		reUsePairVector[SCHEME] = "http";
+		reUsePairVector[DOMAJN] = "www.domain.com";
+		reUsePairVector[PORT] = "8080";
+		reUsePairVector[PATH] = "hello.html";
 	}
 	expected.push_back(reUsePairVector);
 	validStr.push_back("http://www.domain.com/hello.html");
 	{
-		reUsePairVector = defaultPairVector;
-		reUsePairVector[SCHEME].first = true;
-		reUsePairVector[SCHEME].second = "http";
-		reUsePairVector[DOMAJN].first = true;
-		reUsePairVector[DOMAJN].second = "www.domain.com";
-		reUsePairVector[PATH].first = true;
-		reUsePairVector[PATH].second = "hello.html";
+		reUsePairVector = defaultVector;
+		reUsePairVector[SCHEME] = "http";
+		reUsePairVector[DOMAJN] = "www.domain.com";
+		reUsePairVector[PATH] = "hello.html";
 	}
 	expected.push_back(reUsePairVector);
 	validStr.push_back("http://www.domain.com/hello.html?key=1");
 	{
-		reUsePairVector = defaultPairVector;
-		reUsePairVector[SCHEME].first = true;
-		reUsePairVector[SCHEME].second = "http";
-		reUsePairVector[DOMAJN].first = true;
-		reUsePairVector[DOMAJN].second = "www.domain.com";
-		reUsePairVector[PATH].first = true;
-		reUsePairVector[PATH].second = "hello.html";
-		reUsePairVector[PARAMETERS].first = true;
-		reUsePairVector[PARAMETERS].second = "key=1";
+		reUsePairVector = defaultVector;
+		reUsePairVector[SCHEME] = "http";
+		reUsePairVector[DOMAJN] = "www.domain.com";
+		reUsePairVector[PATH] = "hello.html";
+		reUsePairVector[PARAMETERS] = "key=1";
 	}
 	expected.push_back(reUsePairVector);
 	validStr.push_back("http://www.domain.com/hello.html#hello");
 	{
-		reUsePairVector = defaultPairVector;
-		reUsePairVector[SCHEME].first = true;
-		reUsePairVector[SCHEME].second = "http";
-		reUsePairVector[DOMAJN].first = true;
-		reUsePairVector[DOMAJN].second = "www.domain.com";
-		reUsePairVector[PATH].first = true;
-		reUsePairVector[PATH].second = "hello.html";
-		reUsePairVector[ANCHOR].first = true;
-		reUsePairVector[ANCHOR].second = "hello";
+		reUsePairVector = defaultVector;
+		reUsePairVector[SCHEME] = "http";
+		reUsePairVector[DOMAJN] = "www.domain.com";
+		reUsePairVector[PATH] = "hello.html";
+		reUsePairVector[ANCHOR] = "hello";
 	}
 	expected.push_back(reUsePairVector);
 	validStr.push_back("http://www.domain.com/hello.html?key=1#hello");
 	{
-		reUsePairVector = defaultPairVector;
-		reUsePairVector[SCHEME].first = true;
-		reUsePairVector[SCHEME].second = "http";
-		reUsePairVector[DOMAJN].first = true;
-		reUsePairVector[DOMAJN].second = "www.domain.com";
-		reUsePairVector[PATH].first = true;
-		reUsePairVector[PATH].second = "hello.html";
-		reUsePairVector[PARAMETERS].first = true;
-		reUsePairVector[PARAMETERS].second = "key=1";
-		reUsePairVector[ANCHOR].first = true;
-		reUsePairVector[ANCHOR].second = "hello";
+		reUsePairVector = defaultVector;
+		reUsePairVector[SCHEME] = "http";
+		reUsePairVector[DOMAJN] = "www.domain.com";
+		reUsePairVector[PATH] = "hello.html";
+		reUsePairVector[PARAMETERS] = "key=1";
+		reUsePairVector[ANCHOR] = "hello";
 	}
 	expected.push_back(reUsePairVector);
 	validStr.push_back("file:///hello.html");
 	{
-		reUsePairVector = defaultPairVector;
-		reUsePairVector[SCHEME].first = true;
-		reUsePairVector[SCHEME].second = "file";
-		reUsePairVector[PATH].first = true;
-		reUsePairVector[PATH].second = "hello.html";
+		reUsePairVector = defaultVector;
+		reUsePairVector[SCHEME] = "file";
+		reUsePairVector[PATH] = "hello.html";
 	}
 	expected.push_back(reUsePairVector);
 	validStr.push_back("file:///hello/hello.html");
 	{
-		reUsePairVector = defaultPairVector;
-		reUsePairVector[SCHEME].first = true;
-		reUsePairVector[SCHEME].second = "file";
-		reUsePairVector[PATH].first = true;
-		reUsePairVector[PATH].second = "hello/hello.html";
+		reUsePairVector = defaultVector;
+		reUsePairVector[SCHEME] = "file";
+		reUsePairVector[PATH] = "hello/hello.html";
 	}
 	expected.push_back(reUsePairVector);
 	validStr.push_back("file:///mainfolder/hello/hello.html");
 	{
-		reUsePairVector = defaultPairVector;
-		reUsePairVector[SCHEME].first = true;
-		reUsePairVector[SCHEME].second = "file";
-		reUsePairVector[PATH].first = true;
-		reUsePairVector[PATH].second = "mainfolder/hello/hello.html";
+		reUsePairVector = defaultVector;
+		reUsePairVector[SCHEME] = "file";
+		reUsePairVector[PATH] = "mainfolder/hello/hello.html";
 	}
 	expected.push_back(reUsePairVector);
 	validStr.push_back("http://192.168.0.1:8080/hello/hello.html");
 	{
-		reUsePairVector = defaultPairVector;
-		reUsePairVector[SCHEME].first = true;
-		reUsePairVector[SCHEME].second = "http";
-		reUsePairVector[DOMAJN].first = true;
-		reUsePairVector[DOMAJN].second = "192.168.0.1";
-		reUsePairVector[PORT].first = true;
-		reUsePairVector[PORT].second = "8080";
-		reUsePairVector[PATH].first = true;
-		reUsePairVector[PATH].second = "hello/hello.html";
+		reUsePairVector = defaultVector;
+		reUsePairVector[SCHEME] = "http";
+		reUsePairVector[DOMAJN] = "192.168.0.1";
+		reUsePairVector[PORT] = "8080";
+		reUsePairVector[PATH] = "hello/hello.html";
 	}
 	expected.push_back(reUsePairVector);
 	validStr.push_back("http://192.168.0.1:8080/hello/hello.html?key=1#hello");
 	{
-		reUsePairVector = defaultPairVector;
-		reUsePairVector[SCHEME].first = true;
-		reUsePairVector[SCHEME].second = "http";
-		reUsePairVector[DOMAJN].first = true;
-		reUsePairVector[DOMAJN].second = "192.168.0.1";
-		reUsePairVector[PORT].first = true;
-		reUsePairVector[PORT].second = "8080";
-		reUsePairVector[PATH].first = true;
-		reUsePairVector[PATH].second = "hello/hello.html";
-		reUsePairVector[PARAMETERS].first = true;
-		reUsePairVector[PARAMETERS].second = "key=1";
-		reUsePairVector[ANCHOR].first = true;
-		reUsePairVector[ANCHOR].second = "hello";
+		reUsePairVector = defaultVector;
+		reUsePairVector[DOMAJN] = "192.168.0.1";
+		reUsePairVector[PORT] = "8080";
+		reUsePairVector[PATH] = "hello/hello.html";
+		reUsePairVector[PARAMETERS] = "key=1";
+		reUsePairVector[ANCHOR] = "hello";
 	}
 	expected.push_back(reUsePairVector);
 	validStr.push_back("http://192.168.0.1:8080/hello/hello.html#hello");
 	{
-		reUsePairVector = defaultPairVector;
-		reUsePairVector[SCHEME].first = true;
-		reUsePairVector[SCHEME].second = "http";
-		reUsePairVector[DOMAJN].first = true;
-		reUsePairVector[DOMAJN].second = "192.168.0.1";
-		reUsePairVector[PORT].first = true;
-		reUsePairVector[PORT].second = "8080";
-		reUsePairVector[PATH].first = true;
-		reUsePairVector[PATH].second = "hello/hello.html";
-		reUsePairVector[ANCHOR].first = true;
-		reUsePairVector[ANCHOR].second = "hello";
+		reUsePairVector = defaultVector;
+		reUsePairVector[SCHEME] = "http";
+		reUsePairVector[DOMAJN] = "192.168.0.1";
+		reUsePairVector[PORT] = "8080";
+		reUsePairVector[PATH] = "hello/hello.html";
+		reUsePairVector[ANCHOR] = "hello";
 	}
 	expected.push_back(reUsePairVector);
 	validStr.push_back("http://192.168.0.1/hello/hello.html");
 	{
-		reUsePairVector = defaultPairVector;
-		reUsePairVector[SCHEME].first = true;
-		reUsePairVector[SCHEME].second = "http";
-		reUsePairVector[DOMAJN].first = true;
-		reUsePairVector[DOMAJN].second = "192.168.0.1";
-		reUsePairVector[PATH].first = true;
-		reUsePairVector[PATH].second = "hello/hello.html";
+		reUsePairVector = defaultVector;
+		reUsePairVector[SCHEME] = "http";
+		reUsePairVector[DOMAJN] = "192.168.0.1";
+		reUsePairVector[PATH] = "hello/hello.html";
 	}
 	expected.push_back(reUsePairVector);
 	validStr.push_back("http://192.168.0.1/hello/hello.html?key=1");
 	{
-		reUsePairVector = defaultPairVector;
-		reUsePairVector[SCHEME].first = true;
-		reUsePairVector[SCHEME].second = "http";
-		reUsePairVector[DOMAJN].first = true;
-		reUsePairVector[DOMAJN].second = "192.168.0.1";
-		reUsePairVector[PATH].first = true;
-		reUsePairVector[PATH].second = "hello/hello.html";
-		reUsePairVector[PARAMETERS].first = true;
-		reUsePairVector[PARAMETERS].second = "key=1";
+		reUsePairVector = defaultVector;
+		reUsePairVector[SCHEME] = "http";
+		reUsePairVector[DOMAJN] = "192.168.0.1";
+		reUsePairVector[PATH] = "hello/hello.html";
+		reUsePairVector[PARAMETERS] = "key=1";
 	}
 	expected.push_back(reUsePairVector);
 	validStr.push_back("http://192.168.0.1/hello/hello.html?key=1#hello");
 	{
-		reUsePairVector = defaultPairVector;
-		reUsePairVector[SCHEME].first = true;
-		reUsePairVector[SCHEME].second = "http";
-		reUsePairVector[DOMAJN].first = true;
-		reUsePairVector[DOMAJN].second = "192.168.0.1";
-		reUsePairVector[PATH].first = true;
-		reUsePairVector[PATH].second = "hello/hello.html";
-		reUsePairVector[PARAMETERS].first = true;
-		reUsePairVector[PARAMETERS].second = "key=1";
-		reUsePairVector[ANCHOR].first = true;
-		reUsePairVector[ANCHOR].second = "hello";
+		reUsePairVector = defaultVector;
+		reUsePairVector[SCHEME] = "http";
+		reUsePairVector[DOMAJN] = "192.168.0.1";
+		reUsePairVector[PATH] = "hello/hello.html";
+		reUsePairVector[PARAMETERS] = "key=1";
+		reUsePairVector[ANCHOR] = "hello";
 	}
 	expected.push_back(reUsePairVector);
 	validStr.push_back("http://192.168.0.1/hello/hello.html#hello");
 	{
-		reUsePairVector = defaultPairVector;
-		reUsePairVector[SCHEME].first = true;
-		reUsePairVector[SCHEME].second = "http";
-		reUsePairVector[DOMAJN].first = true;
-		reUsePairVector[DOMAJN].second = "192.168.0.1";
-		reUsePairVector[PATH].first = true;
-		reUsePairVector[PATH].second = "hello/hello.html";
-		reUsePairVector[ANCHOR].first = true;
-		reUsePairVector[ANCHOR].second = "hello";
+		reUsePairVector = defaultVector;
+		reUsePairVector[SCHEME] = "http";
+		reUsePairVector[DOMAJN] = "192.168.0.1";
+		reUsePairVector[PATH] = "hello/hello.html";
+		reUsePairVector[ANCHOR] = "hello";
 	}
 	expected.push_back(reUsePairVector);
 	
@@ -291,7 +212,7 @@ int	main()
 	std::cout << "----- ----- ----- ----- ----- ----- ----- -----" << std::endl;
 	for (size_t i = 0; i < validUrl.size(); ++i)
 		for (int j = 0; j < 6; ++j)
-			if (validUrl[i].getProperties()[j].first != expected[i][j].first || validUrl[i].getProperties()[j].second != expected[i][j].second)
+			if (validUrl[i].getProperties()[j] != expected[i][j] || validUrl[i].getProperties()[j] != expected[i][j])
 			{
 				std::cout << "Error: parsing: \"" << validStr[i] << "\"\nProperty: ";
 				switch (j)
@@ -315,8 +236,8 @@ int	main()
 						std::cout << "ANCHOR\n";
 						break;
 				}
-				std::cout << "Result  : " << validUrl[i].getProperties()[j].first << ", " << validUrl[i].getProperties()[j].second;
-				std::cout << "\nExpected: " << expected[i][j].first << ", " << expected[i][j].second << std::endl;
+				std::cout << "Result  : " << validUrl[i].getProperties()[j] << ", " << validUrl[i].getProperties()[j];
+				std::cout << "\nExpected: " << expected[i][j] << ", " << expected[i][j] << std::endl;
 				std::cout << "----- ----- ----- ----- ----- ----- ----- -----" << std::endl;
 			}
 
