@@ -6,7 +6,7 @@
 #    By: pandalaf <pandalaf@student.42wolfsburg.    +#+  +:+       +#+         #
 #                                                 +#+#+#+#+#+   +#+            #
 #    Created: 2023/03/22 10:20:16 by pandalaf          #+#    #+#              #
-#    Updated: 2023/03/23 01:19:45 by pandalaf         ###   ########.fr        #
+#    Updated: 2023/03/24 18:38:38 by pandalaf         ###   ########.fr        #
 #                                                                              #
 # **************************************************************************** #
 
@@ -62,7 +62,7 @@ $(addprefix $(BUILD), %.o): $(addprefix $(SRC_DIR), %.cpp) $(addprefix $(INC_DIR
 	$(CC) $(CFLAGS) -c $< -o $@
 
 # Build directory
-$(BUILD):
+$(patsubst %/, %, $(BUILD)):
 	mkdir -p $(BUILD)
 
 # Remove intermediate files
