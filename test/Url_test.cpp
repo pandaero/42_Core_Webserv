@@ -3,6 +3,7 @@
 #include "../include/Url.hpp"
 
 #include <iostream>
+#include <iomanip>
 
 int	main()
 {
@@ -244,6 +245,28 @@ int	main()
 	std::cout << "Passed valid tests correctly." << std::endl;
 
 // Invalid
+	std::vector<std::string>	inValidStr;
+	inValidStr.push_back("http:///192.168.0.1/hello/hello.html#hello");
+	inValidStr.push_back("http//://192.168.0.1/hello/hello.html#hello");
+	inValidStr.push_back("http:/192.16");
+	inValidStr.push_back("http:192.168.0.1/hello/hello.html#hello");
+
+	std::vector<Url>	inValidUrl;
+	for (size_t i = 0; i < inValidStr.size(); ++i)
+	{
+		std::cout << "\"" << inValidStr[i] << "\" -" << std::setw(40);
+		try
+		{
+			Url	trying(inValidStr[i]);
+			inValidUrl.push_back(trying);
+		}
+		catch(const std::exception& exc)
+		{
+			std::cout << "PASSED.";
+		}
+		std::cout << "\n";
+	}
+	std::cout << "Passed invalid tests correctly." << std::endl;
 
 	return (0);
 }
