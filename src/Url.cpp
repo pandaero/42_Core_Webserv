@@ -6,7 +6,7 @@
 /*   By: pandalaf <pandalaf@student.42wolfsburg.    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/03/20 09:38:38 by pandalaf          #+#    #+#             */
-/*   Updated: 2023/03/24 20:28:15 by pandalaf         ###   ########.fr       */
+/*   Updated: 2023/03/24 20:34:31 by pandalaf         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -50,7 +50,7 @@ Url & Url::operator=(const Url & other)
 	}
 	return (*this);
 }
-#include <iostream>
+
 Url::Url(std::string locator):
 	_rawString(),
 	_properties()
@@ -122,7 +122,7 @@ Url::Url(std::string locator):
 		size_t	pathStart = i;
 		while (i != locator.size() && locator[i] != '?' && locator[i] != '#')
 			++i;
-		properties[PATH] = locator.substr(pathStart, i);
+		properties[PATH] = locator.substr(pathStart, i - pathStart);
 		if (i == locator.size())
 		{
 			new (this) Url(locator, properties);
@@ -142,20 +142,20 @@ Url::Url(std::string locator):
 			}
 			if (locator[i] == '#')
 			{
-				size_t	anchorStart = i;
+				size_t	anchorStart = i + 1;
 				while (i < locator.size())
 					++i;
-				properties[ANCHOR] = locator.substr(anchorStart, i);
+				properties[ANCHOR] = locator.substr(anchorStart, i - anchorStart);
 				new (this) Url(locator, properties);
 				return;
 			}
 		}
 		if (locator[i] == '#')
 		{
-			size_t	anchorStart = i;
+			size_t	anchorStart = i + 1;
 			while (i < locator.size())
 				++i;
-			properties[ANCHOR] = locator.substr(anchorStart, i);
+			properties[ANCHOR] = locator.substr(anchorStart, i - anchorStart);
 			new (this) Url(locator, properties);
 			return;
 		}
