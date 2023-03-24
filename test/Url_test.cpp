@@ -241,6 +241,7 @@ int	main()
 				std::cout << "\nExpected: " << expected[i][j] << std::endl;
 				std::cout << "----- ----- ----- ----- ----- ----- ----- -----" << std::endl;
 			}
+	std::cout << "Passed valid tests correctly." << std::endl;
 
 // Invalid
 
