@@ -6,7 +6,7 @@
 /*   By: pandalaf <pandalaf@student.42wolfsburg.    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/03/17 20:15:58 by pandalaf          #+#    #+#             */
-/*   Updated: 2023/03/23 01:15:37 by pandalaf         ###   ########.fr       */
+/*   Updated: 2023/03/24 14:25:05 by pandalaf         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -22,7 +22,7 @@
 enum	e_urlProperties
 {
 	SCHEME,
-	DOMAIN,
+	DOMAJN,
 	PORT,
 	PATH,
 	PARAMETERS,
