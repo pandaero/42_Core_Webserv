@@ -140,6 +140,7 @@ int	main()
 	validStr.push_back("http://192.168.0.1:8080/hello/hello.html?key=1#hello");
 	{
 		reUsePairVector = defaultVector;
+		reUsePairVector[SCHEME] = "http";
 		reUsePairVector[DOMAJN] = "192.168.0.1";
 		reUsePairVector[PORT] = "8080";
 		reUsePairVector[PATH] = "hello/hello.html";
@@ -236,8 +237,8 @@ int	main()
 						std::cout << "ANCHOR\n";
 						break;
 				}
-				std::cout << "Result  : " << validUrl[i].getProperties()[j] << ", " << validUrl[i].getProperties()[j];
-				std::cout << "\nExpected: " << expected[i][j] << ", " << expected[i][j] << std::endl;
+				std::cout << "Result  : " << validUrl[i].getProperties()[j];
+				std::cout << "\nExpected: " << expected[i][j] << std::endl;
 				std::cout << "----- ----- ----- ----- ----- ----- ----- -----" << std::endl;
 			}
 
