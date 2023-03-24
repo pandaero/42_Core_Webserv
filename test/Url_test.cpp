@@ -15,11 +15,6 @@ int	main()
 
 	std::vector<std::pair<bool, std::string> >	reUsePairVector(6);
 	
-	// Url	a("http://www.domain.com");
-	// std::cout << "URL TESTER" << std::endl;
-	// for (size_t i = 0; i < 6; ++i)
-	// 	std::cout << a.getProperties()[i].first << ", " << a.getProperties()[i].second << std::endl;
-
 	validStr.push_back("http://www.domain.com");
 	{
 		reUsePairVector = defaultPairVector;
@@ -284,24 +279,15 @@ int	main()
 	try
 	{
 		for (size_t i = 0; i < validStr.size(); ++i)
-		{
-			// std::cout << "String: \"" << validStr[i] << "\"" << std::endl;
 			validUrl.push_back(Url(validStr[i]));
-		}
 	}
 	catch (std::exception & exc)
 	{
 		std::cerr << exc.what() << std::endl;
 	}
 
-	std::cout << "Contructed URL class objects" << std::endl;
+	std::cout << "Contructed URL class objects." << std::endl;
 
-	// std::cout << "ValidIn: " << expected[0][0].first << ", " << expected[0][0].second << std::endl;
-	// std::cout << "ValidUrl: " << validUrl[0].getProperties()[1].first << ", " << validUrl[0].getProperties()[1].second << std::endl;
-
-	// std::vector<std::pair<bool, std::string> >	prop = validUrl[0].getProperties();
-	// std::cout << "Bool: " << validUrl[0].getProperties()[0].first; //<< "Value: " << prop[0].second << std::endl;
-	// std::cout << "First: " << (validUrl[0].getProperties())[0].first << std::endl;
 	std::cout << "----- ----- ----- ----- ----- ----- ----- -----" << std::endl;
 	for (size_t i = 0; i < validUrl.size(); ++i)
 		for (int j = 0; j < 6; ++j)
