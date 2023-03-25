@@ -6,7 +6,7 @@
 /*   By: pandalaf <pandalaf@student.42wolfsburg.    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/03/17 20:15:58 by pandalaf          #+#    #+#             */
-/*   Updated: 2023/03/24 19:03:29 by pandalaf         ###   ########.fr       */
+/*   Updated: 2023/03/25 23:22:10 by pandalaf         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -35,11 +35,6 @@ std::ostream &	operator<<(std::ostream &, const Url &);
 
 class	Url
 {
-	private:
-		Url(std::string, std::vector<std::string>);
-		const std::string				_rawString;
-		const std::vector<std::string>	_properties;
-
 	public:
 		Url();
 		Url(const Url &);
@@ -50,6 +45,11 @@ class	Url
 
 		std::string					getStr() const;
 		std::vector<std::string>	getProperties() const;
+
+	private:
+		Url(std::string, std::vector<std::string>);
+		const std::string				_rawString;
+		const std::vector<std::string>	_properties;
 
 	class	invalidUrlException: public std::exception
 	{

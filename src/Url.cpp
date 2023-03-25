@@ -6,7 +6,7 @@
 /*   By: pandalaf <pandalaf@student.42wolfsburg.    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/03/20 09:38:38 by pandalaf          #+#    #+#             */
-/*   Updated: 2023/03/25 22:59:31 by pandalaf         ###   ########.fr       */
+/*   Updated: 2023/03/25 23:23:23 by pandalaf         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -18,13 +18,6 @@ std::ostream &	operator<<(std::ostream & outStream, const Url & url)
 {
 	outStream << url.getStr();
 	return (outStream);
-}
-
-Url::Url(std::string raw, std::vector<std::string> properties):
-	_rawString(raw),
-	_properties(properties)
-{
-
 }
 
 Url::Url()
@@ -177,6 +170,13 @@ std::string	Url::getStr() const
 std::vector<std::string>	Url::getProperties() const
 {
 	return (_properties);
+}
+
+Url::Url(std::string raw, std::vector<std::string> properties):
+	_rawString(raw),
+	_properties(properties)
+{
+
 }
 
 const char *	Url::invalidUrlException::what() const throw()

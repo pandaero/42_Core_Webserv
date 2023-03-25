@@ -9,7 +9,7 @@ int	main(int argc, char **argv)
 
 	// SET UP SERVER
 
-	// PARSE INSTRUCTIONS
+	// LISTEN FOR INSTRUCTIONS TO PARSE
 
 	// EXECUTE INSTRUCTIONS
 
