@@ -243,6 +243,7 @@ int	main()
 				std::cout << "----- ----- ----- ----- ----- ----- ----- -----" << std::endl;
 			}
 	std::cout << "Passed valid tests correctly." << std::endl;
+	std::cout << "----- ----- ----- ----- ----- ----- ----- -----" << std::endl;
 
 // Invalid
 	std::vector<std::string>	inValidStr;
@@ -251,10 +252,11 @@ int	main()
 	inValidStr.push_back("http:/192.16");
 	inValidStr.push_back("http:192.168.0.1/hello/hello.html#hello");
 
+	bool				passed = false;	
 	std::vector<Url>	inValidUrl;
 	for (size_t i = 0; i < inValidStr.size(); ++i)
 	{
-		std::cout << "\"" << inValidStr[i] << "\" -" << std::setw(40);
+		std::cout << "\"" << std::setw(50) << std::left << inValidStr[i] + "\"" << " - ";
 		try
 		{
 			Url	trying(inValidStr[i]);
@@ -263,10 +265,14 @@ int	main()
 		catch(const std::exception& exc)
 		{
 			std::cout << "PASSED.";
+			passed = true;
 		}
+		if (!passed)
+			std::cout << "FAILED.";
 		std::cout << "\n";
 	}
-	std::cout << "Passed invalid tests correctly." << std::endl;
-
+	std::cout << "----- ----- ----- ----- ----- ----- ----- -----" << std::endl;
+	std::cout << "Performed all invalid tests." << std::endl;
+	std::cout << "----- ----- ----- ----- ----- ----- ----- -----" << std::endl;
 	return (0);
 }
