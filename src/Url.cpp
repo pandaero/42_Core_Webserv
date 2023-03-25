@@ -6,7 +6,7 @@
 /*   By: pandalaf <pandalaf@student.42wolfsburg.    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/03/20 09:38:38 by pandalaf          #+#    #+#             */
-/*   Updated: 2023/03/24 20:34:31 by pandalaf         ###   ########.fr       */
+/*   Updated: 2023/03/25 15:15:49 by pandalaf         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -94,7 +94,7 @@ Url::Url(std::string locator):
 		size_t	domainStart = i;
 		while (i < locator.size() && locator[i] != ':' && locator[i] != '/')
 			++i;
-		properties[DOMAIN] = locator.substr(domainStart, i - domainStart);
+		properties[DOMAJN] = locator.substr(domainStart, i - domainStart);
 		size_t	j = i + 1;
 		if (i == locator.size() || locator[j] == '/')
 		{
