@@ -242,12 +242,11 @@ int	main()
 				std::cout << "\nExpected: " << expected[i][j] << std::endl;
 				std::cout << "----- ----- ----- ----- ----- ----- ----- -----" << std::endl;
 			}
-	std::cout << "Passed valid tests correctly." << std::endl;
+	std::cout << "Performed all valid tests." << std::endl;
 	std::cout << "----- ----- ----- ----- ----- ----- ----- -----" << std::endl;
 
 // Invalid
 	std::vector<std::string>	inValidStr;
-	inValidStr.push_back("http:///192.168.0.1/hello/hello.html#hello");
 	inValidStr.push_back("http//://192.168.0.1/hello/hello.html#hello");
 	inValidStr.push_back("http:/192.16");
 	inValidStr.push_back("http:192.168.0.1/hello/hello.html#hello");

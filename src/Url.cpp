@@ -6,11 +6,13 @@
 /*   By: pandalaf <pandalaf@student.42wolfsburg.    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/03/20 09:38:38 by pandalaf          #+#    #+#             */
-/*   Updated: 2023/03/25 15:15:49 by pandalaf         ###   ########.fr       */
+/*   Updated: 2023/03/25 22:59:31 by pandalaf         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #include "../include/Url.hpp"
+
+#include <algorithm>
 
 std::ostream &	operator<<(std::ostream & outStream, const Url & url)
 {
@@ -67,7 +69,11 @@ Url::Url(std::string locator):
 	size_t	i = 0;
 
 	while (i < locator.size() && locator[i] != ':')
+	{
+		if (locator[i] == '/')
+			throw invalidUrlException();
 		++i;
+	}
 	properties[SCHEME] = locator.substr(0, i);
 
 
