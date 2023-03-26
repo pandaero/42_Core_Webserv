@@ -3,10 +3,10 @@
 #                                                         :::      ::::::::    #
 #    Makefile                                           :+:      :+:    :+:    #
 #                                                     +:+ +:+         +:+      #
-#    By: pandalaf <pandalaf@student.42wolfsburg.    +#+  +:+       +#+         #
+#    By: wmardin <wmardin@student.42.fr>            +#+  +:+       +#+         #
 #                                                 +#+#+#+#+#+   +#+            #
 #    Created: 2023/03/17 19:39:35 by pandalaf          #+#    #+#              #
-#    Updated: 2023/03/20 09:48:32 by pandalaf         ###   ########.fr        #
+#    Updated: 2023/03/26 18:48:18 by wmardin          ###   ########.fr        #
 #                                                                              #
 # **************************************************************************** #
 
@@ -94,3 +94,18 @@ re: fclean all
 
 # State rules as non-files
 .PHONY: all run directories clean fclean re
+
+# git add the entire folder w/o specific commit message
+git:
+	git add .
+	git commit -m "auto add & push"
+	git push
+	@echo "$(COLOR)git auto add & push performed.$(RESET)"
+
+# git add the entire folder with specific commit message
+mgit:
+	git add .
+	@read -p "Enter the commit message: " msg; \
+	git commit -m "$$msg"
+	git push
+	@echo "$(COLOR)git auto add & push with message performed.$(RESET)"
