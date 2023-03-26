@@ -21,29 +21,31 @@ typedef enum requestMethod
 	PATCH
 }	reqMeth;
 
+typedef struct request
+{
+	reqMeth		method;
+	std::string	URI;
+	std::string HTTPversion;
+}	request;
+
 class RequestHandler
 {
 	public:
 		RequestHandler(void);
+		RequestHandler(int);
 		~RequestHandler(void);
-		RequestHandler(std::string);
 		RequestHandler(const RequestHandler&);
 
 		RequestHandler& operator=(const RequestHandler&);
 
 		// Getters
-		reqMeth getMethod();
+		request getRequest();
 	
-
-
 	private:
 		bool parseRequest(int);
 
-		reqMeth _requestMethod;
-		std::string _requestURI;
-		std::string _HTTPversion;
-
-
+		int _socket_fd;
+		request _requestStruct;
 };
 
 #endif

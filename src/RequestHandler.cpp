@@ -4,6 +4,10 @@
 RequestHandler::RequestHandler(void)
 {}
 
+RequestHandler::RequestHandler(int socket_fd):
+	_socket_fd(socket_fd)
+{}
+
 RequestHandler::~RequestHandler(void)
 {}
 
