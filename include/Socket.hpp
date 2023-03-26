@@ -6,7 +6,7 @@
 /*   By: pandalaf <pandalaf@student.42wolfsburg.    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/03/25 23:20:06 by pandalaf          #+#    #+#             */
-/*   Updated: 2023/03/26 04:26:54 by pandalaf         ###   ########.fr       */
+/*   Updated: 2023/03/26 10:47:24 by pandalaf         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -16,8 +16,8 @@
 # include "webserv.hpp"
 
 # include <vector>
-# include <pthread.h>
 # include <exception>
+# include <pthread.h>
 
 class	Socket
 {

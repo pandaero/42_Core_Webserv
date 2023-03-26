@@ -1,8 +1,8 @@
 #include "../include/webserv.hpp"
 #include "../include/Socket.hpp"
 
-#include <cstdlib>
 #include <iostream>
+#include <cstdlib>
 #include <unistd.h>
 
 void *	handleHttpRequest(void *arg)
