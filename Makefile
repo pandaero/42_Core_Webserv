@@ -6,7 +6,7 @@
 #    By: wmardin <wmardin@student.42.fr>            +#+  +:+       +#+         #
 #                                                 +#+#+#+#+#+   +#+            #
 #    Created: 2023/03/17 19:39:35 by pandalaf          #+#    #+#              #
-#    Updated: 2023/03/26 18:48:18 by wmardin          ###   ########.fr        #
+#    Updated: 2023/03/26 23:27:05 by wmardin          ###   ########.fr        #
 #                                                                              #
 # **************************************************************************** #
 
@@ -94,6 +94,10 @@ re: fclean all
 
 # State rules as non-files
 .PHONY: all run directories clean fclean re
+
+# test run mulain branch
+test:
+	c++ src/main.cpp src/RequestHandler.cpp -Iinclude
 
 # git add the entire folder w/o specific commit message
 git:
