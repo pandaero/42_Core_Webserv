@@ -6,7 +6,7 @@
 /*   By: pandalaf <pandalaf@student.42wolfsburg.    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/03/25 23:20:06 by pandalaf          #+#    #+#             */
-/*   Updated: 2023/03/26 10:47:24 by pandalaf         ###   ########.fr       */
+/*   Updated: 2023/03/26 22:38:54 by pandalaf         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -17,7 +17,13 @@
 
 # include <vector>
 # include <exception>
+# include <poll.h>
 # include <pthread.h>
+
+class	Socket;
+
+void	startPolling(std::vector<Socket> &);
+void	stopPolling();
 
 class	Socket
 {
@@ -27,26 +33,25 @@ class	Socket
 		~Socket();
 		Socket &	operator=(const Socket &);
 
+		void	setHandler(void (&)(int));
+
+		int		getPort() const;
+		int		getSocketfd() const;
+		void	(*getHandler() const)(int);
+
 		void	bind(int);
-		void	listen();
-		void	start(void * (&)(void *));
-		void	stop();
 
 	private:
 		Socket(int);
-		int								_port;
-		const int						_socketfd;
-		static std::vector<pthread_t>	_socketThreads;
+		int				_port;
+		void 			(*_handler)(int);
+		const int		_socketfd;
 
 	class	socketCreationFailureException: public std::exception
 	{
 		const char *	what() const throw();
 	};
 	class	bindingFailureException: public std::exception
-	{
-		const char *	what() const throw();
-	};
-	class	listenFailureException: public std::exception
 	{
 		const char *	what() const throw();
 	};
