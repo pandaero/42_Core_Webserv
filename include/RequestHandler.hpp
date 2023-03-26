@@ -2,11 +2,12 @@
 #ifndef REQUESTHANDLER_HPP
 #define REQUESTHANDLER_HPP
 
-#include <iomanip>
 #include <ostream>
 #include <iostream>
 #include <fstream>
-#include <exception>
+#include <fcntl.h>
+#include <unistd.h>
+#include <cstdio>
 
 typedef enum requestMethod
 {

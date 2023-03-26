@@ -2,11 +2,15 @@
 #include "../include/RequestHandler.hpp"
 
 RequestHandler::RequestHandler(void)
-{}
+{
+	_socket_fd = -1;
+}
 
 RequestHandler::RequestHandler(int socket_fd):
 	_socket_fd(socket_fd)
-{}
+{
+
+}
 
 RequestHandler::~RequestHandler(void)
 {}
@@ -19,9 +23,7 @@ RequestHandler::RequestHandler(const RequestHandler& src)
 // Operator overloads
 RequestHandler& RequestHandler::operator=(const RequestHandler& src)
 {
-	_requestMethod = src._requestMethod;
-	_requestURI = src._requestURI;
-	_HTTPversion = src._HTTPversion;
+	_requestStruct = src._requestStruct;
 	return *this;
 }
 
@@ -32,26 +34,21 @@ Method SP Request-URI SP HTTP-Version CRLF
 
 */
 
-bool RequestHandler::parseRequest(int socket_fd)
+bool RequestHandler::parseRequest()
 {
 /* 	std::ifstream clientRequest("input.txt");
 	std::string line;
-
-	std::getline(clientRequest, line) */
-
-
-	FILE* request = fdopen(socket_fd, "r");
-	std::ifstream infile;
+*/
+	FILE* clientRequest = fdopen(_socket_fd, "r");
+	std::ifstream infile(*clientRequest);
 	std::string	line;
 	
-	infile.open(request);
-	while (std::getline(infile, line))
+	while (std::getline(clientRequest, line))
 	{
 		size_t delim = line.find(',');
 		if (delim == std::string::npos)
 			continue;
 	}
-
 }
 
 
