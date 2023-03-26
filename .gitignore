@@ -1,2 +1,5 @@
-# Compiled Objects Folder
-build/
+# Compiled Objects Folders
+*/build/
+
+# Url test executable
+test/url

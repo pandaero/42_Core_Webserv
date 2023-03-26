@@ -6,7 +6,7 @@
 #    By: pandalaf <pandalaf@student.42wolfsburg.    +#+  +:+       +#+         #
 #                                                 +#+#+#+#+#+   +#+            #
 #    Created: 2023/03/17 19:39:35 by pandalaf          #+#    #+#              #
-#    Updated: 2023/03/20 09:48:32 by pandalaf         ###   ########.fr        #
+#    Updated: 2023/03/24 18:45:22 by pandalaf         ###   ########.fr        #
 #                                                                              #
 # **************************************************************************** #
 
@@ -70,11 +70,11 @@ $(NAME): $(OBJ) #$(addprefix $(BUILD), main.o)
 	$(CC) $(CFLAGS) $(COPT) $^ -o $(NAME)
 
 # Make the main object file
-$(addprefix $(BUILD_DIR), main.o): $(addprefix $(SRC_DIR), main.cpp) $(INC) | $(BUILD)
+$(addprefix $(BUILD), main.o): $(addprefix $(SRC_DIR), main.cpp) $(INC) | $(BUILD_DIR)
 	$(CC) $(CFLAGS) $(COPT) $(DEFS) -c $< -o $@
 
 # Make required object files
-$(addprefix $(BUILD_DIR), %.o): $(addprefix $(SRC_DIR), %.cpp) $(addprefix $(INC_DIR), %.hpp) $(addprefix $(INC_DIR), %.tpp) | $(BUILD)
+$(addprefix $(BUILD), %.o): $(addprefix $(SRC_DIR), %.cpp) $(addprefix $(INC_DIR), %.hpp) $(addprefix $(INC_DIR), %.tpp) | $(BUILD_DIR)
 	$(CC) $(CFLAGS) $(COPT) -c $< -o $@
 
 # Make the build directory

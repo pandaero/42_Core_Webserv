@@ -2,12 +2,14 @@
 
 int	main(int argc, char **argv)
 {
+	(void) argc;
+	(void) argv;
 
 	// PARSE CONFIG FILE
 
 	// SET UP SERVER
 
-	// PARSE INSTRUCTIONS
+	// LISTEN FOR INSTRUCTIONS TO PARSE
 
 	// EXECUTE INSTRUCTIONS
 
