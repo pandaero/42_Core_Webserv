@@ -43,8 +43,10 @@ class RequestHandler
 		request getRequest();
 	
 	private:
-		bool parseRequest();
 		bool parseMethod();
+		bool parseURI();
+		bool parseHTTP();
+		std::string splitspace();
 
 		std::string _requestString;
 		request _requestStruct;

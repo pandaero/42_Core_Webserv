@@ -19,9 +19,11 @@
 int main (void)
 {
 	
-	std::string requestString("GETS knudeld");
+	std::string requestString("PUT A B");
 	RequestHandler rHandler(requestString);
 
-	request requesty = rHandler.getRequest();
-	std::cout << requesty.method << std::endl;
+	request clientRequest = rHandler.getRequest();
+	std::cout << clientRequest.method << std::endl;
+	std::cout << clientRequest.HTTPversion << std::endl;
+	std::cout << clientRequest.URI << std::endl;
 }
