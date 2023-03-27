@@ -106,6 +106,8 @@ request RequestHandler::getRequest()
 	if (!parseHTTP())
 		std::cout << "parseHTTP failed." << std::endl;
 	return _requestStruct;
+	// parse into string vector and not care,
+	// validate stuff later
 }
 
 
