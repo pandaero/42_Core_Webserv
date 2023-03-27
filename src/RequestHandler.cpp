@@ -44,6 +44,11 @@ std::string RequestHandler::splitspace()
 	return element;
 }
 
+std::vector<string> RequestHandler::split_incoming(std::string input, char delimiter)
+{
+
+}
+
 bool RequestHandler::parseMethod()
 {
 	std::string	method;
