@@ -6,60 +6,75 @@
 /*   By: pandalaf <pandalaf@student.42wolfsburg.    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/03/25 23:31:52 by pandalaf          #+#    #+#             */
-/*   Updated: 2023/03/26 23:44:01 by pandalaf         ###   ########.fr       */
+/*   Updated: 2023/03/29 16:58:25 by pandalaf         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
-#include "../include/webserv.hpp"
 #include "../include/Socket.hpp"
 
 #include <iostream>
-#include <ctime>
+#include <algorithm>
 #include <cstdio>
 #include <fcntl.h>
 #include <unistd.h>
-#include <arpa/inet.h>
 #include <sys/socket.h>
 
-void	startPolling(std::vector<Socket> & sockets)
+
+std::map<int, std::vector<Client> >	Socket::_connectionMap;
+std::vector<int>					Socket::_serverSocketfds;
+std::vector<int>					Socket::_clientSocketfds;
+struct pollfd * 					Socket::_pollStruct = new struct pollfd[MAX_FD_COUNT];
+int									Socket::_numPolledfds = 0;
+
+void	Socket::poll()
 {
-	struct pollfd *	pollfds = new struct pollfd[sockets.size()];
-	for (size_t i = 0; i < sockets.size(); ++i)
+	int polling = ::poll(_pollStruct, _numPolledfds, -1);
+	if (polling == -1)
 	{
-		pollfds[i].fd = sockets[i].getSocketfd();
-		pollfds[i].events = POLLIN;
-		pollfds[i].revents = 0;
-		if (listen(pollfds[i].fd, SOMAXCONN) == -1)
-		{
-			std::cerr << "Error: could not start listening on the socket " << pollfds[i].fd << "." << std::endl;
-			perror("listen");
-		}
+		for (size_t i = 0; i < _serverSocketfds.size(); ++i)
+			close(_serverSocketfds[i]);
+		std::cerr << "Error: could not start polling on the sockets." << std::endl;
 	}
-	while (true)
+
+	for (int i = 0; i < _numPolledfds; ++i)
 	{
-		int polling = poll(pollfds, MAXPOLLFDS, -1);
-		if (polling == -1)
-			std::cerr << "Error: could not start polling on the sockets." << std::endl;
-		else
+		if (_pollStruct[i].revents & POLLIN)
 		{
-			for (size_t i = 0; i < sockets.size(); ++i)
+			std::cout << "Ready to receive." << std::endl;
+			if (std::find(_serverSocketfds.begin(), _serverSocketfds.end(), _pollStruct[i].fd) != _serverSocketfds.end())
 			{
-				if (pollfds[i].revents & POLLIN)
-					sockets[i].getHandler()(pollfds[i].fd);
+				if (_connectionMap.find(_pollStruct[i].fd) != _connectionMap.end())
+				{
+					Client	newClient;
+					newClient.accept(_pollStruct[i].fd);
+					std::cout << "New client connected." << std::endl;
+					_connectionMap.find(_pollStruct[i].fd)->second.push_back(newClient);
+					_clientSocketfds.push_back(newClient.getSocketfd());
+					_pollStruct[_numPolledfds].fd = newClient.getSocketfd();
+					_pollStruct[_numPolledfds++].events = POLLIN;
+				}
+			}
+			else
+			{
+				std::cout << "Receiving..." << std::endl;
+				char	buffer[1024];
+				size_t	bytesReceived = recv(_pollStruct[i].fd, buffer, 1024, 0);
+				if (bytesReceived <= 0)
+				{
+					close(_pollStruct[i].fd);
+					_clientSocketfds.erase(find(_clientSocketfds.begin(), _clientSocketfds.end(), _pollStruct[i].fd));
+					--_numPolledfds;
+				}
+				else
+				{
+					std::cout << "Received " << bytesReceived << " bytes from client. Message: " << buffer << "." << std::endl;
+					int	bytesSent = send(_pollStruct[i].fd, buffer, bytesReceived, 0);
+					if (bytesSent == -1)
+						std::cerr << "Error: could not send data to client" << std::endl;
+				}
 			}
 		}
-		if (g_polling == false)
-		{
-			delete [] pollfds;
-			break;
-		}
 	}
-	std::cout << "Polling..." << std::endl;
-}
-
-void	stopPolling()
-{
-	g_polling = false;
 }
 
 Socket::Socket():
@@ -68,12 +83,15 @@ Socket::Socket():
 	int	socketfd = socket(AF_INET, SOCK_STREAM, 0);
 	if (socketfd == -1)
 		throw socketCreationFailureException();
+	_pollStruct[_numPolledfds].revents = 0;
+	_pollStruct[_numPolledfds].events = POLLIN;
+	_pollStruct[_numPolledfds++].fd = socketfd;
 	new (this) Socket(socketfd);
 }
 
 Socket::Socket(const Socket & other):
-	_port(other._port),
-	_socketfd(other._socketfd)
+	_socketfd(other._socketfd),
+	_port(other._port)
 {
 
 }
@@ -90,11 +108,6 @@ Socket &	Socket::operator=(const Socket & other)
 	return (*this);
 }
 
-void	Socket::setHandler(void (&handler)(int))
-{
-	_handler = &handler;
-}
-
 int	Socket::getPort() const
 {
 	return (_port);
@@ -105,28 +118,47 @@ int	Socket::getSocketfd() const
 	return (_socketfd);
 }
 
-void (*Socket::getHandler() const)(int)
+void	Socket::assignAddress(std::string address)
 {
-	return (_handler);
+	if (address == "any")
+		_serverAddress.sin_addr.s_addr = INADDR_ANY;
+	else
+	{
+		int numAddress = inet_addr(address.c_str());
+		if (numAddress == -1)
+			throw invalidAddressException();	
+		_serverAddress.sin_addr.s_addr = inet_addr(address.c_str());
+	}
 }
 
 void	Socket::bind(int port)
 {
-	struct sockaddr_in	server_address;
-	server_address.sin_family = AF_INET;
-	server_address.sin_addr.s_addr = inet_addr("127.0.0.1");
-	server_address.sin_port = htons(port);
+	_serverAddress.sin_port = htons(port);
 	if (fcntl(_socketfd, F_SETFL, O_NONBLOCK) < 0)
 		perror("fcntl");
-	if (::bind(_socketfd, (struct sockaddr *) &server_address, sizeof(server_address)) == -1)
+	if (::bind(_socketfd, (struct sockaddr *) &_serverAddress, sizeof(_serverAddress)) == -1)
+	{
+		close(_socketfd);
 		throw bindingFailureException();
+	}
+}
+
+void	Socket::listen()
+{
+	if (::listen(_socketfd, SOMAXCONN) == -1)
+	{
+		close(_socketfd);
+		throw listenFailureException();
+	}
 }
 
 Socket::Socket(int socketfd):
-	_handler(NULL),
 	_socketfd(socketfd)
 {
-
+	_serverAddress.sin_family = AF_INET;
+	_serverSocketfds.push_back(socketfd);
+	std::vector<Client>	emptyVector;
+	_connectionMap.insert(make_pair(socketfd, emptyVector));
 }
 
 const char *	Socket::socketCreationFailureException::what() const throw()
@@ -137,4 +169,14 @@ const char *	Socket::socketCreationFailureException::what() const throw()
 const char *	Socket::bindingFailureException::what() const throw()
 {
 	return("Error: socket: failed to bind socket to port.");
+}
+
+const char *	Socket::listenFailureException::what() const throw()
+{
+	return("Error: socket: failed to listen on port.");
+}
+
+const char *	Socket::invalidAddressException::what() const throw()
+{
+	return("Error: socket: invalid address.");
 }

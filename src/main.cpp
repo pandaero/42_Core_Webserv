@@ -6,10 +6,9 @@
 #include <unistd.h>
 #include <arpa/inet.h>
 #include <sys/socket.h>
+#include <sys/resource.h>
 
-
-#include <sstream>
-bool g_polling = true;
+int	g_maxPollFds = 0;
 
 void	handleHttpRequest(int sockfd)
 {
@@ -32,27 +31,41 @@ void	handleHttpRequest(int sockfd)
 int	main(int argc, char **argv)
 {
 
-	(void) argc;
-	(void) argv;
+	if (argc > 2)
+	{
+		std::cerr << "Error: too many arguments." << std::endl;
+		return (EXIT_FAILURE);
+	}
+
+	struct rlimit rlim;
+	if (getrlimit(RLIMIT_NOFILE, &rlim) == -1) {
+		std::cerr << "Error: could not get maximum number of file descriptors." << std::endl;
+		return 1;
+	}
+	g_maxPollFds = rlim.rlim_cur;
+
+	if (argc == 2) // Parse config file
+		(void) argv;
+	else // Use default config
+		(void) argv;
 
 	Socket	http;
+	http.assignAddress("127.0.0.1");
 	http.bind(9445);
-	http.setHandler(handleHttpRequest);
+	http.listen();
 
 	Socket	whatevs;
+	whatevs.assignAddress("127.0.0.1");
 	whatevs.bind(9334);
-	whatevs.setHandler(handleHttpRequest);
+	whatevs.listen();
 
 	Socket	whatevselse;
+	whatevselse.assignAddress("127.0.0.1");
 	whatevselse.bind(9556);
-	whatevselse.setHandler(handleHttpRequest);
+	whatevselse.listen();
 
-	std::vector<Socket>	sockets;
-	sockets.push_back(http);
-	sockets.push_back(whatevs);
-	sockets.push_back(whatevselse);
-
-	startPolling(sockets);
+	while (true)
+		Socket::poll();
 
 	return (EXIT_SUCCESS);
 }
