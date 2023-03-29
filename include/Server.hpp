@@ -23,16 +23,17 @@ typedef enum requestMethod //felt cute, might delete later
 	PATCH
 }	reqMeth;
 
+typedef std::map<std::string, std::string>::const_iterator StrMap_it;
+typedef std::map<std::string, std::string> StringMap;
+
 typedef struct HTTPrequest
 {
-	std::string							Method;
-	std::string							URI;
-	std::string							HTTPversion;
-	std::map<std::string, std::string>	Headers;
-	std::vector<std::string>			Body;
+	std::string		Method;
+	std::string		URI;
+	std::string		HTTPversion;
+	StringMap		Headers;
+	std::string		Body;
 }	HTTPrequest;
-
-typedef std::map<std::string, std::string>::const_iterator headers_it;
 
 class Server
 {
@@ -53,8 +54,8 @@ class Server
 	
 	private:
 		// Utils
-		std::string 						splitEraseStr(std::string&, std::string);
-		std::map<std::string, std::string>	splitEraseStrMap(std::string&, std::string, std::string, char);
+		std::string		splitEraseStr(std::string&, std::string);
+		StringMap		splitEraseStrMap(std::string&, std::string, std::string, char);
 
 		HTTPrequest		_request;
 };

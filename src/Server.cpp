@@ -32,7 +32,7 @@ std::string Server::splitEraseStr(std::string& input, std::string target)
 	return element;
 }
 
-std::map<std::string, std::string> Server::splitEraseStrMap(std::string& input, std::string endOfKey, std::string endOfValue, char endOfMap)
+StringMap Server::splitEraseStrMap(std::string& input, std::string endOfKey, std::string endOfValue, char endOfMap)
 {
 	std::map<std::string, std::string> stringMap;
 	std::string key, value;
@@ -46,18 +46,17 @@ std::map<std::string, std::string> Server::splitEraseStrMap(std::string& input, 
 	return stringMap;
 }
 
-HTTPrequest Server::getRequest() const
-{
-	return _request;
-}
+// ACTIONS
 
 void Server::printRequest()
 {
 	std::cout << "Method: " << _request.Method << "\n";
 	std::cout << "URI: " << _request.URI << "\n";
 	std::cout << "HTTP: " << _request.HTTPversion << std::endl;
-	for (headers_it it = _request.Headers.begin(); it != _request.Headers.end(); it++)
+	std::cout << "Headers:" << std::endl;
+	for (StrMap_it it = _request.Headers.begin(); it != _request.Headers.end(); it++)
 		std::cout << it->first << ": " << it->second << std::endl;
+	std::cout << "Body: " << _request.Body << std::endl;
 }
 
 void Server::parseRequest(std::string requestString)
@@ -73,8 +72,18 @@ void Server::parseRequest(std::string requestString)
 	// parse headers
 	_request.Headers = splitEraseStrMap(requestString, ": ", "\n", '\n');
 
+	// parse body (which is just what remains of the input minus the precedint newline)
+	if (requestString[0] == '\n')
+		requestString.erase(0, 1);
+	_request.Body = requestString;
 }
 
+// GETTERS
+
+HTTPrequest Server::getRequest() const
+{
+	return _request;
+}
 
 /*
 GET /index.html HTTP/1.1
@@ -84,29 +93,17 @@ Accept: text/html,application/xhtml+xml,application/xml;q=0.9,;q=0.8
 Accept-Language: en-US,en;q=0.5
 Connection: keep-alive
 
-*/
-
-/* bool Server::parseMethod()
+[
+	{
+	"name": "John Doe",
+	"email": "johndoe@example.com",
+	"phone": "+1 555-1234"
+},
 {
-	std::string	method;
-	std::string methodList[9]= {"GET", "POST", "PUT", "DELETE", "HEAD", "OPTIONS", "CONNECT", "TRACE", "PATCH"};
-	size_t pos;
-	size_t i = 0;
-	
-	method = splitspace();
-	if (method.empty())
-	{
-		std::cerr << "Invalid client request. Aborting." << std::endl;
-		return false;
-	}
-	while (i < 9 && method != methodList[i])
-		i++;
-	if (i == 9)
-	{
-		std::cerr << "Invalid method in client request. Defaulting to \"GET\"." << std::endl;
-		_request.Method = GET;
-	}
-	else
-		_request.Method = (reqMeth)i;
-	return true;
-} */
+	"name": "Jane Smith",
+	"email": "janesmith@example.com",
+	"phone": "+1 555-5678"
+}
+]
+
+*/
