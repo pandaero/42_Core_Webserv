@@ -1,5 +1,6 @@
 #include <iostream>
 #include <vector>
+#include <cstdlib>
 #include <cstring>
 #include <unistd.h>
 #include <sys/socket.h>
