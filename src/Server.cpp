@@ -34,7 +34,7 @@ std::string Server::splitEraseStr(std::string& input, std::string target)
 
 StringMap Server::splitEraseStrMap(std::string& input, std::string endOfKey, std::string endOfValue, char endOfMap)
 {
-	std::map<std::string, std::string> stringMap;
+	StringMap stringMap;
 	std::string key, value;
 
 	while (!input.empty() && input[0] != endOfMap)
@@ -62,6 +62,7 @@ void Server::printRequest()
 void Server::parseRequest(std::string requestString)
 {
 	// remove possible leading whitespace that is not syntax relevant (\r\n are relevant!)
+	// maybe remove this because this shouldnt actually happen
 	requestString.erase(0, requestString.find_first_not_of(" \t\v"));
 
 	// parse request line
