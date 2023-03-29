@@ -48,7 +48,7 @@ StringMap Server::splitEraseStrMap(std::string& input, std::string endOfKey, std
 
 // ACTIONS
 
-void Server::printRequest()
+void Server::printRequest() const
 {
 	std::cout << "Method: " << _request.Method << "\n";
 	std::cout << "URI: " << _request.URI << "\n";
@@ -85,26 +85,3 @@ HTTPrequest Server::getRequest() const
 {
 	return _request;
 }
-
-/*
-GET /index.html HTTP/1.1
-Host: www.example.com
-User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:68.0) Gecko/20100101 Firefox/68.0
-Accept: text/html,application/xhtml+xml,application/xml;q=0.9,;q=0.8
-Accept-Language: en-US,en;q=0.5
-Connection: keep-alive
-
-[
-	{
-	"name": "John Doe",
-	"email": "johndoe@example.com",
-	"phone": "+1 555-1234"
-},
-{
-	"name": "Jane Smith",
-	"email": "janesmith@example.com",
-	"phone": "+1 555-5678"
-}
-]
-
-*/

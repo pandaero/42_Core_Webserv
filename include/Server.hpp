@@ -46,7 +46,7 @@ class Server
 
 		// Actions
 		void parseRequest(std::string);
-		void printRequest();
+		void printRequest() const;
 
 		// Getters
 		HTTPrequest getRequest() const;
