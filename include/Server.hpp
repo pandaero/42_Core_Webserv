@@ -23,7 +23,7 @@ typedef enum requestMethod //felt cute, might delete later
 	PATCH
 }	reqMeth;
 
-typedef std::map<std::string, std::string>::const_iterator StrMap_it;
+typedef std::map<std::string, std::string>::const_iterator StringMap_it;
 typedef std::map<std::string, std::string> StringMap;
 
 typedef struct HTTPrequest
