@@ -1,14 +1,3 @@
-# **************************************************************************** #
-#                                                                              #
-#                                                         :::      ::::::::    #
-#    Makefile                                           :+:      :+:    :+:    #
-#                                                     +:+ +:+         +:+      #
-#    By: pandalaf <pandalaf@student.42wolfsburg.    +#+  +:+       +#+         #
-#                                                 +#+#+#+#+#+   +#+            #
-#    Created: 2023/03/17 19:39:35 by pandalaf          #+#    #+#              #
-#    Updated: 2023/03/24 18:45:22 by pandalaf         ###   ########.fr        #
-#                                                                              #
-# **************************************************************************** #
 
 # Target executable
 NAME	:= webserv
@@ -94,3 +83,22 @@ re: fclean all
 
 # State rules as non-files
 .PHONY: all run directories clean fclean re
+
+# test run mulain branch
+test:
+	c++ src/main.cpp src/Server.cpp -Iinclude -o mulaintest
+
+# git add the entire folder w/o specific commit message
+git:
+	git add .
+	git commit -m "auto add & push"
+	git push
+	@echo "$(COLOR)git auto add & push performed.$(RESET)"
+
+# git add the entire folder with specific commit message
+mgit:
+	git add .
+	@read -p "Enter the commit message: " msg; \
+	git commit -m "$$msg"
+	git push
+	@echo "$(COLOR)git auto add & push with message performed.$(RESET)"

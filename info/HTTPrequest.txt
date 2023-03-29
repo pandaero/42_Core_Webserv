@@ -1,0 +1,18 @@
+An HTTP request is the tool used by a client to tell a server what it wants.
+
+It has 3 parts:
+
+- Request line
+- Headers
+- Body
+
+The request line has 3 components:
+- Method
+- Request-URI
+- HTTP-Version
+
+The 3 components are separated by a " " and the line ends with "\r\n".
+The syntax is: 
+"<Method SP> <Request-URI> <HTTP-Version> \r\n"
+
+*/

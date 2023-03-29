@@ -3,3 +3,9 @@
 
 # Url test executable
 test/url
+# Compiled Objects Folder
+build/
+
+# justmulainthings
+a.out
+mulaintest
