@@ -6,7 +6,7 @@
 #    By: wmardin <wmardin@student.42.fr>            +#+  +:+       +#+         #
 #                                                 +#+#+#+#+#+   +#+            #
 #    Created: 2023/03/17 19:39:35 by pandalaf          #+#    #+#              #
-#    Updated: 2023/03/26 23:27:05 by wmardin          ###   ########.fr        #
+#    Updated: 2023/03/29 16:37:51 by wmardin          ###   ########.fr        #
 #                                                                              #
 # **************************************************************************** #
 
@@ -97,7 +97,7 @@ re: fclean all
 
 # test run mulain branch
 test:
-	c++ src/main.cpp src/RequestHandler.cpp -Iinclude
+	c++ src/main.cpp src/Server.cpp -Iinclude -o mulaintest
 
 # git add the entire folder w/o specific commit message
 git:

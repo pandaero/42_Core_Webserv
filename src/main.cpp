@@ -1,5 +1,5 @@
 #include <cstdlib>
-#include <RequestHandler.hpp>
+#include <Server.hpp>
 
 /* int	main(int argc, char **argv)
 {
@@ -19,11 +19,9 @@
 int main (void)
 {
 	
-	std::string requestString("PUT A B");
-	RequestHandler rHandler(requestString);
+	std::string requestString("   	PUT /sdf.knudel HTTP:1.1\r\niku: shmag\nknudel: knang:sdfs\n\nknu: ksdfi");
+	Server serverA;
 
-	request clientRequest = rHandler.getRequest();
-	std::cout << clientRequest.method << std::endl;
-	std::cout << clientRequest.HTTPversion << std::endl;
-	std::cout << clientRequest.URI << std::endl;
+	serverA.parseRequest(requestString);
+	serverA.printRequest();
 }
