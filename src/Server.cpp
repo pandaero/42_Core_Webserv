@@ -73,7 +73,7 @@ void Server::parseRequest(std::string requestString)
 	// parse headers
 	_request.Headers = splitEraseStrMap(requestString, ": ", "\n", '\n');
 
-	// parse body (which is just what remains of the input minus the precedint newline)
+	// parse body (which is just what remains of the input minus the preceding newline)
 	if (requestString[0] == '\n')
 		requestString.erase(0, 1);
 	_request.Body = requestString;
