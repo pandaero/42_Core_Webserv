@@ -6,7 +6,7 @@
 #    By: pandalaf <pandalaf@student.42wolfsburg.    +#+  +:+       +#+         #
 #                                                 +#+#+#+#+#+   +#+            #
 #    Created: 2023/03/17 19:39:35 by pandalaf          #+#    #+#              #
-#    Updated: 2023/03/29 00:29:28 by pandalaf         ###   ########.fr        #
+#    Updated: 2023/04/01 17:43:17 by pandalaf         ###   ########.fr        #
 #                                                                              #
 # **************************************************************************** #
 
@@ -34,12 +34,12 @@ ifeq ($(LEAKS), 1)
 endif
 
 # Include files
-INC_PRE := Socket.hpp Client.hpp
+INC_PRE := Socket.hpp Client.hpp Response.hpp
 INC_DIR := include/
 INC		:= $(addprefix $(INC_DIR), $(INC_PRE))
 
 # Source files
-SRC_PRE	:= main.cpp Socket.cpp Client.cpp
+SRC_PRE	:= main.cpp Socket.cpp Client.cpp Response.cpp
 SRC_DIR	:= src/
 SRC		:= $(addprefix $(SRC_DIR), $(SRC_PRE))
 
