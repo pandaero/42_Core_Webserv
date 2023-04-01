@@ -6,7 +6,7 @@
 /*   By: pandalaf <pandalaf@student.42wolfsburg.    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/03/25 23:31:52 by pandalaf          #+#    #+#             */
-/*   Updated: 2023/03/29 16:58:25 by pandalaf         ###   ########.fr       */
+/*   Updated: 2023/03/31 14:04:47 by pandalaf         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -15,6 +15,7 @@
 #include <iostream>
 #include <algorithm>
 #include <cstdio>
+#include <cstring>
 #include <fcntl.h>
 #include <unistd.h>
 #include <sys/socket.h>
@@ -68,9 +69,23 @@ void	Socket::poll()
 				else
 				{
 					std::cout << "Received " << bytesReceived << " bytes from client. Message: " << buffer << "." << std::endl;
-					int	bytesSent = send(_pollStruct[i].fd, buffer, bytesReceived, 0);
-					if (bytesSent == -1)
-						std::cerr << "Error: could not send data to client" << std::endl;
+					//Default html file
+					int filefd = open("config/index.html", O_RDONLY);
+					char filebuf;
+					std::cout << "Sending response" << std::endl;
+					char	response[] = "200 OK ";
+					int bytesSentRes = send(_pollStruct[i].fd, &response, strlen(response), 0);
+					if (bytesSentRes == -1)
+						std::cerr << "Error: could not send response to client" << std::endl;
+					std::cout << "Sending file." << std::endl;
+					while (read(filefd, &filebuf, 1))
+					{
+						int	bytesSent = send(_pollStruct[i].fd, &filebuf, 1, 0);
+						if (bytesSent == -1)
+							std::cerr << "Error: could not send data to client" << std::endl;
+					}
+					std::cout << "File sent." << std::endl;
+					close(filefd);
 				}
 			}
 		}
