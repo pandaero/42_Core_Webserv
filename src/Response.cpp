@@ -6,7 +6,7 @@
 /*   By: pandalaf <pandalaf@student.42wolfsburg.    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/04/01 17:05:35 by pandalaf          #+#    #+#             */
-/*   Updated: 2023/04/02 12:01:20 by pandalaf         ###   ########.fr       */
+/*   Updated: 2023/04/02 12:17:36 by pandalaf         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -85,7 +85,7 @@ void	Response::buildResponse()
 	responseStream << "HTTP/1.1 " << _statusCode << " " << _statusMessage << "\n";
 	if (!_webPage.empty())
 	{
-		responseStream << "Content-Type: text/plain\r\n" << "Content-Length: " << _webPage.size() << "\r\n";
+		responseStream << "Content-Type: html\r\n" << "Content-Length: " << _webPage.size() << "\r\n";
 		responseStream << "\r\n" << _webPage;
 	}
 	_fullResponse = responseStream.str();
