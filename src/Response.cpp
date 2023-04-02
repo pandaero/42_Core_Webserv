@@ -6,7 +6,7 @@
 /*   By: pandalaf <pandalaf@student.42wolfsburg.    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/04/01 17:05:35 by pandalaf          #+#    #+#             */
-/*   Updated: 2023/04/01 17:57:45 by pandalaf         ###   ########.fr       */
+/*   Updated: 2023/04/02 12:01:20 by pandalaf         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -33,7 +33,7 @@ Response::Response(const Response & other)
 
 Response::~Response()
 {
-	free(_fullResponseC);
+
 }
 
 Response &	Response::operator=(const Response & other)
@@ -91,9 +91,9 @@ void	Response::buildResponse()
 	_fullResponse = responseStream.str();
 }
 
-const char *	Response::send_msg()
+const void *	Response::send_msg()
 {
-	return (_fullResponse.c_str());
+	return (_fullResponse.data());
 }
 
 int	Response::send_size()

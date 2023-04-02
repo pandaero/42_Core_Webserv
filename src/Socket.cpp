@@ -6,7 +6,7 @@
 /*   By: pandalaf <pandalaf@student.42wolfsburg.    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/03/25 23:31:52 by pandalaf          #+#    #+#             */
-/*   Updated: 2023/04/01 18:16:35 by pandalaf         ###   ########.fr       */
+/*   Updated: 2023/04/02 12:14:36 by pandalaf         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -75,11 +75,8 @@ void	Socket::poll()
 					standard.setStatusCode(200);
 					standard.loadPage("config/index.html");
 					standard.buildResponse();
-					std::cout << "Sending response:" << std::endl;
-					const char *	sendMsg = standard.send_msg();
-					char *	sending = strdup(sendMsg);
-					std::cout << sending << std::endl;
-					int bytesSentRes = send(_pollStruct[i].fd, &sending, strlen(sending), 0);
+					std::cout << "Sending response." << std::endl;
+					int bytesSentRes = send(_pollStruct[i].fd, standard.send_msg(), standard.send_size(), 0);
 					if (bytesSentRes == -1)
 						std::cerr << "Error: could not send response to client" << std::endl;
 				}
