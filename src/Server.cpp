@@ -6,7 +6,7 @@
 /*   By: pandalaf <pandalaf@student.42wolfsburg.    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/04/07 17:49:49 by pandalaf          #+#    #+#             */
-/*   Updated: 2023/04/07 19:20:38 by pandalaf         ###   ########.fr       */
+/*   Updated: 2023/04/07 20:39:37 by pandalaf         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -14,7 +14,9 @@
 
 Server::Server(std::vector<std::string> serverParameters):
 	_name(serverParameters[NAME]),
-	_root(serverParameters[ROOT])
+	_root(serverParameters[ROOT]),
+	_maxConns(std::atoi(serverParameters[MAXCONN])),
+	_numConns(1)
 {
 	if (serverParameters[ADDRESS] == "ANY")
 		_serverAddress.sin_addr.s_addr = INADDR_ANY;
@@ -53,8 +55,53 @@ Server::~Server()
 
 void	Server::poll()
 {
-	if (::poll(_pollStructs, _numConns, -1) == -1)
+	if (::poll(_pollStructs, _clients.size() + 1, -1) == -1)
 		throw pollFailureException();
+}
+
+void	Server::handleConnections()
+{
+	if (_pollStructs[0].revents & POLLIN)
+	{
+		Client newClient(_pollStructs[0].fd);
+		if (_clients.size() <= _maxConns)
+			_clients.push_back(newClient);
+		else
+			throw connectionLimitExceededException();
+		_pollStructs[_clients.size()].fd = newClient.getSocketfd();
+		_pollStructs[_clients.size()].events = POLLIN;
+	}
+	if (_clients.size() > 0)
+	{
+		for (size_t i = 0; i < _clients.size(); ++i)
+		{
+			if (_pollStructs[i + 1].revents & POLLIN)
+			{
+				char buffer[RECEIVE_BUFFER];
+				size_t	bytesReceived = recv(_pollStructs[i + 1].fd, buffer, RECEIVE_BUFFER, 0);
+				if (bytesReceived <= 0)
+				{
+					close(_pollStructs[i + 1].fd);
+					_clients.erase(std::find(_clients.begin(), _clients.end(), _pollStructs[i + 1]));
+				}
+				else
+				{
+					std::cout << "Received " << bytesReceived << " bytes from client. Message: " << buffer << "." << std::endl;
+					Response	standard;
+					standard.setStatusCode(200);
+					standard.loadPage("config/index.html");
+					standard.buildResponse();
+					std::cout << "Sending response." << std::endl;
+					int bytesSent = send(_pollStruct[i].fd, standard.send_msg(), standard.send_size(), 0);
+					if (bytesSent == -1)
+						throw sendFailureException();
+				}
+			}	
+			// if (_pollStructs[i + 1].revents & POLLOUT)
+			// if (_pollStructs[i + 1].revents & POLLERR)
+			// if (_pollStructs[i + 1].revents & POLLHUP)
+		}
+	}
 }
 
 const char *	Server::invalidAddressException::what() const throw();
@@ -85,4 +132,9 @@ const char *	Server::listenFailureException::what() const throw()
 const char *	Server::pollFailureException::what() const throw()
 {
 	return ("error using poll.");
+}
+
+const char *	Server::connectionLimitExceededException::what() const throw()
+{
+	return ("connection limit reached.");
 }

@@ -6,7 +6,7 @@
 /*   By: pandalaf <pandalaf@student.42wolfsburg.    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/04/07 19:17:18 by pandalaf          #+#    #+#             */
-/*   Updated: 2023/04/07 19:19:44 by pandalaf         ###   ########.fr       */
+/*   Updated: 2023/04/07 20:14:28 by pandalaf         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -29,13 +29,16 @@ class	Server
 		~Server();
 		
 		void	poll();
+		void	handleConnections();
 
 	private:
-		std::string	_name;
-		std::string	_root;
-		int			_numConns;
-		pollfd *	_pollstructs;
-		in_addr_t	_serverAddress;
+		std::string			_name;
+		std::string			_root;
+		int					_numConns;
+		int					_maxConns;
+		pollfd *			_pollstructs;
+		sockaddr_in			_serverAddress;
+		std::vector<Client>	_clients;
 
 	class	invalidAddressException: public std::exception
 	{
