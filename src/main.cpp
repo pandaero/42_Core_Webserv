@@ -1,5 +1,5 @@
 #include "../include/webserv.hpp"
-#include "../include/Socket.hpp"
+#include "../include/Server.hpp"
 
 #include <iostream>
 #include <cstdlib>
@@ -49,23 +49,33 @@ int	main(int argc, char **argv)
 	else // Use default config
 		(void) argv;
 
-	Socket	http;
-	http.assignAddress("127.0.0.1");
-	http.bind(9445);
-	http.listen();
-
-	Socket	whatevs;
-	whatevs.assignAddress("127.0.0.1");
-	whatevs.bind(9334);
-	whatevs.listen();
-
-	Socket	whatevselse;
-	whatevselse.assignAddress("127.0.0.1");
-	whatevselse.bind(9556);
-	whatevselse.listen();
+	std::vector<std::string>	serverParam;
+	serverParam.push_back("domain.com");
+	serverParam.push_back("ANY");
+	serverParam.push_back("9875");
+	serverParam.push_back("rroooty");
+	serverParam.push_back("1000");
+	std::cout << "Port: " << serverParam[PORT] << std::endl;
+	Server	server(serverParam);
+	std::vector<Server>	servers;
+	servers.push_back(server);
 
 	while (true)
-		Socket::poll();
-
+	{
+		for (size_t i = 0; i < servers.size(); ++i)
+		{
+			try
+			{
+				servers[i].poll();
+			}
+			catch (std::exception & exc)
+			{
+				// std::cerr << "Error: could not poll on a socket." << std::endl;
+				perror("poll");
+				continue;
+			}
+			servers[i].handleConnections();
+		}
+	}
 	return (EXIT_SUCCESS);
 }

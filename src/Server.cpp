@@ -6,7 +6,7 @@
 /*   By: pandalaf <pandalaf@student.42wolfsburg.    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/04/07 17:49:49 by pandalaf          #+#    #+#             */
-/*   Updated: 2023/04/07 20:39:37 by pandalaf         ###   ########.fr       */
+/*   Updated: 2023/04/07 21:03:19 by pandalaf         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -15,20 +15,20 @@
 Server::Server(std::vector<std::string> serverParameters):
 	_name(serverParameters[NAME]),
 	_root(serverParameters[ROOT]),
-	_maxConns(std::atoi(serverParameters[MAXCONN])),
+	_maxConns(atoi(serverParameters[MAXCONN].c_str())),
 	_numConns(1)
 {
 	if (serverParameters[ADDRESS] == "ANY")
 		_serverAddress.sin_addr.s_addr = INADDR_ANY;
 	else
 	{
-		in_addr_t	ipAddress = inet_addr(serverParameters[ADDRESS].c_str());
+		int	ipAddress = inet_addr(serverParameters[ADDRESS].c_str());
 		if (ipAddress == -1)
 			throw	invalidAddressException();
-		_serverAddress.sin_addr.s_addr = ipAddress;
+		_serverAddress.sin_addr.s_addr = inet_addr(serverParameters[ADDRESS].c_str());
 	}
-	_serverAddress.sin_port = htons(std::atoi(serverParameters[PORT].c_str()));
-	_pollStructs = new pollfd[std::atoi(serverParameters[MAXCONN])];
+	_serverAddress.sin_port = htons(atoi(serverParameters[PORT].c_str()));
+	_pollStructs = new pollfd[atoi(serverParameters[MAXCONN].c_str())];
 	_pollStructs[0].fd = socket(AF_INET, SOCK_STREAM, 0);
 	if (_pollStructs[0].fd == -1)
 		throw	socketCreationFailureException();
@@ -64,7 +64,7 @@ void	Server::handleConnections()
 	if (_pollStructs[0].revents & POLLIN)
 	{
 		Client newClient(_pollStructs[0].fd);
-		if (_clients.size() <= _maxConns)
+		if (_clients.size() <= (size_t) _maxConns)
 			_clients.push_back(newClient);
 		else
 			throw connectionLimitExceededException();
@@ -73,7 +73,8 @@ void	Server::handleConnections()
 	}
 	if (_clients.size() > 0)
 	{
-		for (size_t i = 0; i < _clients.size(); ++i)
+		int i = 0;
+		for (std::vector<Client>::iterator clientIt = _clients.begin(); clientIt != _clients.end(); ++clientIt)
 		{
 			if (_pollStructs[i + 1].revents & POLLIN)
 			{
@@ -82,7 +83,7 @@ void	Server::handleConnections()
 				if (bytesReceived <= 0)
 				{
 					close(_pollStructs[i + 1].fd);
-					_clients.erase(std::find(_clients.begin(), _clients.end(), _pollStructs[i + 1]));
+					_clients.erase(clientIt);
 				}
 				else
 				{
@@ -92,10 +93,11 @@ void	Server::handleConnections()
 					standard.loadPage("config/index.html");
 					standard.buildResponse();
 					std::cout << "Sending response." << std::endl;
-					int bytesSent = send(_pollStruct[i].fd, standard.send_msg(), standard.send_size(), 0);
+					int bytesSent = send(_pollStructs[i].fd, standard.send_msg(), standard.send_size(), 0);
 					if (bytesSent == -1)
 						throw sendFailureException();
 				}
+				++i;
 			}	
 			// if (_pollStructs[i + 1].revents & POLLOUT)
 			// if (_pollStructs[i + 1].revents & POLLERR)
@@ -104,7 +106,7 @@ void	Server::handleConnections()
 	}
 }
 
-const char *	Server::invalidAddressException::what() const throw();
+const char *	Server::invalidAddressException::what() const throw()
 {
 	return ("invalid IP address supplied.");
 }
@@ -137,4 +139,9 @@ const char *	Server::pollFailureException::what() const throw()
 const char *	Server::connectionLimitExceededException::what() const throw()
 {
 	return ("connection limit reached.");
+}
+
+const char *	Server::sendFailureException::what() const throw()
+{
+	return ("error sending data to client.");
 }

@@ -6,7 +6,7 @@
 /*   By: pandalaf <pandalaf@student.42wolfsburg.    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/04/07 19:17:18 by pandalaf          #+#    #+#             */
-/*   Updated: 2023/04/07 20:14:28 by pandalaf         ###   ########.fr       */
+/*   Updated: 2023/04/07 20:58:43 by pandalaf         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -14,12 +14,21 @@
 # define SERVER_HPP
 
 # include "webserv.hpp"
+# include "Client.hpp"
+# include "Response.hpp"
 
 # include <string>
 # include <vector>
+# include <iostream>
 # include <exception>
+# include <algorithm>
+# include <cstdio>
+# include <cstdlib>
+# include <fcntl.h>
+# include <unistd.h>
 # include <arpa/inet.h>
 # include <sys/socket.h>
+# include <sys/poll.h>
 # include <netinet/in.h>
 
 class	Server
@@ -34,9 +43,9 @@ class	Server
 	private:
 		std::string			_name;
 		std::string			_root;
-		int					_numConns;
 		int					_maxConns;
-		pollfd *			_pollstructs;
+		int					_numConns;
+		pollfd *		_pollStructs;
 		sockaddr_in			_serverAddress;
 		std::vector<Client>	_clients;
 
@@ -61,6 +70,14 @@ class	Server
 		const char *	what() const throw();
 	};
 	class	pollFailureException: public std::exception
+	{
+		const char *	what() const throw();
+	};
+	class	connectionLimitExceededException: public std::exception
+	{
+		const char *	what() const throw();
+	};
+	class	sendFailureException: public std::exception
 	{
 		const char *	what() const throw();
 	};

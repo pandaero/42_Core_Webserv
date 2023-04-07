@@ -6,7 +6,7 @@
 /*   By: pandalaf <pandalaf@student.42wolfsburg.    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/03/28 20:29:39 by pandalaf          #+#    #+#             */
-/*   Updated: 2023/03/29 12:54:00 by pandalaf         ###   ########.fr       */
+/*   Updated: 2023/04/07 20:20:48 by pandalaf         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -20,19 +20,14 @@
 class	Client
 {
 	public:
-		Client();
-		Client(const Client &);
-		~Client();
-		Client &	operator=(const Client &);
+		Client(int);
 
 		int		getSocketfd();
 
-		void	accept(int);
-
 	private:
-		int					_clientSocketfd;
-		socklen_t			_clientSockLen;
-		struct sockaddr_in	_clientAddress;
+		int			_clientSocketfd;
+		socklen_t	_clientSockLen;
+		sockaddr_in	_clientAddress;
 	
 	class	connectionDeniedException: public std::exception
 	{
