@@ -6,7 +6,7 @@
 /*   By: wmardin <wmardin@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/04/07 19:17:18 by pandalaf          #+#    #+#             */
-/*   Updated: 2023/04/15 19:52:32 by wmardin          ###   ########.fr       */
+/*   Updated: 2023/04/15 20:28:14 by wmardin          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -47,23 +47,26 @@ class	Server
 		void setPort(std::string);
 		void setClientMaxBody(std::string);
 		void setGet(bool);
+		void setPost(bool);
+		void setDelete(bool);
+		void setDirListing(bool):
+		void setErrorPage(std::string);
 
 	private:
 		std::string			_name;
 		in_addr_t			_host;
 		uint16_t			_port;
-		std::string			_errorPage;
 		size_t				_clientMaxBody;
-		std::string			_dirListing;
-		std::string			_root;
-		std::string			_cgiDir;
-		std::string			_dir;
-		std::string			_uploadDir;
-		std::string			_HTTPversion;
-		size_t				_backlog;
 		bool				_GET;
 		bool				_POST;
 		bool				_DELETE;
+		bool				_dirListing;
+		std::string			_root;
+		std::string			_errorPage;
+		std::string			_cgiDir;
+		std::string			_dir;
+		std::string			_uploadDir;
+		size_t				_backlog;
 		int					_maxConns;
 		int					_numConns;
 		pollfd *			_pollStructs;

@@ -11,8 +11,12 @@ void setField(Server& newServer, std::string key, std::string value)
 		newServer.setPort(value);
 	else if (key == CLIMAXBODY)
 		newServer.setClientMaxBody(value);
-	else if (key == GET)
+	else if (key == GET && value == "yes")
 		newServer.setGet(true);
+	else if (key == POST && value == "yes")
+		newServer.setPost(true);
+	else if (key == DELETE && value == "yes")
+		newServer.setDelete(true);
 
 }
 
