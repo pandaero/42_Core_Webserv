@@ -3,10 +3,10 @@
 #                                                         :::      ::::::::    #
 #    Makefile                                           :+:      :+:    :+:    #
 #                                                     +:+ +:+         +:+      #
-#    By: pandalaf <pandalaf@student.42wolfsburg.    +#+  +:+       +#+         #
+#    By: wmardin <wmardin@student.42.fr>            +#+  +:+       +#+         #
 #                                                 +#+#+#+#+#+   +#+            #
 #    Created: 2023/03/17 19:39:35 by pandalaf          #+#    #+#              #
-#    Updated: 2023/04/07 20:45:14 by pandalaf         ###   ########.fr        #
+#    Updated: 2023/04/15 19:02:21 by wmardin          ###   ########.fr        #
 #                                                                              #
 # **************************************************************************** #
 
@@ -91,6 +91,25 @@ fclean: clean
 
 # Re-make everything
 re: fclean all
+
+# Color definition for personalized status messages
+COLOR	= \033[30m
+RESET	= \033[0m
+
+# Add current folder and push with generic commit message
+git:
+	git add .
+	git commit -m "auto add & push"
+	git push
+	@echo "$(COLOR)git auto add & push performed.$(RESET)"
+
+# Add current folder and push with specific commit message
+mgit:
+	git add .
+	@read -p "Enter the commit message: " msg; \
+	git commit -m "$$msg"
+	git push
+	@echo "$(COLOR)git auto add & push with message performed.$(RESET)"
 
 # State rules as non-files
 .PHONY: all run directories clean fclean re
