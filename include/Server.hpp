@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   Server.hpp                                         :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: pandalaf <pandalaf@student.42wolfsburg.    +#+  +:+       +#+        */
+/*   By: wmardin <wmardin@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/04/07 19:17:18 by pandalaf          #+#    #+#             */
-/*   Updated: 2023/04/07 20:58:43 by pandalaf         ###   ########.fr       */
+/*   Updated: 2023/04/15 19:52:32 by wmardin          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -34,18 +34,39 @@
 class	Server
 {
 	public:
+		Server();
 		Server(std::vector<std::string>);
 		~Server();
 		
 		void	poll();
 		void	handleConnections();
 
+		// SETTERS
+		void setName(std::string);
+		void setHost(std::string);
+		void setPort(std::string);
+		void setClientMaxBody(std::string);
+		void setGet(bool);
+
 	private:
 		std::string			_name;
+		in_addr_t			_host;
+		uint16_t			_port;
+		std::string			_errorPage;
+		size_t				_clientMaxBody;
+		std::string			_dirListing;
 		std::string			_root;
+		std::string			_cgiDir;
+		std::string			_dir;
+		std::string			_uploadDir;
+		std::string			_HTTPversion;
+		size_t				_backlog;
+		bool				_GET;
+		bool				_POST;
+		bool				_DELETE;
 		int					_maxConns;
 		int					_numConns;
-		pollfd *		_pollStructs;
+		pollfd *			_pollStructs;
 		sockaddr_in			_serverAddress;
 		std::vector<Client>	_clients;
 

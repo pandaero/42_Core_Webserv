@@ -6,7 +6,7 @@
 #    By: wmardin <wmardin@student.42.fr>            +#+  +:+       +#+         #
 #                                                 +#+#+#+#+#+   +#+            #
 #    Created: 2023/03/17 19:39:35 by pandalaf          #+#    #+#              #
-#    Updated: 2023/04/15 19:05:04 by wmardin          ###   ########.fr        #
+#    Updated: 2023/04/15 19:26:44 by wmardin          ###   ########.fr        #
 #                                                                              #
 # **************************************************************************** #
 
@@ -39,7 +39,7 @@ INC_DIR := include/
 INC		:= $(addprefix $(INC_DIR), $(INC_PRE))
 
 # Source files
-SRC_PRE	:= main.cpp Server.cpp Client.cpp Response.cpp
+SRC_PRE	:= main.cpp Server.cpp Client.cpp Response.cpp Utils.cpp Config.cpp
 SRC_DIR	:= src/
 SRC		:= $(addprefix $(SRC_DIR), $(SRC_PRE))
 

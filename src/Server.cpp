@@ -3,14 +3,17 @@
 /*                                                        :::      ::::::::   */
 /*   Server.cpp                                         :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: pandalaf <pandalaf@student.42wolfsburg.    +#+  +:+       +#+        */
+/*   By: wmardin <wmardin@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/04/07 17:49:49 by pandalaf          #+#    #+#             */
-/*   Updated: 2023/04/07 21:03:19 by pandalaf         ###   ########.fr       */
+/*   Updated: 2023/04/15 19:52:45 by wmardin          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #include "../include/Server.hpp"
+
+Server::Server()
+{}
 
 Server::Server(std::vector<std::string> serverParameters):
 	_name(serverParameters[NAME]),
@@ -144,4 +147,34 @@ const char *	Server::connectionLimitExceededException::what() const throw()
 const char *	Server::sendFailureException::what() const throw()
 {
 	return ("error sending data to client.");
+}
+
+// SETTERS
+
+void Server::setName(std::string input)
+{
+	
+	_name = input;
+}
+
+void Server::setHost(std::string input)
+{
+	_host = inet_addr(input.c_str());
+}
+
+void Server::setPort(std::string input)
+{
+	//use strtol and throw exception
+	_port = htons(atoi(input.c_str()));
+}
+
+void Server::setClientMaxBody(std::string input)
+{
+	//use strtol and throw exception
+	_clientMaxBody = atoi(input.c_str());
+}
+
+void Server::setGet(bool input)
+{
+	_GET = input;
 }
