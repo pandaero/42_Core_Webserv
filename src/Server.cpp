@@ -6,27 +6,24 @@
 /*   By: wmardin <wmardin@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/04/07 17:49:49 by pandalaf          #+#    #+#             */
-/*   Updated: 2023/04/16 18:13:49 by wmardin          ###   ########.fr       */
+/*   Updated: 2023/04/16 20:12:36 by wmardin          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #include "../include/Server.hpp"
 
 Server::Server():
+	_name("unnamedServer"),
 	_GET(false),
 	_POST(false),
 	_DELETE(false),
 	_dirListing(false),
-	_clientMaxBody(69),
-	_backlog(1000),
-	_maxConns(1e5),
+	_clientMaxBody(10000),
+	_backlog(100),
+	_maxConns(100),
 	_numConns(1)
 {
-	//probrem: this shit is getting done and only then overwritten.
-	// not probrem for ints and such, but for poll array and listening sokcet it sucks monkey balls
-
 	(void)_numConns;
-	setName("unnamedServer");
 	setHost("0");
 	setPort("3000");
 	setRoot("/default/root");
@@ -55,23 +52,39 @@ Server::Server():
 	}
 }
 
-Server::Server(std::vector<std::string> serverParameters):
-	_name(serverParameters[NAME]),
-	_root(serverParameters[ROOT]),
-	_maxConns(atoi(serverParameters[MAXCONN].c_str())),
+Server::Server(serverConfig config):
 	_numConns(1)
 {
-	if (serverParameters[ADDRESS] == "ANY")
-		_serverAddress.sin_addr.s_addr = INADDR_ANY;
-	else
-	{
-		int	ipAddress = inet_addr(serverParameters[ADDRESS].c_str());
-		if (ipAddress == -1)
-			throw	invalidAddressException();
-		_serverAddress.sin_addr.s_addr = inet_addr(serverParameters[ADDRESS].c_str());
-	}
-	_serverAddress.sin_port = htons(atoi(serverParameters[PORT].c_str()));
-	_pollStructs = new pollfd[atoi(serverParameters[MAXCONN].c_str())];
+	setName(config.serverName);
+	setHost(config.host);
+	setPort(config.port);
+	
+	setGet(config.get);
+	setPost(config.post);
+	setDelete(config.delete_);
+	setDirListing(config.dirListing);
+
+	setRoot(config.root);
+	setDir(config.dir);
+	setUploadDir(config.uploadDir);
+	setCgiDir(config.cgiDir);
+	setErrorPage(config.errorPage);
+	
+	setClientMaxBody(config.clientMaxBody);
+	setBacklog(config.backlog);
+	setMaxConnections(config.maxConnections);
+
+	_pollStructs = new pollfd[_maxConns];
+	startListening();
+}
+
+Server::~Server()
+{
+	delete [] _pollStructs;
+}
+
+void	Server::startListening()
+{
 	_pollStructs[0].fd = socket(AF_INET, SOCK_STREAM, 0);
 	if (_pollStructs[0].fd == -1)
 		throw	socketCreationFailureException();
@@ -84,16 +97,11 @@ Server::Server(std::vector<std::string> serverParameters):
 		close(_pollStructs[0].fd);
 		throw bindFailureException();
 	}
-	if (listen (_pollStructs[0].fd, SOMAXCONN) == -1)
+	if (listen(_pollStructs[0].fd, SOMAXCONN) == -1)
 	{
 		close(_pollStructs[0].fd);
 		throw listenFailureException();
 	}
-}
-
-Server::~Server()
-{
-	delete [] _pollStructs;
 }
 
 void	Server::poll()

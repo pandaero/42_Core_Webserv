@@ -33,6 +33,60 @@
 // Errors
 #define E_FILEOPEN	"Could not open config file."
 
+class Server; //forward declaration necessary, but why?
+
+struct serverConfig
+{
+	// Main Settings
+	std::string	serverName;
+	std::string	host;
+	std::string port;
+		
+	// Bools
+	bool get;
+	bool post;
+	bool delete_;
+	bool dirListing;
+	
+	// Directories
+	std::string root;
+	std::string dir;
+	std::string uploadDir;
+	std::string cgiDir;
+	std::string errorPage;
+	
+	// Size restrictions
+	std::string clientMaxBody;
+	std::string maxConnections;
+	std::string backlog;
+
+	serverConfig()
+	{
+		// Main Settings
+		serverName = "unnamedServer";
+		host = "0";
+		port = "0";
+	
+		// Bools
+		get = false;
+		post = false;
+		delete_ = false;
+		dirListing = false;
+	
+		// Directories
+		root = "/default/root";
+		dir = "/default/dir";
+		uploadDir = "/default/upload";
+		cgiDir = "/default/cgi";
+		errorPage = "/default/error";
+	
+		// Size restrictions
+		clientMaxBody = "10000";
+		maxConnections = "1000";
+		backlog = "100";
+	}
+};
+
 std::vector<Server> setupServers(const char*);
 
 #endif

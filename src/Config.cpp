@@ -1,9 +1,8 @@
 
 #include "../include/Config.hpp"
 
-void setField(Server& newServer, std::string key, std::string value)
-{
-	// Main Settings
+/*
+// Main Settings
 	if (key == SERVERNAME)
 		newServer.setName(value);
 	else if (key == HOST)
@@ -40,6 +39,47 @@ void setField(Server& newServer, std::string key, std::string value)
 		newServer.setMaxConnections(value);
 	else if (key == BACKLOG)
 		newServer.setBacklog(value);
+*/
+
+void setField(serverConfig& newConfig, std::string key, std::string value)
+{
+	// Main Settings
+	if (key == SERVERNAME)
+		newConfig.serverName = value;
+	else if (key == HOST)
+		newConfig.host = value;
+	else if (key == PORT)
+		newConfig.port = value;
+	
+	// Bools
+	else if (key == GET && value == "yes")
+		newConfig.get = true;
+	else if (key == POST && value == "yes")
+		newConfig.post = true;
+	else if (key == DELETE && value == "yes")
+		newConfig.delete_ = true;
+	else if (key == DIRLISTING && value == "yes")
+		newConfig.dirListing = true;
+	
+	// Directories
+	else if (key == ROOT)
+		newConfig.root = value;
+	else if (key == DIR)
+		newConfig.dir = value;
+	else if (key == UPLOADDIR)
+		newConfig.uploadDir = value;
+	else if (key == CGIDIR)
+		newConfig.cgiDir = value;
+	else if (key == ERRORPAGE)
+		newConfig.errorPage = value;
+	
+	// Size restrictions
+	else if (key == CLIMAXBODY)
+		newConfig.clientMaxBody = value;
+	else if (key == MAXCONNS)
+		newConfig.maxConnections = value;
+	else if (key == BACKLOG)
+		newConfig.backlog = value;
 }
 
 std::vector<Server> setupServers(const char* path)
@@ -56,14 +96,14 @@ std::vector<Server> setupServers(const char* path)
 	{
 		if (trim(line) == "<server>")
 		{
-			Server newServer;
-
+			serverConfig newConfig;
 			while (std::getline(infile, line) && trim(line) != "</server>")
 			{
 				key = splitEraseStr(line, ":");
 				value = trim(line);
-				setField(newServer, key, value);
+				setField(newConfig, key, value);
 			}
+			Server newServer(newConfig);
 			serverList.push_back(newServer);
 		}
 	}

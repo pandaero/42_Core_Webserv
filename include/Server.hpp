@@ -6,7 +6,7 @@
 /*   By: wmardin <wmardin@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/04/07 19:17:18 by pandalaf          #+#    #+#             */
-/*   Updated: 2023/04/16 17:48:41 by wmardin          ###   ########.fr       */
+/*   Updated: 2023/04/16 20:16:31 by wmardin          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -16,7 +16,7 @@
 # include "webserv.hpp"
 # include "Client.hpp"
 # include "Response.hpp"
-# include "Utils.hpp"
+# include "Config.hpp"
 
 # include <string>
 # include <vector>
@@ -46,17 +46,20 @@
 #define E_BACKLOGVAL	"Invalid size of back log."
 
 // Constraints
-#define CLIENTMAXBODYVAL	1e6
-#define MAXCONNECTIONSVAL	1e4
-#define BACKLOGVAL			1000
+#define CLIENTMAXBODYVAL	10000
+#define MAXCONNECTIONSVAL	1000
+#define BACKLOGVAL			100
+
+struct serverConfig; //why necessary?
 
 class	Server
 {
 	public:
 		Server();
-		Server(std::vector<std::string>);
+		Server(serverConfig);
 		~Server();
 		
+		void	startListening();
 		void	poll();
 		void	handleConnections();
 		void	whoIsI();
