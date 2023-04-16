@@ -62,25 +62,18 @@ struct serverConfig
 
 	serverConfig()
 	{
-		// Main Settings
 		serverName = "unnamedServer";
 		host = "0";
 		port = "0";
-	
-		// Bools
 		get = false;
 		post = false;
 		delete_ = false;
 		dirListing = false;
-	
-		// Directories
 		root = "/default/root";
 		dir = "/default/dir";
 		uploadDir = "/default/upload";
 		cgiDir = "/default/cgi";
 		errorPage = "/default/error";
-	
-		// Size restrictions
 		clientMaxBody = "10000";
 		maxConnections = "1000";
 		backlog = "100";
