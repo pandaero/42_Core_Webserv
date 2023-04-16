@@ -6,7 +6,7 @@
 /*   By: wmardin <wmardin@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/04/07 17:49:49 by pandalaf          #+#    #+#             */
-/*   Updated: 2023/04/16 14:36:37 by wmardin          ###   ########.fr       */
+/*   Updated: 2023/04/16 18:13:49 by wmardin          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -121,7 +121,7 @@ void	Server::handleConnections()
 		{
 			if (_pollStructs[i + 1].revents & POLLIN)
 			{
-				char buffer[RECEIVE_BUFFER];
+				char buffer[_clientMaxBody];
 				size_t	bytesReceived = recv(_pollStructs[i + 1].fd, buffer, RECEIVE_BUFFER, 0);
 				if (bytesReceived <= 0)
 				{
