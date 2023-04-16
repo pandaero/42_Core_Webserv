@@ -6,7 +6,7 @@
 /*   By: wmardin <wmardin@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/04/07 17:49:49 by pandalaf          #+#    #+#             */
-/*   Updated: 2023/04/16 09:05:24 by wmardin          ###   ########.fr       */
+/*   Updated: 2023/04/16 12:07:27 by wmardin          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -29,7 +29,6 @@ Server::Server()
 	setClientMaxBody("69");
 }
 
-//complete default init on server class
 Server::Server(std::vector<std::string> serverParameters):
 	_name(serverParameters[NAME]),
 	_root(serverParameters[ROOT]),
@@ -126,7 +125,8 @@ void	Server::handleConnections()
 
 void Server::whoIsI()
 {
-	std::cout	<< "Name:\t\t" << _name << '\n' \
+	std::cout	<< '\n' \
+				<< "Name:\t\t" << _name << '\n' \
 				<< "Host:\t\t" << _host << '\n' \
 				<< "Port:\t\t" << _port << '\n' \
 				
@@ -141,7 +141,9 @@ void Server::whoIsI()
 				<< "CGI Dir:\t" << _cgiDir << '\n' \
 				<< "Error Page:\t" << _errorPage << '\n' \
 				
-				<< "Cl. max body:\t" << _clientMaxBody << '\n' << std::endl;
+				<< "Cl. max body:\t" << _clientMaxBody << '\n' \
+				<< "Backlog:\t" << _backlog << '\n' \
+				<< "Max Conns:\t" << _maxConns << std::endl;
 }
 
 const char *	Server::invalidAddressException::what() const throw()
@@ -188,20 +190,28 @@ const char *	Server::sendFailureException::what() const throw()
 
 void Server::setName(std::string input)
 {
-	// only allow alnum
+	if (!isAlnumString(input))
+		throw std::invalid_argument(E_SERVERNAME);
 	_name = input;
 }
 
 void Server::setHost(std::string input)
 {
-	//use alnum plus dot or firstnotof 0 to 9 .
+	if (input.find_first_not_of("0123456789.") != std::string::npos)
+		throw std::invalid_argument(E_HOSTADDRINPUT);
 	_host = inet_addr(input.c_str());
+	if (_host == INADDR_NONE)
+		throw std::invalid_argument(E_HOSTADDRVAL);
 }
 
 void Server::setPort(std::string input)
 {
-	//use strtol and throw exception
-	_port = htons(atoi(input.c_str()));
+	if (input.find_first_not_of("0123456789") != std::string::npos)
+			throw std::invalid_argument(E_PORTINPUT);
+	size_t temp = atoi(input.c_str());
+	if (temp > 65534)
+		throw std::invalid_argument(E_PORTVAL);
+	_port = htons(temp);
 }
 
 void Server::setGet(bool input)
@@ -256,6 +266,27 @@ void Server::setErrorPage(std::string input)
 
 void Server::setClientMaxBody(std::string input)
 {
-	//use strtol and throw exception
+	if (input.find_first_not_of("0123456789") != std::string::npos)
+			throw std::invalid_argument(E_CMAXBODYINPUT);
 	_clientMaxBody = atoi(input.c_str());
+	if (_clientMaxBody > CLIENTMAXBODYVAL)
+		throw std::invalid_argument(E_CMAXBODYVAL);
+}
+
+void Server::setMaxConnections(std::string input)
+{
+	if (input.find_first_not_of("0123456789") != std::string::npos)
+			throw std::invalid_argument(E_MAXCONNINPUT);
+	_maxConns = atoi(input.c_str());
+	if (_maxConns > MAXCONNECTIONSVAL)
+		throw std::invalid_argument(E_MAXCONNVAL);
+}
+
+void Server::setBacklog(std::string input)
+{
+	if (input.find_first_not_of("0123456789") != std::string::npos)
+			throw std::invalid_argument(E_BACKLOGINPUT);
+	_backlog = atoi(input.c_str());
+	if (_backlog > BACKLOGVAL)
+		throw std::invalid_argument(E_BACKLOGVAL);
 }

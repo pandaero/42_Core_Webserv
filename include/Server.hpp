@@ -6,7 +6,7 @@
 /*   By: wmardin <wmardin@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/04/07 19:17:18 by pandalaf          #+#    #+#             */
-/*   Updated: 2023/04/16 09:04:11 by wmardin          ###   ########.fr       */
+/*   Updated: 2023/04/16 12:03:25 by wmardin          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -16,6 +16,7 @@
 # include "webserv.hpp"
 # include "Client.hpp"
 # include "Response.hpp"
+# include "Utils.hpp"
 
 # include <string>
 # include <vector>
@@ -30,6 +31,24 @@
 # include <sys/socket.h>
 # include <sys/poll.h>
 # include <netinet/in.h>
+
+// Error messages
+#define E_SERVERNAME	"Invalid characters in server name input. Only alphanumerical allowed."
+#define E_HOSTADDRINPUT	"Invalid characters in host address input. Only numerical and dot allowed."
+#define E_HOSTADDRVAL	"Invalid address value. Cannot convert to IP address."
+#define E_PORTINPUT		"Invalid characters in port input. Only numerical allowed."
+#define E_PORTVAL		"Invalid port number. Must be from 0 to 65535."
+#define E_CMAXBODYINPUT	"Invalid characters in client max body size input. Only numerical allowed."
+#define E_CMAXBODYVAL	"Invalid client max body size."
+#define E_MAXCONNINPUT	"Invalid characters in max connections input. Only numerical allowed."
+#define E_MAXCONNVAL	"Invalid size of max connections."
+#define E_BACKLOGINPUT	"Invalid characters in backlog input. Only numerical allowed."
+#define E_BACKLOGVAL	"Invalid size of back log."
+
+// Constraints
+#define CLIENTMAXBODYVAL	1e6
+#define MAXCONNECTIONSVAL	1e4
+#define BACKLOGVAL			1000
 
 class	Server
 {
@@ -57,8 +76,10 @@ class	Server
 		void setUploadDir(std::string);
 		void setCgiDir(std::string);
 		void setErrorPage(std::string);
-		
+
 		void setClientMaxBody(std::string);
+		void setMaxConnections(std::string);
+		void setBacklog(std::string);
 
 	private:
 		std::string			_name;
@@ -78,8 +99,8 @@ class	Server
 		
 		size_t				_clientMaxBody;
 		size_t				_backlog;
-		int					_maxConns;
-		int					_numConns;
+		size_t				_maxConns;
+		size_t				_numConns;
 		pollfd *			_pollStructs;
 		sockaddr_in			_serverAddress;
 		std::vector<Client>	_clients;

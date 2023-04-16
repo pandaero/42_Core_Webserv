@@ -27,6 +27,8 @@
 
 // Size limits
 #define CLIMAXBODY	"clientMaxBodySize"
+#define MAXCONNS	"maxConnections"
+#define BACKLOG		"backlog"
 
 std::vector<Server> setupServers(const char*);
 

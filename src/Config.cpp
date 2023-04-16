@@ -36,6 +36,10 @@ void setField(Server& newServer, std::string key, std::string value)
 	// Size restrictions
 	else if (key == CLIMAXBODY)
 		newServer.setClientMaxBody(value);
+	else if (key == MAXCONNS)
+		newServer.setMaxConnections(value);
+	else if (key == BACKLOG)
+		newServer.setBacklog(value);
 }
 
 std::vector<Server> setupServers(const char* path)
