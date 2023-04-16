@@ -6,27 +6,30 @@
 /*   By: wmardin <wmardin@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/04/07 17:49:49 by pandalaf          #+#    #+#             */
-/*   Updated: 2023/04/16 12:09:18 by wmardin          ###   ########.fr       */
+/*   Updated: 2023/04/16 14:01:24 by wmardin          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #include "../include/Server.hpp"
 
-Server::Server()
+Server::Server():
+	_numConns(1),
+	_backlog(1000),
+	_maxConns(1e5),
+	_clientMaxBody(69),
+	_GET(false),
+	_POST(false),
+	_DELETE(false),
+	_dirListing(false)
 {
 	setName("unnamedServer");
 	setHost("ANY");
 	setPort("3000");
-	setGet(false);
-	setPost(false);
-	setDelete(false);
-	setDirListing(false);
 	setRoot("/default/root");
 	setDir("/default/dir");
 	setUploadDir("/default/upload");
 	setCgiDir("/default/CGI");
 	setErrorPage("/default/error");
-	setClientMaxBody("69");
 }
 
 Server::Server(std::vector<std::string> serverParameters):
