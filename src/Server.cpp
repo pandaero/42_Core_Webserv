@@ -6,7 +6,7 @@
 /*   By: wmardin <wmardin@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/04/07 17:49:49 by pandalaf          #+#    #+#             */
-/*   Updated: 2023/04/16 12:07:27 by wmardin          ###   ########.fr       */
+/*   Updated: 2023/04/16 12:09:18 by wmardin          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -197,7 +197,8 @@ void Server::setName(std::string input)
 
 void Server::setHost(std::string input)
 {
-	if (input.find_first_not_of("0123456789.") != std::string::npos)
+	std::cout << input << std::endl;
+	if (input.find_first_not_of("0123456789.") != std::string::npos && input != "ANY")
 		throw std::invalid_argument(E_HOSTADDRINPUT);
 	_host = inet_addr(input.c_str());
 	if (_host == INADDR_NONE)
