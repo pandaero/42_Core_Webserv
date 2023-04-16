@@ -6,7 +6,7 @@
 /*   By: wmardin <wmardin@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/04/07 17:49:49 by pandalaf          #+#    #+#             */
-/*   Updated: 2023/04/16 14:21:50 by wmardin          ###   ########.fr       */
+/*   Updated: 2023/04/16 14:36:37 by wmardin          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -22,6 +22,9 @@ Server::Server():
 	_maxConns(1e5),
 	_numConns(1)
 {
+	//probrem: this shit is getting done and only then overwritten.
+	// not probrem for ints and such, but for poll array and listening sokcet it sucks monkey balls
+
 	(void)_numConns;
 	setName("unnamedServer");
 	setHost("0");
@@ -31,6 +34,25 @@ Server::Server():
 	setUploadDir("/default/upload");
 	setCgiDir("/default/CGI");
 	setErrorPage("/default/error");
+
+	_pollStructs = new pollfd[_maxConns];
+	_pollStructs[0].fd = socket(AF_INET, SOCK_STREAM, 0);
+	if (_pollStructs[0].fd == -1)
+		throw	socketCreationFailureException();
+	_pollStructs[0].events = POLLIN;
+	_pollStructs[0].revents = 0;
+	if (fcntl(_pollStructs[0].fd, F_SETFL, O_NONBLOCK) == -1)
+		throw	fileDescriptorControlFailureException();
+	if (bind(_pollStructs[0].fd, (struct sockaddr *) &_serverAddress, sizeof(_serverAddress)) == -1)
+	{
+		close(_pollStructs[0].fd);
+		throw bindFailureException();
+	}
+	if (listen(_pollStructs[0].fd, SOMAXCONN) == -1)
+	{
+		close(_pollStructs[0].fd);
+		throw listenFailureException();
+	}
 }
 
 Server::Server(std::vector<std::string> serverParameters):
@@ -131,8 +153,8 @@ void Server::whoIsI()
 {
 	std::cout	<< '\n' \
 				<< "Name:\t\t" << _name << '\n' \
-				<< "Host:\t\t" << _host << '\n' \
-				<< "Port:\t\t" << _port << '\n' \
+				<< "Host:\t\t" << _serverAddress.sin_addr.s_addr << '\n' \
+				<< "Port:\t\t" << _serverAddress.sin_port << '\n' \
 				
 				<< "GET:\t\t" << (_GET ? "yes" : "no") << '\n' \
 				<< "POST:\t\t" << (_POST ? "yes" : "no") << '\n' \

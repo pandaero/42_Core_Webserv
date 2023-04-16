@@ -6,7 +6,7 @@
 /*   By: wmardin <wmardin@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/04/07 19:17:18 by pandalaf          #+#    #+#             */
-/*   Updated: 2023/04/16 12:03:25 by wmardin          ###   ########.fr       */
+/*   Updated: 2023/04/16 14:31:14 by wmardin          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -83,8 +83,6 @@ class	Server
 
 	private:
 		std::string			_name;
-		in_addr_t			_host;
-		uint16_t			_port;
 		
 		bool				_GET;
 		bool				_POST;
