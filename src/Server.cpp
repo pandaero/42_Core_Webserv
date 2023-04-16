@@ -6,7 +6,7 @@
 /*   By: wmardin <wmardin@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/04/07 17:49:49 by pandalaf          #+#    #+#             */
-/*   Updated: 2023/04/15 20:28:40 by wmardin          ###   ########.fr       */
+/*   Updated: 2023/04/16 08:20:31 by wmardin          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -170,12 +170,6 @@ void Server::setPort(std::string input)
 	_port = htons(atoi(input.c_str()));
 }
 
-void Server::setClientMaxBody(std::string input)
-{
-	//use strtol and throw exception
-	_clientMaxBody = atoi(input.c_str());
-}
-
 void Server::setGet(bool input)
 {
 	_GET = input;
@@ -196,23 +190,10 @@ void Server::setDirListing(bool input)
 	_dirListing = input;
 }
 
-// Possibly unify these and give both input and target. then only one function needed.
 void Server:: setRoot(std::string input)
 {
 	//also URL class?
 	_root = input;
-}
-
-void Server::setErrorPage(std::string input)
-{
-	//Probably use URL class here?
-	_errorPage = input;
-}
-
-void Server::setCgiDir(std::string input)
-{
-	//Probably use URL class here?
-	_cgiDir = input;
 }
 
 void Server::setDir(std::string input)
@@ -225,4 +206,22 @@ void Server::setUploadDir(std::string input)
 {
 	//Probably use URL class here?
 	_uploadDir = input;
+}
+
+void Server::setCgiDir(std::string input)
+{
+	//Probably use URL class here?
+	_cgiDir = input;
+}
+
+void Server::setErrorPage(std::string input)
+{
+	//Probably use URL class here?
+	_errorPage = input;
+}
+
+void Server::setClientMaxBody(std::string input)
+{
+	//use strtol and throw exception
+	_clientMaxBody = atoi(input.c_str());
 }

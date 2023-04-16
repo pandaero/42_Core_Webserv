@@ -1,24 +1,9 @@
 #include "../include/Server.hpp"
-
 #include "../include/Config.hpp"
 #include "../include/Utils.hpp"
 
-/* int	main(int argc, char **argv)
-{
+typedef std::vector<Server>::iterator ServerVecIt;
 
-	// PARSE CONFIG FILE
-
-	// SET UP SERVER
-
-	// PARSE INSTRUCTIONS
-
-	// EXECUTE INSTRUCTIONS
-
-	return (EXIT_SUCCESS);
-}
- */
-
-#include <cstring>
 
 
 /* int main()
@@ -55,14 +40,12 @@
 
 int main()
 {
-	Server	servster;
-	int i = 0;
+	std::vector<Server>	servers;
 
-	parseConfigFile("config/test.conf");
-	
+	servers = setupServers("config/test.conf");
 	while (1)
 	{
-		servster.poll();
-		std::cout << "Number of polls: " << ++i << std::endl;
+		for (ServerVecIt it = servers.begin(); it != servers.end(); it++)
+			it->poll();
 	}
 }

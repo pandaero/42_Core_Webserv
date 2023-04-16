@@ -3,24 +3,42 @@
 
 void setField(Server& newServer, std::string key, std::string value)
 {
+	// Main Settings
 	if (key == SERVERNAME)
 		newServer.setName(value);
 	else if (key == HOST)
 		newServer.setHost(value);
 	else if (key == PORT)
 		newServer.setPort(value);
-	else if (key == CLIMAXBODY)
-		newServer.setClientMaxBody(value);
+	
+	// Bools
 	else if (key == GET && value == "yes")
 		newServer.setGet(true);
 	else if (key == POST && value == "yes")
 		newServer.setPost(true);
 	else if (key == DELETE && value == "yes")
 		newServer.setDelete(true);
-
+	else if (key == DIRLISTING && value == "yes")
+		newServer.setDirListing(true);
+	
+	// Directories
+	else if (key == ROOT)
+		newServer.setRoot(value);
+	else if (key == DIR)
+		newServer.setDir(value);
+	else if (key == UPLOADDIR)
+		newServer.setUploadDir(value);
+	else if (key == CGIDIR)
+		newServer.setCgiDir(value);
+	else if (key == ERRORPAGE)
+		newServer.setErrorPage(value);
+	
+	// Size restrictions
+	else if (key == CLIMAXBODY)
+		newServer.setClientMaxBody(value);
 }
 
-void parseConfigFile(const char* path)
+std::vector<Server> setupServers(const char* path)
 {
 	std::ifstream	infile(path);
 	std::string		line;
@@ -41,22 +59,10 @@ void parseConfigFile(const char* path)
 				key = splitEraseStr(line, ":");
 				value = trim(line);
 				setField(newServer, key, value);
-				//std::cout << "key: " << key << "\tvalue: " << value << std::endl;
 			}
 			serverList.push_back(newServer);
 		}
 	}
-	
-	
-		/* size_t delim = line.find(',');
-		if (delim == std::string::npos)
-			continue;
-		if (!date.parseDate(line.substr(0, delim)))
-			continue;
-		if (!parsePrice(line.substr(delim + 1, line.size()), &price))
-			continue;
-		_btc_price.insert(std::make_pair(date, price)); */
 	infile.close();
+	return serverList;
 }
-
-
