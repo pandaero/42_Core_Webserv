@@ -22,7 +22,7 @@
 #define ROOT		"root"
 #define DIR			"dir"
 #define UPLOADDIR	"uploadDir"
-#define CGIDIR		"cgiDir"
+#define CGIDIR		"CGIdir"
 #define ERRORPAGE	"errorPage"
 
 // Size limits

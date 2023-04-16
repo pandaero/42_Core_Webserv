@@ -6,7 +6,7 @@
 /*   By: wmardin <wmardin@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/04/07 19:17:18 by pandalaf          #+#    #+#             */
-/*   Updated: 2023/04/16 08:40:55 by wmardin          ###   ########.fr       */
+/*   Updated: 2023/04/16 09:04:11 by wmardin          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -40,6 +40,7 @@ class	Server
 		
 		void	poll();
 		void	handleConnections();
+		void	whoIsI();
 
 		// SETTERS
 		void setName(std::string);
@@ -63,15 +64,18 @@ class	Server
 		std::string			_name;
 		in_addr_t			_host;
 		uint16_t			_port;
+		
 		bool				_GET;
 		bool				_POST;
 		bool				_DELETE;
 		bool				_dirListing;
+		
 		std::string			_root;
 		std::string			_dir;
 		std::string			_uploadDir;
 		std::string			_cgiDir;
 		std::string			_errorPage;
+		
 		size_t				_clientMaxBody;
 		size_t				_backlog;
 		int					_maxConns;

@@ -6,14 +6,28 @@
 /*   By: wmardin <wmardin@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/04/07 17:49:49 by pandalaf          #+#    #+#             */
-/*   Updated: 2023/04/16 08:20:31 by wmardin          ###   ########.fr       */
+/*   Updated: 2023/04/16 09:05:24 by wmardin          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #include "../include/Server.hpp"
 
 Server::Server()
-{}
+{
+	setName("unnamedServer");
+	setHost("ANY");
+	setPort("3000");
+	setGet(false);
+	setPost(false);
+	setDelete(false);
+	setDirListing(false);
+	setRoot("/default/root");
+	setDir("/default/dir");
+	setUploadDir("/default/upload");
+	setCgiDir("/default/CGI");
+	setErrorPage("/default/error");
+	setClientMaxBody("69");
+}
 
 //complete default init on server class
 Server::Server(std::vector<std::string> serverParameters):
@@ -108,6 +122,26 @@ void	Server::handleConnections()
 			// if (_pollStructs[i + 1].revents & POLLHUP)
 		}
 	}
+}
+
+void Server::whoIsI()
+{
+	std::cout	<< "Name:\t\t" << _name << '\n' \
+				<< "Host:\t\t" << _host << '\n' \
+				<< "Port:\t\t" << _port << '\n' \
+				
+				<< "GET:\t\t" << (_GET ? "yes" : "no") << '\n' \
+				<< "POST:\t\t" << (_POST ? "yes" : "no") << '\n' \
+				<< "DELETE:\t\t" << (_DELETE ? "yes" : "no") << '\n' \
+				<< "Dir Listing:\t" << (_dirListing ? "yes" : "no") << '\n' \
+				
+				<< "Root:\t\t" << _root << '\n' \
+				<< "Dir:\t\t" << _dir << '\n' \
+				<< "Upload Dir:\t" << _uploadDir << '\n' \
+				<< "CGI Dir:\t" << _cgiDir << '\n' \
+				<< "Error Page:\t" << _errorPage << '\n' \
+				
+				<< "Cl. max body:\t" << _clientMaxBody << '\n' << std::endl;
 }
 
 const char *	Server::invalidAddressException::what() const throw()

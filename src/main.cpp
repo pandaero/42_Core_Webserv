@@ -43,6 +43,10 @@ int main()
 	std::vector<Server>	servers;
 
 	servers = setupServers("config/test.conf");
+
+	for (ServerVecIt it = servers.begin(); it != servers.end(); it++)
+			it->whoIsI();
+
 	while (1)
 	{
 		for (ServerVecIt it = servers.begin(); it != servers.end(); it++)
