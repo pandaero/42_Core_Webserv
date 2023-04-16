@@ -51,7 +51,7 @@ std::vector<Server> setupServers(const char* path)
 	std::vector<Server>	serverList;
 	
 	if (!infile.is_open())
-		throw std::range_error("Could not open config file.");		
+		throw std::range_error(E_FILEOPEN);		
 	while (std::getline(infile, line))
 	{
 		if (trim(line) == "<server>")

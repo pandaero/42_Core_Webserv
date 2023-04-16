@@ -30,6 +30,9 @@
 #define MAXCONNS	"maxConnections"
 #define BACKLOG		"backlog"
 
+// Errors
+#define E_FILEOPEN	"Could not open config file."
+
 std::vector<Server> setupServers(const char*);
 
 #endif

@@ -6,24 +6,25 @@
 /*   By: wmardin <wmardin@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/04/07 17:49:49 by pandalaf          #+#    #+#             */
-/*   Updated: 2023/04/16 14:01:24 by wmardin          ###   ########.fr       */
+/*   Updated: 2023/04/16 14:21:50 by wmardin          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #include "../include/Server.hpp"
 
 Server::Server():
-	_numConns(1),
-	_backlog(1000),
-	_maxConns(1e5),
-	_clientMaxBody(69),
 	_GET(false),
 	_POST(false),
 	_DELETE(false),
-	_dirListing(false)
+	_dirListing(false),
+	_clientMaxBody(69),
+	_backlog(1000),
+	_maxConns(1e5),
+	_numConns(1)
 {
+	(void)_numConns;
 	setName("unnamedServer");
-	setHost("ANY");
+	setHost("0");
 	setPort("3000");
 	setRoot("/default/root");
 	setDir("/default/dir");
@@ -199,13 +200,17 @@ void Server::setName(std::string input)
 }
 
 void Server::setHost(std::string input)
-{
-	std::cout << input << std::endl;
-	if (input.find_first_not_of("0123456789.") != std::string::npos && input != "ANY")
-		throw std::invalid_argument(E_HOSTADDRINPUT);
-	_host = inet_addr(input.c_str());
-	if (_host == INADDR_NONE)
-		throw std::invalid_argument(E_HOSTADDRVAL);
+{	
+	if (input == "ANY")
+		_serverAddress.sin_addr.s_addr = INADDR_ANY;
+	else
+	{
+		if (input.find_first_not_of("0123456789.") != std::string::npos)
+			throw std::invalid_argument(E_HOSTADDRINPUT);
+		_serverAddress.sin_addr.s_addr = inet_addr(input.c_str());
+		if (_serverAddress.sin_addr.s_addr == INADDR_NONE)
+			throw std::invalid_argument(E_HOSTADDRVAL);
+	}
 }
 
 void Server::setPort(std::string input)
@@ -215,7 +220,7 @@ void Server::setPort(std::string input)
 	size_t temp = atoi(input.c_str());
 	if (temp > 65534)
 		throw std::invalid_argument(E_PORTVAL);
-	_port = htons(temp);
+	_serverAddress.sin_port = htons(temp);
 }
 
 void Server::setGet(bool input)
