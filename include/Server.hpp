@@ -6,7 +6,7 @@
 /*   By: wmardin <wmardin@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/04/07 19:17:18 by pandalaf          #+#    #+#             */
-/*   Updated: 2023/04/16 20:16:31 by wmardin          ###   ########.fr       */
+/*   Updated: 2023/04/17 16:51:11 by wmardin          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -44,13 +44,15 @@
 #define E_MAXCONNVAL	"Invalid size of max connections."
 #define E_BACKLOGINPUT	"Invalid characters in backlog input. Only numerical allowed."
 #define E_BACKLOGVAL	"Invalid size of back log."
+#define E_ACC_READ		"Cannot read from path: "
+#define E_ACC_WRITE		"Cannot write in path: "
 
 // Constraints
-#define CLIENTMAXBODYVAL	10000
-#define MAXCONNECTIONSVAL	1000
-#define BACKLOGVAL			100
+#define MAX_CLIENTBODY	10000
+#define MAX_CONNECTIONS	1000
+#define MAX_BACKLOG		100
 
-struct serverConfig; //why necessary?
+struct serverConfig; //why necessary? It's in Config.hpp
 
 class	Server
 {
@@ -65,24 +67,24 @@ class	Server
 		void	whoIsI();
 
 		// SETTERS
-		void setName(std::string);
-		void setHost(std::string);
-		void setPort(std::string);
+		void	setName(std::string);
+		void	setHost(std::string);
+		void	setPort(std::string);
+		void	setPost(bool);
 		
-		void setGet(bool);
-		void setPost(bool);
-		void setDelete(bool);
-		void setDirListing(bool);
+		void	setDelete(bool);
+		void	setGet(bool);
+		void	setDirListing(bool);
 		
-		void setRoot(std::string);
-		void setDir(std::string);
-		void setUploadDir(std::string);
-		void setCgiDir(std::string);
-		void setErrorPage(std::string);
+		void	setRoot(std::string);
+		void	setDir(std::string);
+		void	setUploadDir(std::string);
+		void	setCgiDir(std::string);
+		void	setErrorPage(std::string);
 
-		void setClientMaxBody(std::string);
-		void setMaxConnections(std::string);
-		void setBacklog(std::string);
+		void	setClientMaxBody(std::string);
+		void	setMaxConnections(std::string);
+		void	setBacklog(std::string);
 
 	private:
 		std::string			_name;
@@ -105,6 +107,10 @@ class	Server
 		pollfd *			_pollStructs;
 		sockaddr_in			_serverAddress;
 		std::vector<Client>	_clients;
+
+		void	checkMethodAccess(std::string);
+		void	checkReadAccess(std::string);
+		void	checkWriteAccess(std::string);
 
 	class	invalidAddressException: public std::exception
 	{

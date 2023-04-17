@@ -6,13 +6,13 @@
 /*   By: wmardin <wmardin@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/04/07 17:49:49 by pandalaf          #+#    #+#             */
-/*   Updated: 2023/04/16 20:12:36 by wmardin          ###   ########.fr       */
+/*   Updated: 2023/04/17 16:51:24 by wmardin          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #include "../include/Server.hpp"
 
-Server::Server():
+Server::Server(): // we can take this constructor out, dont need it.
 	_name("unnamedServer"),
 	_GET(false),
 	_POST(false),
@@ -33,23 +33,7 @@ Server::Server():
 	setErrorPage("/default/error");
 
 	_pollStructs = new pollfd[_maxConns];
-	_pollStructs[0].fd = socket(AF_INET, SOCK_STREAM, 0);
-	if (_pollStructs[0].fd == -1)
-		throw	socketCreationFailureException();
-	_pollStructs[0].events = POLLIN;
-	_pollStructs[0].revents = 0;
-	if (fcntl(_pollStructs[0].fd, F_SETFL, O_NONBLOCK) == -1)
-		throw	fileDescriptorControlFailureException();
-	if (bind(_pollStructs[0].fd, (struct sockaddr *) &_serverAddress, sizeof(_serverAddress)) == -1)
-	{
-		close(_pollStructs[0].fd);
-		throw bindFailureException();
-	}
-	if (listen(_pollStructs[0].fd, SOMAXCONN) == -1)
-	{
-		close(_pollStructs[0].fd);
-		throw listenFailureException();
-	}
+	startListening();	
 }
 
 Server::Server(serverConfig config):
@@ -91,7 +75,7 @@ void	Server::startListening()
 	_pollStructs[0].events = POLLIN;
 	_pollStructs[0].revents = 0;
 	if (fcntl(_pollStructs[0].fd, F_SETFL, O_NONBLOCK) == -1)
-		throw	fileDescriptorControlFailureException();
+		throw fileDescriptorControlFailureException();
 	if (bind(_pollStructs[0].fd, (struct sockaddr *) &_serverAddress, sizeof(_serverAddress)) == -1)
 	{
 		close(_pollStructs[0].fd);
@@ -159,24 +143,24 @@ void	Server::handleConnections()
 
 void Server::whoIsI()
 {
-	std::cout	<< '\n' \
-				<< "Name:\t\t" << _name << '\n' \
-				<< "Host:\t\t" << _serverAddress.sin_addr.s_addr << '\n' \
-				<< "Port:\t\t" << _serverAddress.sin_port << '\n' \
+	std::cout	<< '\n'
+				<< "Name:\t\t" << _name << '\n'
+				<< "Host:\t\t" << _serverAddress.sin_addr.s_addr << '\n'
+				<< "Port:\t\t" << _serverAddress.sin_port << '\n'
 				
-				<< "GET:\t\t" << (_GET ? "yes" : "no") << '\n' \
-				<< "POST:\t\t" << (_POST ? "yes" : "no") << '\n' \
-				<< "DELETE:\t\t" << (_DELETE ? "yes" : "no") << '\n' \
-				<< "Dir Listing:\t" << (_dirListing ? "yes" : "no") << '\n' \
+				<< "GET:\t\t" << (_GET ? "yes" : "no") << '\n'
+				<< "POST:\t\t" << (_POST ? "yes" : "no") << '\n'
+				<< "DELETE:\t\t" << (_DELETE ? "yes" : "no") << '\n'
+				<< "Dir Listing:\t" << (_dirListing ? "yes" : "no") << '\n'
 				
-				<< "Root:\t\t" << _root << '\n' \
-				<< "Dir:\t\t" << _dir << '\n' \
-				<< "Upload Dir:\t" << _uploadDir << '\n' \
-				<< "CGI Dir:\t" << _cgiDir << '\n' \
-				<< "Error Page:\t" << _errorPage << '\n' \
+				<< "Root:\t\t" << _root << '\n'
+				<< "Dir:\t\t" << _dir << '\n'
+				<< "Upload Dir:\t" << _uploadDir << '\n'
+				<< "CGI Dir:\t" << _cgiDir << '\n'
+				<< "Error Page:\t" << _errorPage << '\n'
 				
-				<< "Cl. max body:\t" << _clientMaxBody << '\n' \
-				<< "Backlog:\t" << _backlog << '\n' \
+				<< "Cl. max body:\t" << _clientMaxBody << '\n'
+				<< "Backlog:\t" << _backlog << '\n'
 				<< "Max Conns:\t" << _maxConns << std::endl;
 }
 
@@ -275,31 +259,31 @@ void Server::setDirListing(bool input)
 
 void Server:: setRoot(std::string input)
 {
-	//also URL class?
+	checkMethodAccess(input);
 	_root = input;
 }
 
 void Server::setDir(std::string input)
 {
-	//Probably use URL class here?
+	checkMethodAccess(input);
 	_dir = input;
 }
 
 void Server::setUploadDir(std::string input)
 {
-	//Probably use URL class here?
+	checkWriteAccess(input);
 	_uploadDir = input;
 }
 
 void Server::setCgiDir(std::string input)
 {
-	//Probably use URL class here?
+	checkMethodAccess(input); //prolly not correct to check for methods?
 	_cgiDir = input;
 }
 
 void Server::setErrorPage(std::string input)
 {
-	//Probably use URL class here?
+	checkReadAccess(input);
 	_errorPage = input;
 }
 
@@ -308,7 +292,7 @@ void Server::setClientMaxBody(std::string input)
 	if (input.find_first_not_of("0123456789") != std::string::npos)
 			throw std::invalid_argument(E_CMAXBODYINPUT);
 	_clientMaxBody = atoi(input.c_str());
-	if (_clientMaxBody > CLIENTMAXBODYVAL)
+	if (_clientMaxBody > MAX_CLIENTBODY)
 		throw std::invalid_argument(E_CMAXBODYVAL);
 }
 
@@ -317,7 +301,7 @@ void Server::setMaxConnections(std::string input)
 	if (input.find_first_not_of("0123456789") != std::string::npos)
 			throw std::invalid_argument(E_MAXCONNINPUT);
 	_maxConns = atoi(input.c_str());
-	if (_maxConns > MAXCONNECTIONSVAL)
+	if (_maxConns > MAX_CONNECTIONS)
 		throw std::invalid_argument(E_MAXCONNVAL);
 }
 
@@ -326,6 +310,28 @@ void Server::setBacklog(std::string input)
 	if (input.find_first_not_of("0123456789") != std::string::npos)
 			throw std::invalid_argument(E_BACKLOGINPUT);
 	_backlog = atoi(input.c_str());
-	if (_backlog > BACKLOGVAL)
+	if (_backlog > MAX_BACKLOG)
 		throw std::invalid_argument(E_BACKLOGVAL);
+}
+
+// PRIVATE MEMBER FUNCTIONS
+
+void Server::checkMethodAccess(std::string path)
+{
+	if (_GET && access(path.c_str(), R_OK) != 0)
+		throw std::runtime_error(E_ACC_READ + path);
+	if ((_POST | _DELETE) && access(path.c_str(), W_OK) != 0)
+		throw std::runtime_error(E_ACC_WRITE + path);
+}
+
+void Server::checkReadAccess(std::string path)
+{
+	if (access(path.c_str(), R_OK) != 0)
+		throw std::runtime_error(E_ACC_READ + path);
+}
+
+void Server::checkWriteAccess(std::string path)
+{
+	if (access(path.c_str(), W_OK) != 0)
+		throw std::runtime_error(E_ACC_WRITE + path);
 }
