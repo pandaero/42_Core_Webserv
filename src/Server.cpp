@@ -6,7 +6,7 @@
 /*   By: wmardin <wmardin@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/04/07 17:49:49 by pandalaf          #+#    #+#             */
-/*   Updated: 2023/04/17 16:51:24 by wmardin          ###   ########.fr       */
+/*   Updated: 2023/04/17 17:05:22 by wmardin          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -290,10 +290,10 @@ void Server::setErrorPage(std::string input)
 void Server::setClientMaxBody(std::string input)
 {
 	if (input.find_first_not_of("0123456789") != std::string::npos)
-			throw std::invalid_argument(E_CMAXBODYINPUT);
+			throw std::invalid_argument(E_MAXCLIENTBODYINPUT);
 	_clientMaxBody = atoi(input.c_str());
-	if (_clientMaxBody > MAX_CLIENTBODY)
-		throw std::invalid_argument(E_CMAXBODYVAL);
+	if (_clientMaxBody > MAX_MAXCLIENTBODY)
+		throw std::invalid_argument(E_MAXCLIENTBODYVAL);
 }
 
 void Server::setMaxConnections(std::string input)
@@ -301,7 +301,7 @@ void Server::setMaxConnections(std::string input)
 	if (input.find_first_not_of("0123456789") != std::string::npos)
 			throw std::invalid_argument(E_MAXCONNINPUT);
 	_maxConns = atoi(input.c_str());
-	if (_maxConns > MAX_CONNECTIONS)
+	if (_maxConns > MAX_MAXCONNECTIONS)
 		throw std::invalid_argument(E_MAXCONNVAL);
 }
 

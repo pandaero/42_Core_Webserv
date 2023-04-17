@@ -6,7 +6,7 @@
 /*   By: wmardin <wmardin@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/04/07 19:17:18 by pandalaf          #+#    #+#             */
-/*   Updated: 2023/04/17 16:51:11 by wmardin          ###   ########.fr       */
+/*   Updated: 2023/04/17 17:15:20 by wmardin          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -38,8 +38,8 @@
 #define E_HOSTADDRVAL	"Invalid address value. Cannot convert to IP address."
 #define E_PORTINPUT		"Invalid characters in port input. Only numerical allowed."
 #define E_PORTVAL		"Invalid port number. Must be from 0 to 65535."
-#define E_CMAXBODYINPUT	"Invalid characters in client max body size input. Only numerical allowed."
-#define E_CMAXBODYVAL	"Invalid client max body size."
+#define E_MAXCLIENTBODYINPUT	"Invalid characters in client max body size input. Only numerical allowed."
+#define E_MAXCLIENTBODYVAL		"Invalid client max body size."
 #define E_MAXCONNINPUT	"Invalid characters in max connections input. Only numerical allowed."
 #define E_MAXCONNVAL	"Invalid size of max connections."
 #define E_BACKLOGINPUT	"Invalid characters in backlog input. Only numerical allowed."
@@ -48,9 +48,9 @@
 #define E_ACC_WRITE		"Cannot write in path: "
 
 // Constraints
-#define MAX_CLIENTBODY	10000
-#define MAX_CONNECTIONS	1000
-#define MAX_BACKLOG		100
+#define MAX_MAXCLIENTBODY	10000
+#define MAX_MAXCONNECTIONS	1000
+#define MAX_BACKLOG			100
 
 struct serverConfig; //why necessary? It's in Config.hpp
 
