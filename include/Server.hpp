@@ -6,7 +6,7 @@
 /*   By: wmardin <wmardin@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/04/07 19:17:18 by pandalaf          #+#    #+#             */
-/*   Updated: 2023/04/17 17:15:20 by wmardin          ###   ########.fr       */
+/*   Updated: 2023/04/19 12:04:10 by wmardin          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -21,6 +21,7 @@
 # include <string>
 # include <vector>
 # include <iostream>
+# include <sstream>
 # include <exception>
 # include <algorithm>
 # include <cstdio>

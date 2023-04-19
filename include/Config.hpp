@@ -32,6 +32,7 @@
 
 // Errors
 #define E_FILEOPEN	"Could not open config file."
+#define E_NOSERVER	"No valid server configs found."
 
 class Server; //forward declaration necessary, but why?
 
