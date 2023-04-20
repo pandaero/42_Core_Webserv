@@ -82,33 +82,40 @@ void setField(serverConfig& newConfig, std::string key, std::string value)
 		newConfig.backlog = value;
 }
 
-std::vector<Server> setupServers(const char* path)
+std::string getConfig(const char* path)
 {
 	std::ifstream		infile(path);
 	std::stringstream	buffer;
-	std::string			key;
-	std::string			value;
-	std::vector<Server>	serverList;
 	
 	if (!infile.is_open())
 		throw std::runtime_error(E_FILEOPEN);
 	buffer << infile.rdbuf();
 	infile.close();
-	std::string configFile = buffer.str();
-	std::string blockTitle = splitEraseStr(configFile, "{");
+	return buffer.str();
+}
+
+std::vector<Server> setupServers(const char* path)
+{
+	std::string			configString;
+	std::string			key;
+	std::string			value;
+	std::vector<Server>	serverList;
+	
+	configString = getConfig(path);
+	std::string blockTitle = splitEraseStr(configString, "{");
 	if (trim(blockTitle) != "server")
 		throw std::runtime_error(E_BLOCTITLE);
 	int i = 0;
-	while (!trim(configFile).empty())
+	while (!trim(configString).empty())
 	{
 		
 		std::cout << i++ << std::endl;
 		serverConfig newConfig;
-		while (trim(configFile)[0] != '}')
+		while (trim(configString)[0] != '}')
 		{
-			key = splitEraseStr(configFile, " ");
-			trim(configFile);
-			value = splitEraseStr(configFile, ";");
+			key = splitEraseStr(configString, " ");
+			trim(configString);
+			value = splitEraseStr(configString, ";");
 			std::cout << "key: " << key << std::endl;
 			std::cout << "value: " << value << std::endl;
 			setField(newConfig, key, value);
