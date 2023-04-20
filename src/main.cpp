@@ -42,7 +42,7 @@ int main()
 {
 	std::vector<Server>	servers;
 
-	servers = setupServers("config/test.conf");
+	servers = setupServers("config/ngnix_style.conf");
 
 	for (ServerVecIt it = servers.begin(); it != servers.end(); it++)
 			it->whoIsI();

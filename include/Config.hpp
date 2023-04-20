@@ -8,9 +8,9 @@
 #include "Utils.hpp"
 
 // Main settings
-#define SERVERNAME	"serverName"
+#define SERVERNAME	"server_name"
 #define HOST		"host"
-#define PORT		"port"
+#define PORT		"listen"
 
 // Bools
 #define GET			"GET"
@@ -33,6 +33,7 @@
 // Errors
 #define E_FILEOPEN	"Could not open config file."
 #define E_NOSERVER	"No valid server configs found."
+#define E_BLOCTITLE	"Invalid block declaration, (only \"server\" allowed)."
 
 class Server; //forward declaration necessary, but why?
 
@@ -70,11 +71,11 @@ struct serverConfig
 		post = false;
 		delete_ = false;
 		dirListing = false;
-		root = "/default/root";
-		dir = "/default/dir";
-		uploadDir = "/default/upload";
-		cgiDir = "/default/cgi";
-		errorPage = "/default/error";
+		root = "website/root";
+		dir = "website/dir";
+		uploadDir = "website/upload";
+		cgiDir = "website/cgi";
+		errorPage = "website/error.html";
 		clientMaxBody = "10000";
 		maxConnections = "1000";
 		backlog = "100";

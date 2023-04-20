@@ -6,7 +6,7 @@
 /*   By: wmardin <wmardin@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/04/07 17:49:49 by pandalaf          #+#    #+#             */
-/*   Updated: 2023/04/17 17:05:22 by wmardin          ###   ########.fr       */
+/*   Updated: 2023/04/20 10:55:27 by wmardin          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -37,7 +37,8 @@ Server::Server(): // we can take this constructor out, dont need it.
 }
 
 Server::Server(serverConfig config):
-	_numConns(1)
+	_numConns(1),
+	_pollStructs(NULL)
 {
 	setName(config.serverName);
 	setHost(config.host);
@@ -64,7 +65,9 @@ Server::Server(serverConfig config):
 
 Server::~Server()
 {
-	delete [] _pollStructs;
+	if (_pollStructs)
+		std::cout << "if pollstructs active" << std::endl;
+		//delete [] _pollStructs;
 }
 
 void	Server::startListening()
@@ -208,8 +211,9 @@ const char *	Server::sendFailureException::what() const throw()
 
 void Server::setName(std::string input)
 {
-	if (!isAlnumString(input))
-		throw std::invalid_argument(E_SERVERNAME);
+	for (std::string::const_iterator it = input.begin(); it != input.end(); it++)
+		if (!isalnum(*it) && *it != '.')
+			throw std::invalid_argument(E_SERVERNAME);
 	_name = input;
 }
 
