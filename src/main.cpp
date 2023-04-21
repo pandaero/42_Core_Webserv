@@ -1,72 +1,67 @@
-#include "../include/webserv.hpp"
 #include "../include/Server.hpp"
+#include "../include/ServerConfig.hpp"
+#include "../include/webserv.hpp"
 
-#include <iostream>
-#include <cstdlib>
-#include <unistd.h>
-#include <arpa/inet.h>
-#include <sys/socket.h>
-#include <sys/resource.h>
+typedef std::vector<Server>::iterator ServerVecIt;
 
-int	g_maxPollFds = 0;
 
-void	handleHttpRequest(int sockfd)
+
+/* int main()
 {
-	char				buffer[1024];
-	struct sockaddr_in	client_address;
-	socklen_t			client_address_length = sizeof(client_address);
-	int					bytesRcvd = recvfrom(sockfd, buffer, sizeof(buffer), 0, (struct sockaddr *)&client_address, &client_address_length);
+	Server	servster;
+
 	
-	if (bytesRcvd == -1)
-		std::cerr << "Error: did not receive data from socket." << std::endl;
+	std::string requestString("POST /api/users HTTP/1.1\r\nHost: www.example.com\nUser-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/88.0.4324.96 Safari/537.36\nContent-Type: application/json\nContent-Length: 44\nConnection: keep-alive\n\n{\"username}\": \"jdoe\", \"password\": \"password123\"}");
+	std::string empty("");
+	Server serverA;
 
-	std::cout << "Received: " << buffer;
+	serverA.parseRequest(empty);
+	serverA.printRequest();
+	serverA.parseRequest(requestString);
+	serverA.printRequest();
 
-	std::string	received(buffer);
-	
-	std::string	response = "Received: \"" + received.substr(0, received.size() - 2) + "\" successfully.\n";
-	send(sockfd, response.c_str(), response.size(), 0);
-}
-
-int	main(int argc, char **argv)
-{
-
-	if (argc > 2)
+	int i = 0;
+	while (1)
 	{
-		std::cerr << "Error: too many arguments." << std::endl;
-		return (EXIT_FAILURE);
+		//printf("\n+++++++ Waiting for new connection ++++++++\n\n");
+		servster.poll();
+		int newConnFd = servster.acceptConnection();
+		char buffer[30000] = {0};
+		read(newConnFd, buffer, 30000);
+		printf("%s\n",buffer );
+		
+
+		write(newConnFd, msg, strlen(msg));
+		printf("------------------Hello message sent-------------------\n");
+		std::cout << "Number of connections: " << ++i << std::endl;
 	}
+} */
 
-	struct rlimit rlim;
-	if (getrlimit(RLIMIT_NOFILE, &rlim) == -1) {
-		std::cerr << "Error: could not get maximum number of file descriptors." << std::endl;
-		return 1;
+
+
+
+int main()
+{
+	std::vector<ServerConfig>	configVec;
+	size_t						serverCount;
+
+	configVec = getConfigs("config/ngnix_style.conf");
+	serverCount = configVec.size();
+
+	Server*	serverArr[serverCount];
+	for (size_t i = 0; i < serverCount; i++)
+	{
+		serverArr[i] = new Server(configVec[i]);
+		serverArr[i]->whoIsI();
 	}
-	g_maxPollFds = rlim.rlim_cur;
-
-	if (argc == 2) // Parse config file
-		(void) argv;
-	else // Use default config
-		(void) argv;
-
-	std::vector<std::string>	serverParam;
-	serverParam.push_back("domain.com");
-	serverParam.push_back("ANY");
-	serverParam.push_back("9875");
-	serverParam.push_back("rroooty");
-	serverParam.push_back("1000");
-	std::cout << "Port: " << serverParam[PORT] << std::endl;
-	Server	server(serverParam);
-	std::vector<Server>	servers;
-	servers.push_back(server);
 
 	while (true)
 	{
-		for (size_t i = 0; i < servers.size(); ++i)
+		for (size_t i = 0; i < serverCount; ++i)
 		{
 			try
 			{
-				servers[i].poll();
+				serverArr[i]->poll();
 			}
 			catch (std::exception & exc)
 			{
@@ -74,8 +69,7 @@ int	main(int argc, char **argv)
 				perror("poll");
 				continue;
 			}
-			servers[i].handleConnections();
+			serverArr[i]->handleConnections();
 		}
 	}
-	return (EXIT_SUCCESS);
 }

@@ -6,3 +6,6 @@ webserv
 
 # Url test executable
 test/url
+
+# Stray executables
+*.out

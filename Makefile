@@ -1,17 +1,9 @@
-# **************************************************************************** #
-#                                                                              #
-#                                                         :::      ::::::::    #
-#    Makefile                                           :+:      :+:    :+:    #
-#                                                     +:+ +:+         +:+      #
-#    By: pandalaf <pandalaf@student.42wolfsburg.    +#+  +:+       +#+         #
-#                                                 +#+#+#+#+#+   +#+            #
-#    Created: 2023/03/17 19:39:35 by pandalaf          #+#    #+#              #
-#    Updated: 2023/04/07 20:45:14 by pandalaf         ###   ########.fr        #
-#                                                                              #
-# **************************************************************************** #
-
 # Target executable
 NAME	:= webserv
+
+# Color definition for personalized status messages
+COLOR	= \033[30m
+RESET	= \033[0m
 
 # Default arguments
 ifeq ($(shell uname), Linux)
@@ -39,7 +31,7 @@ INC_DIR := include/
 INC		:= $(addprefix $(INC_DIR), $(INC_PRE))
 
 # Source files
-SRC_PRE	:= main.cpp Server.cpp Client.cpp Response.cpp
+SRC_PRE	:= main.cpp webserv.cpp Server.cpp Client.cpp Response.cpp ServerConfig.cpp
 SRC_DIR	:= src/
 SRC		:= $(addprefix $(SRC_DIR), $(SRC_PRE))
 
@@ -91,6 +83,14 @@ fclean: clean
 
 # Re-make everything
 re: fclean all
+
+# Add current folder and push with specific commit message
+mgit:
+	git add .
+	@read -p "Enter the commit message: " msg; \
+	git commit -m "$$msg"
+	git push
+	@echo "$(COLOR)git auto add & push with message performed.$(RESET)"
 
 # State rules as non-files
 .PHONY: all run directories clean fclean re
