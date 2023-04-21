@@ -6,7 +6,7 @@
 /*   By: wmardin <wmardin@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/04/07 19:17:18 by pandalaf          #+#    #+#             */
-/*   Updated: 2023/04/21 11:36:50 by wmardin          ###   ########.fr       */
+/*   Updated: 2023/04/21 11:50:54 by wmardin          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -35,16 +35,16 @@
 
 // Error messages
 #define E_SERVERNAME	"Invalid characters in server name input. Only alphanumerical, <<.>> and <<_>> allowed: "
-#define E_HOSTADDRINPUT	"Invalid characters in host address input. Only numerical and dot allowed."
-#define E_HOSTADDRVAL	"Invalid address value. Cannot convert to IP address."
-#define E_PORTINPUT		"Invalid characters in port input. Only numerical allowed."
-#define E_PORTVAL		"Invalid port number. Must be from 0 to 65535."
-#define E_MAXCLIENTBODYINPUT	"Invalid characters in client max body size input. Only numerical allowed."
-#define E_MAXCLIENTBODYVAL		"Invalid client max body size."
-#define E_MAXCONNINPUT	"Invalid characters in max connections input. Only numerical allowed."
-#define E_MAXCONNVAL	"Invalid size of max connections."
-#define E_BACKLOGINPUT	"Invalid characters in backlog input. Only numerical allowed."
-#define E_BACKLOGVAL	"Invalid size of back log."
+#define E_HOSTADDRINPUT	"Invalid characters in host address input. Only numerical and dot allowed: "
+#define E_HOSTADDRVAL	"Invalid address value. Cannot convert to IP address: "
+#define E_PORTINPUT		"Invalid characters in port input. Only numerical allowed: "
+#define E_PORTVAL		"Invalid port number. Must be from 0 to 65535: "
+#define E_MAXCLIENTBODYINPUT	"Invalid characters in client max body size input. Only numerical allowed: "
+#define E_MAXCLIENTBODYVAL		"Invalid client max body size: "
+#define E_MAXCONNINPUT	"Invalid characters in max connections input. Only numerical allowed: "
+#define E_MAXCONNVAL	"Invalid size of max connections: "
+#define E_BACKLOGINPUT	"Invalid characters in backlog input. Only numerical allowed: "
+#define E_BACKLOGVAL	"Invalid size of back log: "
 #define E_ACC_READ		"Cannot read from path: "
 #define E_ACC_WRITE		"Cannot write in path: "
 
