@@ -6,7 +6,7 @@
 /*   By: wmardin <wmardin@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/04/07 17:49:49 by pandalaf          #+#    #+#             */
-/*   Updated: 2023/04/21 11:50:57 by wmardin          ###   ########.fr       */
+/*   Updated: 2023/04/21 15:57:48 by wmardin          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -40,6 +40,7 @@ Server::Server(ServerConfig config):
 	_numConns(1),
 	_pollStructs(NULL)
 {
+	(void)_numConns;
 	setName(config.serverName);
 	setHost(config.host);
 	setPort(config.port);
