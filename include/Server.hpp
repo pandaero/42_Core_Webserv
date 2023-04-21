@@ -6,7 +6,7 @@
 /*   By: wmardin <wmardin@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/04/07 19:17:18 by pandalaf          #+#    #+#             */
-/*   Updated: 2023/04/21 09:44:27 by wmardin          ###   ########.fr       */
+/*   Updated: 2023/04/21 11:36:50 by wmardin          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -34,7 +34,7 @@
 # include <netinet/in.h>
 
 // Error messages
-#define E_SERVERNAME	"Invalid characters in server name input. Only alphanumerical allowed."
+#define E_SERVERNAME	"Invalid characters in server name input. Only alphanumerical, <<.>> and <<_>> allowed: "
 #define E_HOSTADDRINPUT	"Invalid characters in host address input. Only numerical and dot allowed."
 #define E_HOSTADDRVAL	"Invalid address value. Cannot convert to IP address."
 #define E_PORTINPUT		"Invalid characters in port input. Only numerical allowed."
@@ -58,7 +58,7 @@ class ServerConfig; //why necessary? It's in Config.hpp
 class	Server
 {
 	public:
-		Server();
+		//Server();
 		Server(ServerConfig);
 		~Server();
 		

@@ -38,23 +38,25 @@ typedef std::vector<Server>::iterator ServerVecIt;
 } */
 
 
+
+
 int main()
 {
-	std::vector<ServerConfig> configList;
-	std::vector<Server>	servers;
+	std::vector<ServerConfig>	configVec;
 
-	configList = getConfigs("config/ngnix_style.conf");
-	/* for (size_t i = 0; i < configList.size(); i++)
+	configVec = getConfigs("config/ngnix_style.conf");
+	
+	Server*	serverArr[configVec.size()];
+	
+	for (size_t i = 0; i < configVec.size(); i++)
 	{
-		Server(configList[i]);
-	} */
+		serverArr[i] = new Server(configVec[i]);
+		serverArr[i]->whoIsI();
+	}
 
-	for (ServerVecIt it = servers.begin(); it != servers.end(); it++)
-			it->whoIsI();
-
-	while (1)
+/* 	while (1)
 	{
 		for (ServerVecIt it = servers.begin(); it != servers.end(); it++)
 			it->poll();
-	}
+	} */
 }

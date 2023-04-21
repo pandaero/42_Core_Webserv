@@ -6,13 +6,13 @@
 /*   By: wmardin <wmardin@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/04/07 17:49:49 by pandalaf          #+#    #+#             */
-/*   Updated: 2023/04/21 09:41:17 by wmardin          ###   ########.fr       */
+/*   Updated: 2023/04/21 11:36:22 by wmardin          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #include "../include/Server.hpp"
 
-Server::Server(): // we can take this constructor out, dont need it.
+/* Server::Server(): // we can take this constructor out, dont need it.
 	_name("unnamedServer"),
 	_GET(false),
 	_POST(false),
@@ -34,7 +34,7 @@ Server::Server(): // we can take this constructor out, dont need it.
 
 	_pollStructs = new pollfd[_maxConns];
 	startListening();	
-}
+} */
 
 Server::Server(ServerConfig config):
 	_numConns(1),
@@ -212,8 +212,8 @@ const char *	Server::sendFailureException::what() const throw()
 void Server::setName(std::string input)
 {
 	for (std::string::const_iterator it = input.begin(); it != input.end(); it++)
-		if (!isalnum(*it) && *it != '.')
-			throw std::invalid_argument(E_SERVERNAME);
+		if (!isalnum(*it) && *it != '.' && *it != '_')
+			throw std::invalid_argument(E_SERVERNAME + input);
 	_name = input;
 }
 

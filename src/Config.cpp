@@ -88,13 +88,37 @@ void ServerConfig::setField(std::string key, std::string value)
 		backlog = value;
 }
 
+// UTIL FUNCTIONS
+
+std::vector<ServerConfig> getConfigs(const char* path)
+{
+	std::string					configData;
+	std::vector<ServerConfig>	configList;
+	
+	configData = configFileToString(path);
+	trim(configData);
+	while (!configData.empty())
+	{
+		ServerConfig newConfig(getConfigElement(configData));
+		configList.push_back(newConfig);
+	}
+	std::cout << "Finished parsing input. " << configList.size() << " config elements built." << std::endl;
+	if (configList.empty())
+		throw std::runtime_error(E_NOSERVER);
+	return configList;
+}
+
+
 std::string configFileToString(const char* path)
 {
 	std::ifstream		infile(path);
 	std::stringstream	buffer;
 	
 	if (!infile.is_open())
-		throw std::runtime_error(E_FILEOPEN);
+	{
+		std::string invalidpath(path);
+		throw std::runtime_error(E_FILEOPEN + invalidpath);
+	}
 	buffer << infile.rdbuf();
 	infile.close();
 	return buffer.str();
@@ -117,65 +141,7 @@ std::string getConfigElement(std::string& configString)
 		throw std::runtime_error(E_ELMNTDECL + elementTitle);
 	len_close = configString.find("}");
 	if (configString.find("{") < len_close)
-		throw std::runtime_error(E_SUBELEMNT);
+		throw std::runtime_error(E_SUBELEMNT + configString);
 	elementBody = splitEraseStr(configString, "}");
 	return trim(elementBody);
 }
-
-std::vector<ServerConfig> getConfigs(const char* path)
-{
-	std::string					configData;
-	std::vector<ServerConfig>	configList;
-	
-	configData = configFileToString(path);
-	trim(configData);
-	while (!configData.empty())
-	{
-		ServerConfig newConfig(getConfigElement(configData));
-		configList.push_back(newConfig);
-	}
-	std::cout << "Finished parsing input. " << configList.size() << " config elements built." << std::endl;
-	if (configList.empty())
-		throw std::runtime_error(E_NOSERVER);
-	return configList;
-}
-
-/*
-// Main Settings
-	if (key == SERVERNAME)
-		newServer.setName(value);
-	else if (key == HOST)
-		newServer.setHost(value);
-	else if (key == PORT)
-		newServer.setPort(value);
-	
-	// Bools
-	else if (key == GET && value == "yes")
-		newServer.setGet(true);
-	else if (key == POST && value == "yes")
-		newServer.setPost(true);
-	else if (key == DELETE && value == "yes")
-		newServer.setDelete(true);
-	else if (key == DIRLISTING && value == "yes")
-		newServer.setDirListing(true);
-	
-	// Directories
-	else if (key == ROOT)
-		newServer.setRoot(value);
-	else if (key == DIR)
-		newServer.setDir(value);
-	else if (key == UPLOADDIR)
-		newServer.setUploadDir(value);
-	else if (key == CGIDIR)
-		newServer.setCgiDir(value);
-	else if (key == ERRORPAGE)
-		newServer.setErrorPage(value);
-	
-	// Size restrictions
-	else if (key == CLIMAXBODY)
-		newServer.setClientMaxBody(value);
-	else if (key == MAXCONNS)
-		newServer.setMaxConnections(value);
-	else if (key == BACKLOG)
-		newServer.setBacklog(value);
-*/
