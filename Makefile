@@ -1,17 +1,9 @@
-# **************************************************************************** #
-#                                                                              #
-#                                                         :::      ::::::::    #
-#    Makefile                                           :+:      :+:    :+:    #
-#                                                     +:+ +:+         +:+      #
-#    By: wmardin <wmardin@student.42.fr>            +#+  +:+       +#+         #
-#                                                 +#+#+#+#+#+   +#+            #
-#    Created: 2023/03/17 19:39:35 by pandalaf          #+#    #+#            
-#    Updated: 2023/04/15 19:26:44 by wmardin          ###   ########.fr        #
-#                                                                              #
-# **************************************************************************** #
-
 # Target executable
 NAME	:= webserv
+
+# Color definition for personalized status messages
+COLOR	= \033[30m
+RESET	= \033[0m
 
 # Default arguments
 ifeq ($(shell uname), Linux)
@@ -91,17 +83,6 @@ fclean: clean
 
 # Re-make everything
 re: fclean all
-
-# Color definition for personalized status messages
-COLOR	= \033[30m
-RESET	= \033[0m
-
-# Add current folder and push with generic commit message
-git:
-	git add .
-	git commit -m "auto add & push"
-	git push
-	@echo "$(COLOR)git auto add & push performed.$(RESET)"
 
 # Add current folder and push with specific commit message
 mgit:
