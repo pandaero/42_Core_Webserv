@@ -129,7 +129,7 @@ void	Server::handleConnections()
 					std::cout << "Received " << bytesReceived << " bytes from client. Message: " << buffer << "." << std::endl;
 					Response	standard;
 					standard.setStatusCode(200);
-					standard.loadPage("config/index.html");
+					standard.loadPage("website/index.html");
 					standard.buildResponse();
 					std::cout << "Sending response." << std::endl;
 					int bytesSent = send(_pollStructs[i + 1].fd, standard.send_msg(), standard.send_size(), 0);
