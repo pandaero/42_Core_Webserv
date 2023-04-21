@@ -13,6 +13,10 @@
 #ifndef WEBSERV_HPP
 # define WEBSERV_HPP
 
+# include <iostream>
+# include <vector>
+# include <map>
+
 # define RECEIVE_BUFFER 8192
 
 enum serverParams
@@ -23,5 +27,14 @@ enum serverParams
 	ROOT,
 	MAXCONN
 };
+
+typedef std::map<std::string, std::string>::const_iterator	StringMap_it;
+typedef std::map<std::string, std::string> 					StringMap;
+
+bool 			isAlnumString(const std::string&);
+std::string		trim(std::string& input);
+std::string		splitEraseStr(std::string&, std::string);
+StringMap		splitEraseStrMap(std::string&, std::string, std::string, char);
+
 
 #endif
