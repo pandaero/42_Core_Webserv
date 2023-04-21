@@ -6,7 +6,7 @@
 /*   By: wmardin <wmardin@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/04/07 19:17:18 by pandalaf          #+#    #+#             */
-/*   Updated: 2023/04/19 12:04:10 by wmardin          ###   ########.fr       */
+/*   Updated: 2023/04/21 09:44:27 by wmardin          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -53,13 +53,13 @@
 #define MAX_MAXCONNECTIONS	1000
 #define MAX_BACKLOG			100
 
-struct serverConfig; //why necessary? It's in Config.hpp
+class ServerConfig; //why necessary? It's in Config.hpp
 
 class	Server
 {
 	public:
 		Server();
-		Server(serverConfig);
+		Server(ServerConfig);
 		~Server();
 		
 		void	startListening();

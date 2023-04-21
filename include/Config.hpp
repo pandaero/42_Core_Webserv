@@ -33,11 +33,48 @@
 // Errors
 #define E_FILEOPEN	"Could not open config file."
 #define E_NOSERVER	"No valid server configs found."
-#define E_BLOCTITLE	"Invalid block declaration, (only \"server\" allowed)."
+#define E_ELMNTDECL	"Invalid element declaration, (only \"server\" allowed): "
+#define E_SUBELEMNT	"Subelements not allowed."
 
 class Server; //forward declaration necessary, but why?
 
-struct serverConfig
+class ServerConfig
+{
+	public:
+		ServerConfig();
+		ServerConfig(std::string);
+		~ServerConfig();
+
+		void setDefault();
+		void setField(std::string, std::string);
+		void parseInput(std::string);
+
+		std::string	serverName;
+		std::string	host;
+		std::string port;
+		bool get;
+		bool post;
+		bool delete_;
+		bool dirListing;
+		std::string root;
+		std::string dir;
+		std::string uploadDir;
+		std::string cgiDir;
+		std::string errorPage;
+		std::string clientMaxBody;
+		std::string maxConnections;
+		std::string backlog;
+};
+
+// Framework for building ServerConfig objects
+std::vector<ServerConfig>	getConfigs(const char*);
+std::string					getConfigString(const char*);
+std::string					getConfigElement(std::string&);
+
+
+#endif
+
+/* struct serverConfig
 {
 	// Main Settings
 	std::string	serverName;
@@ -80,8 +117,4 @@ struct serverConfig
 		maxConnections = "1000";
 		backlog = "100";
 	}
-};
-
-std::vector<Server> setupServers(const char*);
-
-#endif
+}; */

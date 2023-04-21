@@ -40,9 +40,14 @@ typedef std::vector<Server>::iterator ServerVecIt;
 
 int main()
 {
+	std::vector<ServerConfig> configList;
 	std::vector<Server>	servers;
 
-	servers = setupServers("config/ngnix_style.conf");
+	configList = getConfigs("config/ngnix_style.conf");
+	/* for (size_t i = 0; i < configList.size(); i++)
+	{
+		Server(configList[i]);
+	} */
 
 	for (ServerVecIt it = servers.begin(); it != servers.end(); it++)
 			it->whoIsI();
