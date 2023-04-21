@@ -132,7 +132,7 @@ void	Server::handleConnections()
 					standard.loadPage("config/index.html");
 					standard.buildResponse();
 					std::cout << "Sending response." << std::endl;
-					int bytesSent = send(_pollStructs[i].fd, standard.send_msg(), standard.send_size(), 0);
+					int bytesSent = send(_pollStructs[i + 1].fd, standard.send_msg(), standard.send_size(), 0);
 					if (bytesSent == -1)
 						throw sendFailureException();
 				}
@@ -224,8 +224,6 @@ void Server::setHost(std::string input)
 		_serverAddress.sin_addr.s_addr = INADDR_ANY;
 	else
 	{
-		if (input.find_first_not_of("0123456789.") != std::string::npos)
-			throw std::runtime_error(E_HOSTADDRINPUT + input);
 		_serverAddress.sin_addr.s_addr = inet_addr(input.c_str());
 		if (_serverAddress.sin_addr.s_addr == INADDR_NONE)
 			throw std::runtime_error(E_HOSTADDRVAL + input);
@@ -282,7 +280,7 @@ void Server::setUploadDir(std::string input)
 
 void Server::setCgiDir(std::string input)
 {
-	checkMethodAccess(input); //prolly not correct to check for methods?
+	checkMethodAccess(input); //prolly not correct to check for methods??
 	_cgiDir = input;
 }
 

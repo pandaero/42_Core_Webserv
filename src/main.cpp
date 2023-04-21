@@ -1,6 +1,6 @@
 #include "../include/Server.hpp"
-#include "../include/Config.hpp"
-#include "../include/Utils.hpp"
+#include "../include/ServerConfig.hpp"
+#include "../include/webserv.hpp"
 
 typedef std::vector<Server>::iterator ServerVecIt;
 
@@ -55,9 +55,21 @@ int main()
 		serverArr[i]->whoIsI();
 	}
 
-	while (1)
+	while (true)
 	{
-		for (size_t i = 0; i < serverCount; i++)
-			serverArr[i]->poll();
+		for (size_t i = 0; i < serverCount; ++i)
+		{
+			try
+			{
+				serverArr[i]->poll();
+			}
+			catch (std::exception & exc)
+			{
+				// std::cerr << "Error: could not poll on a socket." << std::endl;
+				perror("poll");
+				continue;
+			}
+			serverArr[i]->handleConnections();
+		}
 	}
 }

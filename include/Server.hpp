@@ -16,7 +16,7 @@
 # include "webserv.hpp"
 # include "Client.hpp"
 # include "Response.hpp"
-# include "Config.hpp"
+# include "ServerConfig.hpp"
 
 # include <string>
 # include <vector>
