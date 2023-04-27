@@ -10,7 +10,7 @@ int main()
 	configVec = getConfigs("default/config/nginx_style.conf");
 	serverCount = configVec.size();
 
-	Server*	serverArr[serverCount];
+	Server *	serverArr[serverCount];
 	for (size_t i = 0; i < serverCount; i++)
 	{
 		serverArr[i] = new Server(configVec[i]);
