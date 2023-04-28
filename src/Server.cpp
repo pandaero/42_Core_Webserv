@@ -6,7 +6,7 @@
 /*   By: wmardin <wmardin@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/04/07 17:49:49 by pandalaf          #+#    #+#             */
-/*   Updated: 2023/04/28 16:59:34 by wmardin          ###   ########.fr       */
+/*   Updated: 2023/04/28 17:06:03 by wmardin          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -279,7 +279,7 @@ void Server::setUploadDir(std::string input)
 
 void Server::setCgiDir(std::string input)
 {
-	checkMethodAccess(input); //prolly not correct to check for methods??
+	checkExecAccess(input);
 	_cgiDir = input;
 }
 
@@ -336,4 +336,10 @@ void Server::checkWriteAccess(std::string path)
 {
 	if (access(path.c_str(), W_OK) != 0)
 		throw std::runtime_error(E_ACC_WRITE + path + '\n');
+}
+
+void Server::checkExecAccess(std::string path)
+{
+	if (access(path.c_str(), X_OK) != 0)
+		throw std::runtime_error(E_ACC_EXEC + path + '\n');
 }

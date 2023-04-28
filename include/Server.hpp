@@ -6,7 +6,7 @@
 /*   By: wmardin <wmardin@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/04/07 19:17:18 by pandalaf          #+#    #+#             */
-/*   Updated: 2023/04/28 16:55:53 by wmardin          ###   ########.fr       */
+/*   Updated: 2023/04/28 17:04:13 by wmardin          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -89,6 +89,8 @@ class	Server
 		void	checkMethodAccess(std::string);
 		void	checkReadAccess(std::string);
 		void	checkWriteAccess(std::string);
+		void	checkExecAccess(std::string);
+
 
 	class	invalidAddressException: public std::exception
 	{

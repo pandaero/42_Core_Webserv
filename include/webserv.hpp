@@ -6,7 +6,7 @@
 /*   By: wmardin <wmardin@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/03/26 01:51:20 by pandalaf          #+#    #+#             */
-/*   Updated: 2023/04/28 16:53:05 by wmardin          ###   ########.fr       */
+/*   Updated: 2023/04/28 17:03:41 by wmardin          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -61,6 +61,7 @@
 # define E_BACKLOGVAL			"Error: Server: Invalid size of back log: "
 # define E_ACC_READ				"Error: Server: Cannot read from path: "
 # define E_ACC_WRITE			"Error: Server: Cannot write in path: "
+# define E_ACC_EXEC				"Error: Server: Cannot execute from path: "
 
 // TYPEDEFS
 typedef std::map<std::string, std::string>::const_iterator	StringMap_it;
