@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   Server.hpp                                         :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: wmardin <wmardin@student.42.fr>            +#+  +:+       +#+        */
+/*   By: pandalaf <pandalaf@student.42wolfsburg.    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/04/07 19:17:18 by pandalaf          #+#    #+#             */
-/*   Updated: 2023/04/28 17:04:13 by wmardin          ###   ########.fr       */
+/*   Updated: 2023/04/28 17:30:51 by pandalaf         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -38,7 +38,6 @@ class ServerConfig; //why necessary? It's in Config.hpp - sometimes it doesn't g
 class	Server
 {
 	public:
-		//Server();
 		Server(ServerConfig);
 		~Server();
 		
@@ -47,7 +46,6 @@ class	Server
 		void	handleConnections();
 		void	whoIsI();
 
-		// SETTERS
 		void	setName(std::string);
 		void	setHost(std::string);
 		void	setPort(std::string);
@@ -91,7 +89,6 @@ class	Server
 		void	checkWriteAccess(std::string);
 		void	checkExecAccess(std::string);
 
-
 	class	invalidAddressException: public std::exception
 	{
 		const char *	what() const throw();
@@ -125,5 +122,4 @@ class	Server
 		const char *	what() const throw();
 	};
 };
-
 #endif

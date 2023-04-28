@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   Server.cpp                                         :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: wmardin <wmardin@student.42.fr>            +#+  +:+       +#+        */
+/*   By: pandalaf <pandalaf@student.42wolfsburg.    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/04/07 17:49:49 by pandalaf          #+#    #+#             */
-/*   Updated: 2023/04/28 17:06:03 by wmardin          ###   ########.fr       */
+/*   Updated: 2023/04/28 17:30:50 by pandalaf         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -167,48 +167,6 @@ void Server::whoIsI()
 				<< "Max Conns:\t" << _maxConns << std::endl;
 }
 
-const char *	Server::invalidAddressException::what() const throw()
-{
-	return ("invalid IP address supplied.");
-}
-
-const char *	Server::socketCreationFailureException::what() const throw()
-{
-	return ("error creating socket for server.");
-}
-
-const char *	Server::fileDescriptorControlFailureException::what() const throw()
-{
-	return ("error controlling file descriptor to non-blocking.");
-}
-
-const char *	Server::bindFailureException::what() const throw()
-{
-	return ("error using bind.");
-}
-
-const char *	Server::listenFailureException::what() const throw()
-{
-	return ("error using listen.");
-}
-
-const char *	Server::pollFailureException::what() const throw()
-{
-	return ("error using poll.");
-}
-
-const char *	Server::connectionLimitExceededException::what() const throw()
-{
-	return ("connection limit reached.");
-}
-
-const char *	Server::sendFailureException::what() const throw()
-{
-	return ("error sending data to client.");
-}
-
-// SETTERS
-
 void Server::setName(std::string input)
 {
 	for (std::string::const_iterator it = input.begin(); it != input.end(); it++)
@@ -316,8 +274,6 @@ void Server::setBacklog(std::string input)
 		throw std::runtime_error(E_BACKLOGVAL + input + '\n');
 }
 
-// PRIVATE MEMBER FUNCTIONS
-
 void Server::checkMethodAccess(std::string path)
 {
 	if (_GET && access(path.c_str(), R_OK) != 0)
@@ -342,4 +298,44 @@ void Server::checkExecAccess(std::string path)
 {
 	if (access(path.c_str(), X_OK) != 0)
 		throw std::runtime_error(E_ACC_EXEC + path + '\n');
+}
+
+const char *	Server::invalidAddressException::what() const throw()
+{
+	return ("invalid IP address supplied.");
+}
+
+const char *	Server::socketCreationFailureException::what() const throw()
+{
+	return ("error creating socket for server.");
+}
+
+const char *	Server::fileDescriptorControlFailureException::what() const throw()
+{
+	return ("error controlling file descriptor to non-blocking.");
+}
+
+const char *	Server::bindFailureException::what() const throw()
+{
+	return ("error using bind.");
+}
+
+const char *	Server::listenFailureException::what() const throw()
+{
+	return ("error using listen.");
+}
+
+const char *	Server::pollFailureException::what() const throw()
+{
+	return ("error using poll.");
+}
+
+const char *	Server::connectionLimitExceededException::what() const throw()
+{
+	return ("connection limit reached.");
+}
+
+const char *	Server::sendFailureException::what() const throw()
+{
+	return ("error sending data to client.");
 }
