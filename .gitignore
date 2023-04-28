@@ -1,5 +1,11 @@
 # Compiled Objects Folders
-*/build/
+*build/
+
+# Executable
+webserv
 
 # Url test executable
 test/url
+
+# Stray executables
+*.out
