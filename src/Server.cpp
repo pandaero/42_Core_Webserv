@@ -6,7 +6,7 @@
 /*   By: wmardin <wmardin@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/04/07 17:49:49 by pandalaf          #+#    #+#             */
-/*   Updated: 2023/04/21 15:57:48 by wmardin          ###   ########.fr       */
+/*   Updated: 2023/04/28 16:39:11 by wmardin          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -67,8 +67,7 @@ Server::Server(ServerConfig config):
 Server::~Server()
 {
 	if (_pollStructs)
-		std::cout << "if pollstructs active" << std::endl;
-		//delete [] _pollStructs;
+		delete [] _pollStructs;
 }
 
 void	Server::startListening()
@@ -149,8 +148,8 @@ void Server::whoIsI()
 {
 	std::cout	<< '\n'
 				<< "Name:\t\t" << _name << '\n'
-				<< "Host:\t\t" << _serverAddress.sin_addr.s_addr << '\n'
-				<< "Port:\t\t" << _serverAddress.sin_port << '\n'
+				<< "Host:\t\t" << inet_ntoa(_serverAddress.sin_addr) << '\n'
+				<< "Port:\t\t" << ntohs(_serverAddress.sin_port) << '\n'
 				
 				<< "GET:\t\t" << (_GET ? "yes" : "no") << '\n'
 				<< "POST:\t\t" << (_POST ? "yes" : "no") << '\n'

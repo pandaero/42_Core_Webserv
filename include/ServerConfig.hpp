@@ -6,35 +6,6 @@
 # include "Server.hpp"
 # include "webserv.hpp"
 
-// Main settings
-# define SERVERNAME	"server_name"
-# define HOST		"host"
-# define PORT		"listen"
-
-// Bools
-# define GET		"GET"
-# define POST		"POST"
-# define DELETE		"DELETE"
-# define DIRLISTING	"directoryListing"
-
-// Directories
-# define ROOT		"root"
-# define DIR		"dir"
-# define UPLOADDIR	"uploadDir"
-# define CGIDIR		"CGIdir"
-# define ERRORPAGE	"errorPage"
-
-// Size limits
-# define CLIMAXBODY	"clientMaxBodySize"
-# define MAXCONNS	"maxConnections"
-# define BACKLOG	"backlog"
-
-// Errors
-# define E_FILEOPEN		"Could not open config file: "
-# define E_NOSERVER		"No valid server configs found."
-# define E_ELMNTDECL	"Invalid element declaration, (only \"server\" allowed): "
-# define E_SUBELEMNT	"Subelements not allowed: "
-
 class ServerConfig
 {
 	public:
