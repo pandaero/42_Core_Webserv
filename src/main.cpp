@@ -45,7 +45,7 @@ int main()
 	std::vector<ServerConfig>	configVec;
 	size_t						serverCount;
 
-	configVec = getConfigs("config/ngnix_style.conf");
+	configVec = getConfigs("default/config/ngnix_style.conf");
 	serverCount = configVec.size();
 
 	Server*	serverArr[serverCount];

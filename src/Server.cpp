@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   Server.cpp                                         :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: wmardin <wmardin@student.42.fr>            +#+  +:+       +#+        */
+/*   By: apielasz <apielasz@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/04/07 17:49:49 by pandalaf          #+#    #+#             */
-/*   Updated: 2023/04/21 15:57:48 by wmardin          ###   ########.fr       */
+/*   Updated: 2023/04/28 11:52:23 by apielasz         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -129,7 +129,7 @@ void	Server::handleConnections()
 					std::cout << "Received " << bytesReceived << " bytes from client. Message: " << buffer << "." << std::endl;
 					Response	standard;
 					standard.setStatusCode(200);
-					standard.loadPage("website/index.html");
+					standard.loadPage("default/index.html");
 					standard.buildResponse();
 					std::cout << "Sending response." << std::endl;
 					int bytesSent = send(_pollStructs[i + 1].fd, standard.send_msg(), standard.send_size(), 0);
