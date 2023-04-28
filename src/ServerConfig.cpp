@@ -22,11 +22,11 @@ void ServerConfig::setDefault()
 	post = false;
 	delete_ = false;
 	dirListing = false;
-	root = "website/root";
-	dir = "website/dir";
-	uploadDir = "website/upload";
-	cgiDir = "website/cgi";
-	errorPage = "website/error.html";
+	root = "default/root";
+	dir = "default/dir";
+	uploadDir = "default/upload";
+	cgiDir = "default/cgi";
+	errorPage = "default/error.html";
 	clientMaxBody = "10000";
 	maxConnections = "1000";
 	backlog = "100";

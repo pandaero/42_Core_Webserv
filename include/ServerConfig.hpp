@@ -30,8 +30,8 @@
 # define BACKLOG	"backlog"
 
 // Errors
-# define E_FILEOPEN	"Could not open config file: "
-# define E_NOSERVER	"No valid server configs found."
+# define E_FILEOPEN		"Could not open config file: "
+# define E_NOSERVER		"No valid server configs found."
 # define E_ELMNTDECL	"Invalid element declaration, (only \"server\" allowed): "
 # define E_SUBELEMNT	"Subelements not allowed: "
 
