@@ -6,7 +6,7 @@
 /*   By: wmardin <wmardin@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/03/26 01:51:20 by pandalaf          #+#    #+#             */
-/*   Updated: 2023/04/28 16:34:26 by wmardin          ###   ########.fr       */
+/*   Updated: 2023/04/28 16:42:50 by wmardin          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -18,6 +18,8 @@
 # include <map>
 
 # define RECEIVE_BUFFER 8192
+
+// CONFIGURATION ELEMENT IDENTIFIERS
 
 // Main settings
 # define SERVERNAME	"server_name"
@@ -42,11 +44,13 @@
 # define MAXCONNS	"maxConnections"
 # define BACKLOG	"backlog"
 
-// Errors
-# define E_FILEOPEN		"Could not open config file: "
-# define E_NOSERVER		"No valid server configs found."
-# define E_ELMNTDECL	"Invalid element declaration, (only \"server\" allowed): "
-# define E_SUBELEMNT	"Subelements not allowed: "
+// ERROR MESSAGES
+
+// ServerConfig
+# define E_FILEOPEN		"ServerConfig: Could not open config file: "
+# define E_NOSERVER		"ServerConfig: No valid server configs found."
+# define E_ELMNTDECL	"ServerConfig: Invalid element declaration, (only \"server\" allowed): "
+# define E_SUBELEMNT	"ServerConfig: Subelements not allowed: "
 
 typedef std::map<std::string, std::string>::const_iterator	StringMap_it;
 typedef std::map<std::string, std::string> 					StringMap;
