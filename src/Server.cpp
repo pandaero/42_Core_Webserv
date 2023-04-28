@@ -6,7 +6,7 @@
 /*   By: wmardin <wmardin@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/04/07 17:49:49 by pandalaf          #+#    #+#             */
-/*   Updated: 2023/04/28 16:39:11 by wmardin          ###   ########.fr       */
+/*   Updated: 2023/04/28 16:59:34 by wmardin          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -213,7 +213,7 @@ void Server::setName(std::string input)
 {
 	for (std::string::const_iterator it = input.begin(); it != input.end(); it++)
 		if (!isalnum(*it) && *it != '.' && *it != '_')
-			throw std::runtime_error(E_SERVERNAME + input);
+			throw std::runtime_error(E_SERVERNAME + input + '\n');
 	_name = input;
 }
 
@@ -225,17 +225,17 @@ void Server::setHost(std::string input)
 	{
 		_serverAddress.sin_addr.s_addr = inet_addr(input.c_str());
 		if (_serverAddress.sin_addr.s_addr == INADDR_NONE)
-			throw std::runtime_error(E_HOSTADDRVAL + input);
+			throw std::runtime_error(E_HOSTADDRVAL + input + '\n');
 	}
 }
 
 void Server::setPort(std::string input)
 {
 	if (input.find_first_not_of("0123456789") != std::string::npos)
-			throw std::runtime_error(E_PORTINPUT + input);
+			throw std::runtime_error(E_PORTINPUT + input + '\n');
 	size_t temp = atoi(input.c_str());
 	if (temp > 65534)
-		throw std::runtime_error(E_PORTVAL + input);
+		throw std::runtime_error(E_PORTVAL + input + '\n');
 	_serverAddress.sin_port = htons(temp);
 }
 
@@ -292,28 +292,28 @@ void Server::setErrorPage(std::string input)
 void Server::setClientMaxBody(std::string input)
 {
 	if (input.find_first_not_of("0123456789") != std::string::npos)
-			throw std::runtime_error(E_MAXCLIENTBODYINPUT);
+			throw std::runtime_error(E_MAXCLIENTBODYINPUT + input + '\n');
 	_clientMaxBody = atoi(input.c_str());
 	if (_clientMaxBody > MAX_MAXCLIENTBODY)
-		throw std::runtime_error(E_MAXCLIENTBODYVAL);
+		throw std::runtime_error(E_MAXCLIENTBODYVAL + input + '\n');
 }
 
 void Server::setMaxConnections(std::string input)
 {
 	if (input.find_first_not_of("0123456789") != std::string::npos)
-			throw std::runtime_error(E_MAXCONNINPUT);
+			throw std::runtime_error(E_MAXCONNINPUT + input + '\n');
 	_maxConns = atoi(input.c_str());
 	if (_maxConns > MAX_MAXCONNECTIONS)
-		throw std::runtime_error(E_MAXCONNVAL);
+		throw std::runtime_error(E_MAXCONNVAL + input + '\n');
 }
 
 void Server::setBacklog(std::string input)
 {
 	if (input.find_first_not_of("0123456789") != std::string::npos)
-			throw std::runtime_error(E_BACKLOGINPUT);
+			throw std::runtime_error(E_BACKLOGINPUT + input + '\n');
 	_backlog = atoi(input.c_str());
 	if (_backlog > MAX_BACKLOG)
-		throw std::runtime_error(E_BACKLOGVAL);
+		throw std::runtime_error(E_BACKLOGVAL + input + '\n');
 }
 
 // PRIVATE MEMBER FUNCTIONS
@@ -321,19 +321,19 @@ void Server::setBacklog(std::string input)
 void Server::checkMethodAccess(std::string path)
 {
 	if (_GET && access(path.c_str(), R_OK) != 0)
-		throw std::runtime_error(E_ACC_READ + path);
+		throw std::runtime_error(E_ACC_READ + path + '\n');
 	if ((_POST | _DELETE) && access(path.c_str(), W_OK) != 0)
-		throw std::runtime_error(E_ACC_WRITE + path);
+		throw std::runtime_error(E_ACC_WRITE + path + '\n');
 }
 
 void Server::checkReadAccess(std::string path)
 {
 	if (access(path.c_str(), R_OK) != 0)
-		throw std::runtime_error(E_ACC_READ + path);
+		throw std::runtime_error(E_ACC_READ + path + '\n');
 }
 
 void Server::checkWriteAccess(std::string path)
 {
 	if (access(path.c_str(), W_OK) != 0)
-		throw std::runtime_error(E_ACC_WRITE + path);
+		throw std::runtime_error(E_ACC_WRITE + path + '\n');
 }
