@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   Server.cpp                                         :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: wmardin <wmardin@student.42.fr>            +#+  +:+       +#+        */
+/*   By: pandalaf <pandalaf@student.42wolfsburg.    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/04/07 17:49:49 by pandalaf          #+#    #+#             */
-/*   Updated: 2023/04/21 15:57:48 by wmardin          ###   ########.fr       */
+/*   Updated: 2023/04/28 17:30:50 by pandalaf         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -67,8 +67,7 @@ Server::Server(ServerConfig config):
 Server::~Server()
 {
 	if (_pollStructs)
-		std::cout << "if pollstructs active" << std::endl;
-		//delete [] _pollStructs;
+		delete [] _pollStructs;
 }
 
 void	Server::startListening()
@@ -149,8 +148,8 @@ void Server::whoIsI()
 {
 	std::cout	<< '\n'
 				<< "Name:\t\t" << _name << '\n'
-				<< "Host:\t\t" << _serverAddress.sin_addr.s_addr << '\n'
-				<< "Port:\t\t" << _serverAddress.sin_port << '\n'
+				<< "Host:\t\t" << inet_ntoa(_serverAddress.sin_addr) << '\n'
+				<< "Port:\t\t" << ntohs(_serverAddress.sin_port) << '\n'
 				
 				<< "GET:\t\t" << (_GET ? "yes" : "no") << '\n'
 				<< "POST:\t\t" << (_POST ? "yes" : "no") << '\n'
@@ -168,53 +167,11 @@ void Server::whoIsI()
 				<< "Max Conns:\t" << _maxConns << std::endl;
 }
 
-const char *	Server::invalidAddressException::what() const throw()
-{
-	return ("invalid IP address supplied.");
-}
-
-const char *	Server::socketCreationFailureException::what() const throw()
-{
-	return ("error creating socket for server.");
-}
-
-const char *	Server::fileDescriptorControlFailureException::what() const throw()
-{
-	return ("error controlling file descriptor to non-blocking.");
-}
-
-const char *	Server::bindFailureException::what() const throw()
-{
-	return ("error using bind.");
-}
-
-const char *	Server::listenFailureException::what() const throw()
-{
-	return ("error using listen.");
-}
-
-const char *	Server::pollFailureException::what() const throw()
-{
-	return ("error using poll.");
-}
-
-const char *	Server::connectionLimitExceededException::what() const throw()
-{
-	return ("connection limit reached.");
-}
-
-const char *	Server::sendFailureException::what() const throw()
-{
-	return ("error sending data to client.");
-}
-
-// SETTERS
-
 void Server::setName(std::string input)
 {
 	for (std::string::const_iterator it = input.begin(); it != input.end(); it++)
 		if (!isalnum(*it) && *it != '.' && *it != '_')
-			throw std::runtime_error(E_SERVERNAME + input);
+			throw std::runtime_error(E_SERVERNAME + input + '\n');
 	_name = input;
 }
 
@@ -226,17 +183,17 @@ void Server::setHost(std::string input)
 	{
 		_serverAddress.sin_addr.s_addr = inet_addr(input.c_str());
 		if (_serverAddress.sin_addr.s_addr == INADDR_NONE)
-			throw std::runtime_error(E_HOSTADDRVAL + input);
+			throw std::runtime_error(E_HOSTADDRVAL + input + '\n');
 	}
 }
 
 void Server::setPort(std::string input)
 {
 	if (input.find_first_not_of("0123456789") != std::string::npos)
-			throw std::runtime_error(E_PORTINPUT + input);
+			throw std::runtime_error(E_PORTINPUT + input + '\n');
 	size_t temp = atoi(input.c_str());
 	if (temp > 65534)
-		throw std::runtime_error(E_PORTVAL + input);
+		throw std::runtime_error(E_PORTVAL + input + '\n');
 	_serverAddress.sin_port = htons(temp);
 }
 
@@ -280,7 +237,7 @@ void Server::setUploadDir(std::string input)
 
 void Server::setCgiDir(std::string input)
 {
-	checkMethodAccess(input); //prolly not correct to check for methods??
+	checkExecAccess(input);
 	_cgiDir = input;
 }
 
@@ -293,48 +250,92 @@ void Server::setErrorPage(std::string input)
 void Server::setClientMaxBody(std::string input)
 {
 	if (input.find_first_not_of("0123456789") != std::string::npos)
-			throw std::runtime_error(E_MAXCLIENTBODYINPUT);
+			throw std::runtime_error(E_MAXCLIENTBODYINPUT + input + '\n');
 	_clientMaxBody = atoi(input.c_str());
 	if (_clientMaxBody > MAX_MAXCLIENTBODY)
-		throw std::runtime_error(E_MAXCLIENTBODYVAL);
+		throw std::runtime_error(E_MAXCLIENTBODYVAL + input + '\n');
 }
 
 void Server::setMaxConnections(std::string input)
 {
 	if (input.find_first_not_of("0123456789") != std::string::npos)
-			throw std::runtime_error(E_MAXCONNINPUT);
+			throw std::runtime_error(E_MAXCONNINPUT + input + '\n');
 	_maxConns = atoi(input.c_str());
 	if (_maxConns > MAX_MAXCONNECTIONS)
-		throw std::runtime_error(E_MAXCONNVAL);
+		throw std::runtime_error(E_MAXCONNVAL + input + '\n');
 }
 
 void Server::setBacklog(std::string input)
 {
 	if (input.find_first_not_of("0123456789") != std::string::npos)
-			throw std::runtime_error(E_BACKLOGINPUT);
+			throw std::runtime_error(E_BACKLOGINPUT + input + '\n');
 	_backlog = atoi(input.c_str());
 	if (_backlog > MAX_BACKLOG)
-		throw std::runtime_error(E_BACKLOGVAL);
+		throw std::runtime_error(E_BACKLOGVAL + input + '\n');
 }
-
-// PRIVATE MEMBER FUNCTIONS
 
 void Server::checkMethodAccess(std::string path)
 {
 	if (_GET && access(path.c_str(), R_OK) != 0)
-		throw std::runtime_error(E_ACC_READ + path);
+		throw std::runtime_error(E_ACC_READ + path + '\n');
 	if ((_POST | _DELETE) && access(path.c_str(), W_OK) != 0)
-		throw std::runtime_error(E_ACC_WRITE + path);
+		throw std::runtime_error(E_ACC_WRITE + path + '\n');
 }
 
 void Server::checkReadAccess(std::string path)
 {
 	if (access(path.c_str(), R_OK) != 0)
-		throw std::runtime_error(E_ACC_READ + path);
+		throw std::runtime_error(E_ACC_READ + path + '\n');
 }
 
 void Server::checkWriteAccess(std::string path)
 {
 	if (access(path.c_str(), W_OK) != 0)
-		throw std::runtime_error(E_ACC_WRITE + path);
+		throw std::runtime_error(E_ACC_WRITE + path + '\n');
+}
+
+void Server::checkExecAccess(std::string path)
+{
+	if (access(path.c_str(), X_OK) != 0)
+		throw std::runtime_error(E_ACC_EXEC + path + '\n');
+}
+
+const char *	Server::invalidAddressException::what() const throw()
+{
+	return ("invalid IP address supplied.");
+}
+
+const char *	Server::socketCreationFailureException::what() const throw()
+{
+	return ("error creating socket for server.");
+}
+
+const char *	Server::fileDescriptorControlFailureException::what() const throw()
+{
+	return ("error controlling file descriptor to non-blocking.");
+}
+
+const char *	Server::bindFailureException::what() const throw()
+{
+	return ("error using bind.");
+}
+
+const char *	Server::listenFailureException::what() const throw()
+{
+	return ("error using listen.");
+}
+
+const char *	Server::pollFailureException::what() const throw()
+{
+	return ("error using poll.");
+}
+
+const char *	Server::connectionLimitExceededException::what() const throw()
+{
+	return ("connection limit reached.");
+}
+
+const char *	Server::sendFailureException::what() const throw()
+{
+	return ("error sending data to client.");
 }
