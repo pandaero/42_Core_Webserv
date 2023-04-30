@@ -6,7 +6,7 @@
 /*   By: pandalaf <pandalaf@student.42wolfsburg.    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/04/01 17:05:35 by pandalaf          #+#    #+#             */
-/*   Updated: 2023/04/02 12:17:36 by pandalaf         ###   ########.fr       */
+/*   Updated: 2023/04/30 23:36:20 by pandalaf         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -23,29 +23,9 @@ Response::Response()
 
 }
 
-Response::Response(const Response & other)
-{
-	_fullResponse = other._fullResponse;
-	_statusCode = other._statusCode;
-	_statusMessage = other._statusMessage;
-	_webPage = other._webPage;
-}
-
 Response::~Response()
 {
 
-}
-
-Response &	Response::operator=(const Response & other)
-{
-	if (this != &other)
-	{
-		_fullResponse = other._fullResponse;
-		_statusCode = other._statusCode;
-		_statusMessage = other._statusMessage;
-		_webPage = other._webPage;
-	}
-	return (*this);
 }
 
 void	Response::setStatusCode(int code)
@@ -60,43 +40,101 @@ void	Response::setStatusCode(int code)
 		case 404:
 			_statusMessage = "Not Found";
 			break;
+		case 500:
+			_statusMessage = "Internal Server Error";
+			break;
 		default:
+			_statusMessage = "Internal Server Error";
 			break;
 	}
 }
 
-void	Response::loadPage(std::string filename)
+void	Response::setFile(std::string filePath)
 {
-	std::ifstream	page(filename.c_str());
-
-	if (page.fail())
-		std::cerr << "Error: could not open webpage file." << std::endl;
-	
-	std::stringstream	pageStream;
-	pageStream << page.rdbuf();
-	_webPage = pageStream.str();
-	page.close();
+	_contentType = extensionType(filePath);
+	_filePath = filePath;
+	FILE *	file = std::fopen(filePath.c_str(), "rb");
+	if (!file)
+	{
+		std::cerr << "Error: Response: set: could not open file.";
+		setStatusCode(500);
+	}
+	std::fseek(file, 0, SEEK_END);
+	_fileSize = std::ftell(file);
+	std::fclose(file);
 }
 
 void	Response::buildResponse()
 {
-	std::stringstream	responseStream;
+	std::stringstream	headerStream;
 
-	responseStream << "HTTP/1.1 " << _statusCode << " " << _statusMessage << "\n";
-	if (!_webPage.empty())
+	headerStream << "HTTP/1.1 " << _statusCode << " " << _statusMessage << "\n";
+	if (!_filePath.empty())
 	{
-		responseStream << "Content-Type: html\r\n" << "Content-Length: " << _webPage.size() << "\r\n";
-		responseStream << "\r\n" << _webPage;
+		headerStream << "Content-Type: ";
+		switch (_contentType)
+		{
+			case PLAINTEXT:
+				headerStream << "text/plain";
+				break;
+			case HTML:
+				headerStream << "text/html";
+				break;
+			case ZIP:
+				headerStream << "application/zip";
+				break;
+			case PNG:
+				headerStream << "image/png";
+				break;
+			case JPEG:
+				headerStream << "image/jpeg";
+				break;
+			case PDF:
+				headerStream << "application/pdf";
+				break;
+			case XML:
+				headerStream << "application/xml";
+				break;
+			case JSON:
+				headerStream << "application/json";
+				break;
+			case AVIF:
+				headerStream << "image/avif";
+				break;
+			default:
+				headerStream << "application/octet-stream";
+		}
+		headerStream << "\r\n" << "Content-Length: " << _fileSize << "\r\n";
 	}
-	_fullResponse = responseStream.str();
+	_responseHeader = headerStream.str();
 }
 
-const void *	Response::send_msg()
+int	Response::sendResponse(int socketfd)
 {
-	return (_fullResponse.data());
-}
+	int	bytesSent = 0;
 
-int	Response::send_size()
-{
-	return (_fullResponse.size());
+	buildResponse();
+	// Open file and send contents through socket
+	std::ifstream	file(_filePath.c_str(), std::ios::binary);
+	if (!file)
+	{
+		std::cerr << "Error: Response: send: could not open file.";
+		return (-1);
+	}
+	char	buffer[1024];
+	while (file.read(buffer, sizeof(buffer)))
+	{
+		if (bytesSent += send(socketfd, buffer, file.gcount(), 0) == -1)
+		{
+			std::cerr << "Error: Response: send: could not send data.";
+			return (-1);
+		}
+	}
+	if (!file.eof())
+	{
+		std::cerr << "Error: Response: send: could not read entire file.";
+		return (-1);
+	}
+	file.close();
+	return (bytesSent);
 }

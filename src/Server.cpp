@@ -6,7 +6,7 @@
 /*   By: pandalaf <pandalaf@student.42wolfsburg.    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/04/07 17:49:49 by pandalaf          #+#    #+#             */
-/*   Updated: 2023/04/28 17:30:50 by pandalaf         ###   ########.fr       */
+/*   Updated: 2023/04/30 23:44:09 by pandalaf         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -128,12 +128,9 @@ void	Server::handleConnections()
 					std::cout << "Received " << bytesReceived << " bytes from client. Message: " << buffer << "." << std::endl;
 					Response	standard;
 					standard.setStatusCode(200);
-					standard.loadPage("website/index.html");
-					standard.buildResponse();
+					standard.setFile("default/site/index.html");
 					std::cout << "Sending response." << std::endl;
-					int bytesSent = send(_pollStructs[i + 1].fd, standard.send_msg(), standard.send_size(), 0);
-					if (bytesSent == -1)
-						throw sendFailureException();
+					standard.sendResponse(_pollStructs[i + 1].fd);
 				}
 				++i;
 			}	
