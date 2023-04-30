@@ -15,7 +15,7 @@ class ServerConfig
 
 		void setDefault();
 		void setField(std::string, std::string);
-		void parseInput(std::string);
+		void parseConfigElement(std::string);
 
 		std::string	serverName;
 		std::string	host;

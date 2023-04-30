@@ -7,7 +7,7 @@ ServerConfig::ServerConfig()
 ServerConfig::ServerConfig(std::string input)
 {
 	setDefault();
-	parseInput(input);
+	parseConfigElement(input);
 }
 
 ServerConfig::~ServerConfig()
@@ -15,24 +15,12 @@ ServerConfig::~ServerConfig()
 
 void ServerConfig::setDefault()
 {
-	serverName = "unnamedServer";
-	host = "0";
-	port = "0";
-	get = false;
-	post = false;
-	delete_ = false;
-	dirListing = false;
-	root = "default/root";
-	dir = "default/dir";
-	uploadDir = "default/upload";
-	cgiDir = "default/cgi";
-	errorPage = "default/error.html";
-	clientMaxBody = "10000";
-	maxConnections = "1000";
-	backlog = "100";
+	std::string	defaultConfigData(configFileToString(DEFAULTCONFIGPATH));
+	std::string	defaultConfigElement(getConfigElement(defaultConfigData));
+	parseConfigElement(defaultConfigElement);
 }
 
-void ServerConfig::parseInput(std::string input)
+void ServerConfig::parseConfigElement(std::string input)
 {
 	std::string		key;
 	std::string		value;
