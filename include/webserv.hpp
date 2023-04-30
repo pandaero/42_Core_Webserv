@@ -6,7 +6,7 @@
 /*   By: wmardin <wmardin@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/03/26 01:51:20 by pandalaf          #+#    #+#             */
-/*   Updated: 2023/04/28 17:03:41 by wmardin          ###   ########.fr       */
+/*   Updated: 2023/04/30 10:36:25 by wmardin          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -23,6 +23,9 @@
 # define MAX_MAXCONNECTIONS		1000
 # define MAX_BACKLOG			100
 
+// DEFAULT CONFIG PATH
+# define DEFAULTCONFIGPATH		"default/config/default.conf"
+
 // CONFIGURATION ELEMENT IDENTIFIERS
 # define SERVERNAME	"server_name"
 # define HOST		"host"
@@ -30,13 +33,13 @@
 # define GET		"GET"
 # define POST		"POST"
 # define DELETE		"DELETE"
-# define DIRLISTING	"directoryListing"
+# define DIRLISTING	"dirListing"
 # define ROOT		"root"
 # define DIR		"dir"
 # define UPLOADDIR	"uploadDir"
-# define CGIDIR		"CGIdir"
+# define CGIDIR		"cgiDir"
 # define ERRORPAGE	"errorPage"
-# define CLIMAXBODY	"clientMaxBodySize"
+# define CLIMAXBODY	"clientMaxBody"
 # define MAXCONNS	"maxConnections"
 # define BACKLOG	"backlog"
 
