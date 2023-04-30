@@ -3,30 +3,31 @@
 /*                                                        :::      ::::::::   */
 /*   webserv.hpp                                        :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: wmardin <wmardin@student.42.fr>            +#+  +:+       +#+        */
+/*   By: pandalaf <pandalaf@student.42wolfsburg.    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/03/26 01:51:20 by pandalaf          #+#    #+#             */
-/*   Updated: 2023/04/30 10:36:25 by wmardin          ###   ########.fr       */
+/*   Updated: 2023/04/30 22:46:12 by pandalaf         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #ifndef WEBSERV_HPP
 # define WEBSERV_HPP
 
+// Headers required by this header.
 # include <iostream>
 # include <vector>
 # include <map>
 
-// SIZE DEFINITIONS
+// ===== ===== ===== ===== SIZE DEFINITIONS ===== ===== ===== =====
 # define RECEIVE_BUFFER			8192
 # define MAX_MAXCLIENTBODY		10000
 # define MAX_MAXCONNECTIONS		1000
 # define MAX_BACKLOG			100
 
-// DEFAULT CONFIG PATH
+// ===== ===== ===== ===== DEFAULT CONFIG PATH ===== ===== ===== =====
 # define DEFAULTCONFIGPATH		"default/config/default.conf"
 
-// CONFIGURATION ELEMENT IDENTIFIERS
+// ===== ===== ===== ===== CONFIGURATION ELEMENT IDENTIFIERS ===== ===== ===== =====
 # define SERVERNAME	"server_name"
 # define HOST		"host"
 # define PORT		"listen"
@@ -43,7 +44,7 @@
 # define MAXCONNS	"maxConnections"
 # define BACKLOG	"backlog"
 
-// ERROR MESSAGES
+// ===== ===== ===== ===== ERROR MESSAGES ===== ===== ===== =====
 // ServerConfig
 # define E_FILEOPEN		"Error: ServerConfig: Could not open config file: "
 # define E_NOSERVER		"Error: ServerConfig: No valid server configs found."
@@ -66,14 +67,34 @@
 # define E_ACC_WRITE			"Error: Server: Cannot write in path: "
 # define E_ACC_EXEC				"Error: Server: Cannot execute from path: "
 
-// TYPEDEFS
+// ===== ===== ===== ===== TYPEDEFS ===== ===== ===== =====
 typedef std::map<std::string, std::string>::const_iterator	StringMap_it;
 typedef std::map<std::string, std::string> 					StringMap;
 
-// GLOBAL FUNCTIONS
-bool 			isAlnumString(const std::string&);
-std::string		trim(std::string& input);
-std::string		splitEraseStr(std::string&, std::string);
-StringMap		splitEraseStrMap(std::string&, std::string, std::string, char);
+typedef enum contentTypes
+{
+	PLAINTEXT,
+	HTML,
+	OCTETSTREAM,
+	ZIP,
+	PNG,
+	JPEG,
+	PDF,
+	XML,
+	JSON,
+	AVIF
+}	contentType;
+
+// ===== ===== ===== ===== GLOBAL FUNCTIONS ===== ===== ===== =====
+// Determines whether a string contains purely alphanumerical characters.
+bool 			isAlnumString(const std::string &);
+// Definition required.
+std::string		trim(std::string &);
+// Definition required.
+std::string		splitEraseStr(std::string &, std::string);
+// Definition required.
+StringMap		splitEraseStrMap(std::string &, std::string, std::string, char);
+// Determines the file/content type according to the file's full path. (based on dot-preceded extensions)
+contentType		extensionType(const std::string &);
 
 #endif

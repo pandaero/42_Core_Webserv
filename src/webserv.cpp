@@ -42,3 +42,30 @@ StringMap splitEraseStrMap(std::string& input, std::string endOfKey, std::string
 	}
 	return stringMap;
 }
+
+contentType	extensionType(const std::string & filePath)
+{
+	size_t	pos;
+
+	if ((pos = filePath.find_last_of('.')) == std::string::npos)
+		return (OCTETSTREAM);
+	if (filePath.find(".txt", pos) != std::string::npos)
+		return (PLAINTEXT);
+	else if (filePath.find(".html", pos) != std::string::npos)
+		return (HTML);
+	else if (filePath.find(".zip", pos) != std::string::npos)
+		return (ZIP);
+	else if (filePath.find(".PNG", pos) != std::string::npos)
+		return (PNG);
+	else if (filePath.find(".jpeg", pos) != std::string::npos || filePath.find(".jpg", pos) != std::string::npos)
+		return (JPEG);
+	else if (filePath.find(".pdf", pos) != std::string::npos)
+		return (PDF);
+	else if (filePath.find(".xml", pos) != std::string::npos)
+		return (XML);
+	else if (filePath.find(".json", pos) != std::string::npos)
+		return (JSON);
+	else if (filePath.find(".avif", pos) != std::string::npos)
+		return (AVIF);
+	return (OCTETSTREAM);
+}
