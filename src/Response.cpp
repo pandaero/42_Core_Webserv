@@ -6,7 +6,7 @@
 /*   By: pandalaf <pandalaf@student.42wolfsburg.    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/04/01 17:05:35 by pandalaf          #+#    #+#             */
-/*   Updated: 2023/04/30 23:36:20 by pandalaf         ###   ########.fr       */
+/*   Updated: 2023/05/01 21:59:30 by pandalaf         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -104,16 +104,24 @@ void	Response::buildResponse()
 			default:
 				headerStream << "application/octet-stream";
 		}
-		headerStream << "\r\n" << "Content-Length: " << _fileSize << "\r\n";
+		headerStream << "\r\n" << "Content-Length: " << _fileSize << "\r\n\r\n";
 	}
 	_responseHeader = headerStream.str();
 }
 
 int	Response::sendResponse(int socketfd)
 {
-	int	bytesSent = 0;
+	int headerBytesSent = 0;
+	int	fileBytesSent = 0;
+	int	closingBytesSent = 0;
 
 	buildResponse();
+	// Send header
+	if ((headerBytesSent += send(socketfd, _responseHeader.data(), _responseHeader.size(), 0)) == -1)
+	{
+		std::cerr << "Error: Response: send: failure to send header data.";
+		return (-1);
+	}
 	// Open file and send contents through socket
 	std::ifstream	file(_filePath.c_str(), std::ios::binary);
 	if (!file)
@@ -124,9 +132,9 @@ int	Response::sendResponse(int socketfd)
 	char	buffer[1024];
 	while (file.read(buffer, sizeof(buffer)))
 	{
-		if (bytesSent += send(socketfd, buffer, file.gcount(), 0) == -1)
+		if ((fileBytesSent += send(socketfd, buffer, file.gcount(), 0)) == -1)
 		{
-			std::cerr << "Error: Response: send: could not send data.";
+			std::cerr << "Error: Response: send: could not send file data.";
 			return (-1);
 		}
 	}
@@ -136,5 +144,12 @@ int	Response::sendResponse(int socketfd)
 		return (-1);
 	}
 	file.close();
-	return (bytesSent);
+	// Send termination CRLFs
+	std::string	terminationSequence("\r\n\r\n");
+	if ((closingBytesSent += send(socketfd, terminationSequence.data(), terminationSequence.size(), 0)) == -1)
+	{
+		std::cerr << "Error: Response: send: failure to send termination data.";
+		return (-1);
+	}
+	return (fileBytesSent);
 }
