@@ -6,7 +6,7 @@
 /*   By: pandalaf <pandalaf@student.42wolfsburg.    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/04/07 17:49:49 by pandalaf          #+#    #+#             */
-/*   Updated: 2023/05/01 17:38:17 by pandalaf         ###   ########.fr       */
+/*   Updated: 2023/05/01 22:56:36 by pandalaf         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -103,9 +103,14 @@ void	Server::handleConnections()
 				else
 				{
 					std::cout << "Received " << bytesReceived << " bytes from client. Message: " << buffer << "." << std::endl;
+					Request		request(buffer);
 					Response	standard;
 					standard.setStatusCode(200);
-					standard.setFile("default/site/index.html");
+					if (*(request.path().end() - 1) == '/')
+					{
+						// serve index (try html, htm, shtml, php), if not present, check directory listing setting to create it (or not)
+						standard.setFile(_root + '/' + request.path() + "index.html");
+					}
 					std::cout << "Sending response." << std::endl;
 					standard.sendResponse(_pollStructs[i + 1].fd);
 				}
@@ -159,6 +164,7 @@ void Server::setHost(std::string input)
 		if (_serverAddress.sin_addr.s_addr == INADDR_NONE)
 			throw std::runtime_error(E_HOSTADDRVAL + input + '\n');
 	}
+	_serverAddress.sin_family = AF_INET;
 }
 
 void Server::setPort(std::string input)

@@ -6,7 +6,7 @@
 /*   By: pandalaf <pandalaf@student.42wolfsburg.    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/04/07 19:17:18 by pandalaf          #+#    #+#             */
-/*   Updated: 2023/04/28 17:30:51 by pandalaf         ###   ########.fr       */
+/*   Updated: 2023/05/01 22:35:08 by pandalaf         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -16,6 +16,7 @@
 # include "webserv.hpp"
 # include "Client.hpp"
 # include "Response.hpp"
+# include "Request.hpp"
 # include "ServerConfig.hpp"
 
 # include <string>
