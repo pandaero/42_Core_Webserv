@@ -26,12 +26,12 @@ ifeq ($(LEAKS), 1)
 endif
 
 # Include files
-INC_PRE := Server.hpp Client.hpp Response.hpp
+INC_PRE := Server.hpp Client.hpp Request.hpp Response.hpp
 INC_DIR := include/
 INC		:= $(addprefix $(INC_DIR), $(INC_PRE))
 
 # Source files
-SRC_PRE	:= main.cpp webserv.cpp Server.cpp Client.cpp Response.cpp ServerConfig.cpp
+SRC_PRE	:= main.cpp webserv.cpp Server.cpp Client.cpp Request.cpp Response.cpp ServerConfig.cpp
 SRC_DIR	:= src/
 SRC		:= $(addprefix $(SRC_DIR), $(SRC_PRE))
 

@@ -69,3 +69,23 @@ contentType	extensionType(const std::string & filePath)
 		return (AVIF);
 	return (OCTETSTREAM);
 }
+
+std::vector<std::string>	splitString(std::string str, const std::string & del)
+{
+	std::vector<std::string>	out;
+	out.reserve(100);
+	if (str.find(del) == std::string::npos)
+	{
+		out.push_back(str);
+		return (out);
+	}
+	int end = str.find(del);
+	while (end != -1)
+	{
+		out.push_back(str.substr(0, end));
+		str.erase(str.begin(), str.begin() + end + 1);
+		end = str.find(del);
+	}
+	out.push_back(str.substr(0, end));
+	return (out);
+}

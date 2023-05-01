@@ -6,7 +6,7 @@
 /*   By: pandalaf <pandalaf@student.42wolfsburg.    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/03/26 01:51:20 by pandalaf          #+#    #+#             */
-/*   Updated: 2023/04/30 22:46:12 by pandalaf         ###   ########.fr       */
+/*   Updated: 2023/05/01 23:19:17 by pandalaf         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -96,5 +96,6 @@ std::string		splitEraseStr(std::string &, std::string);
 StringMap		splitEraseStrMap(std::string &, std::string, std::string, char);
 // Determines the file/content type according to the file's full path. (based on dot-preceded extensions)
 contentType		extensionType(const std::string &);
-
+// Splits a string according to a string, outputs vector of strings.
+std::vector<std::string>	splitString(std::string, const std::string &);
 #endif
