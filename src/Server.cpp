@@ -6,35 +6,11 @@
 /*   By: pandalaf <pandalaf@student.42wolfsburg.    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/04/07 17:49:49 by pandalaf          #+#    #+#             */
-/*   Updated: 2023/04/30 23:44:09 by pandalaf         ###   ########.fr       */
+/*   Updated: 2023/05/01 17:38:17 by pandalaf         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #include "../include/Server.hpp"
-
-/* Server::Server(): // we can take this constructor out, dont need it.
-	_name("unnamedServer"),
-	_GET(false),
-	_POST(false),
-	_DELETE(false),
-	_dirListing(false),
-	_clientMaxBody(10000),
-	_backlog(100),
-	_maxConns(100),
-	_numConns(1)
-{
-	(void)_numConns;
-	setHost("0");
-	setPort("3000");
-	setRoot("/default/root");
-	setDir("/default/dir");
-	setUploadDir("/default/upload");
-	setCgiDir("/default/CGI");
-	setErrorPage("/default/error");
-
-	_pollStructs = new pollfd[_maxConns];
-	startListening();	
-} */
 
 Server::Server(ServerConfig config):
 	_numConns(1),
@@ -72,7 +48,7 @@ Server::~Server()
 
 void	Server::startListening()
 {
-	_pollStructs[0].fd = socket(AF_INET, SOCK_STREAM, 0);
+	_pollStructs[0].fd = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP);
 	if (_pollStructs[0].fd == -1)
 		throw	socketCreationFailureException();
 	_pollStructs[0].events = POLLIN;
@@ -82,6 +58,7 @@ void	Server::startListening()
 	if (bind(_pollStructs[0].fd, (struct sockaddr *) &_serverAddress, sizeof(_serverAddress)) == -1)
 	{
 		close(_pollStructs[0].fd);
+		// std::cerr << "Error binding: " << strerror(errno) << std::endl;
 		throw bindFailureException();
 	}
 	if (listen(_pollStructs[0].fd, SOMAXCONN) == -1)
@@ -187,9 +164,9 @@ void Server::setHost(std::string input)
 void Server::setPort(std::string input)
 {
 	if (input.find_first_not_of("0123456789") != std::string::npos)
-			throw std::runtime_error(E_PORTINPUT + input + '\n');
-	size_t temp = atoi(input.c_str());
-	if (temp > 65534)
+		throw std::runtime_error(E_PORTINPUT + input + '\n');
+	uint16_t temp = (uint16_t) atoi(input.c_str());
+	if (temp > (uint16_t) 65534)
 		throw std::runtime_error(E_PORTVAL + input + '\n');
 	_serverAddress.sin_port = htons(temp);
 }
