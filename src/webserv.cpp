@@ -10,8 +10,8 @@ bool isAlnumString(const std::string& input)
 
 std::string trim(std::string& input)
 {
-	size_t start = input.find_first_not_of(" \t\r\n");
-	size_t end = input.find_last_not_of(" \t\r\n");
+	size_t start = input.find_first_not_of(WHITESPACE);
+	size_t end = input.find_last_not_of(WHITESPACE);
 	if (start == std::string::npos)
 		input = "";
 	else

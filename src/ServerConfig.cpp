@@ -27,7 +27,7 @@ void ServerConfig::parseConfigElement(std::string input)
 	
 	while (!trim(input).empty())
 	{
-		key = splitEraseStr(input, " ");
+		key = splitEraseChars(input, " \t");
 		trim(input);
 		value = splitEraseStr(input, ";");
 		setField(key, value);
@@ -63,9 +63,29 @@ void ServerConfig::setField(std::string key, std::string value)
 		uploadDir = value;
 	else if (key == CGIDIR)
 		cgiDir = value;
+	else if (key == DEFAULTERRPAGE)
+		defaultErrorPage = value;
 	else if (key == ERRORPAGE)
-		errorPage = value;
-	
+	{
+		std::string element;
+		std::vector<size_t> errorNumbers;
+		
+		element = splitEraseChars(value, " ");
+		trim(element);
+		while (element.find_first_not_of("0123456789") == std::string::npos)
+		{
+			size_t errNum = atoi(element.c_str());
+			if (errNum < 100 || errNum > 599)
+				throw std::runtime_error(E_INVALERRNUM + element + '\n');
+			errorNumbers.push_back(errNum);
+			std::cout << "in while" << errNum << std::endl;
+			element = splitEraseChars(value, " ");
+			trim(element);
+		}
+		std::cout << element << std::endl;
+		for (size_t i = 0; i < errorNumbers.size(); i++)
+			errorPages.insert(std::make_pair(errorNumbers[i], element));	
+	}
 	// Size restrictions
 	else if (key == CLIMAXBODY)
 		clientMaxBody = value;

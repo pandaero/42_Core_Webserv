@@ -6,7 +6,7 @@
 /*   By: wmardin <wmardin@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/03/26 01:51:20 by pandalaf          #+#    #+#             */
-/*   Updated: 2023/05/02 19:49:58 by wmardin          ###   ########.fr       */
+/*   Updated: 2023/05/02 23:17:48 by wmardin          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -30,21 +30,22 @@
 # define WHITESPACE	" \t\v\r\n"
 
 // CONFIGURATION ELEMENT IDENTIFIERS
-# define SERVERNAME	"server_name"
-# define HOST		"host"
-# define PORT		"listen"
-# define GET		"GET"
-# define POST		"POST"
-# define DELETE		"DELETE"
-# define DIRLISTING	"dirListing"
-# define ROOT		"root"
-# define DIR		"dir"
-# define UPLOADDIR	"uploadDir"
-# define CGIDIR		"cgiDir"
-# define ERRORPAGE	"errorPage"
-# define CLIMAXBODY	"clientMaxBody"
-# define MAXCONNS	"maxConnections"
-# define BACKLOG	"backlog"
+# define SERVERNAME		"server_name"
+# define HOST			"host"
+# define PORT			"listen"
+# define GET			"GET"
+# define POST			"POST"
+# define DELETE			"DELETE"
+# define DIRLISTING		"dirListing"
+# define ROOT			"root"
+# define DIR			"dir"
+# define UPLOADDIR		"uploadDir"
+# define CGIDIR			"cgiDir"
+# define DEFAULTERRPAGE	"defaultErrorPage"
+# define ERRORPAGE		"error_page"
+# define CLIMAXBODY		"clientMaxBody"
+# define MAXCONNS		"maxConnections"
+# define BACKLOG		"backlog"
 
 // ERROR MESSAGES
 // ServerConfig
@@ -52,6 +53,7 @@
 # define E_NOSERVER		"Error: ServerConfig: No valid server configs found."
 # define E_ELMNTDECL	"Error: ServerConfig: Invalid element declaration, (only \"server\" allowed): "
 # define E_SUBELEMNT	"Error: ServerConfig: Subelements not allowed: "
+# define E_INVALERRNUM	"Error: ServerConfig: Invalid HTML response code (range is from 100 to 599): "
 
 // Server
 # define E_SERVERNAME			"Error: Server: Invalid characters in server name input. Only alphanumerical, <<.>> and <<_>> allowed: "
