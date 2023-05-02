@@ -185,6 +185,7 @@ void Server::setHost(std::string input)
 		if (_serverAddress.sin_addr.s_addr == INADDR_NONE)
 			throw std::runtime_error(E_HOSTADDRVAL + input + '\n');
 	}
+	_serverAddress.sin_family = AF_INET;
 }
 
 void Server::setPort(std::string input)
