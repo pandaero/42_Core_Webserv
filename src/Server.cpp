@@ -6,7 +6,7 @@
 /*   By: pandalaf <pandalaf@student.42wolfsburg.    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/04/07 17:49:49 by pandalaf          #+#    #+#             */
-/*   Updated: 2023/05/01 22:56:36 by pandalaf         ###   ########.fr       */
+/*   Updated: 2023/05/02 16:53:00 by pandalaf         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -104,6 +104,17 @@ void	Server::handleConnections()
 				{
 					std::cout << "Received " << bytesReceived << " bytes from client. Message: " << buffer << "." << std::endl;
 					Request		request(buffer);
+					// CGI handling (for php and potentially python scripts)
+					// if (request.path() == ".php")
+					// {
+					// 	pid = fork ()
+					// 	if (pid == 0)
+					// 	{
+					// 		// run cgi with input file as argument or piped in
+					// 		// save file to temp directory
+					// 	}
+					// 	// attempt to serve file (html from cgi)
+					// }
 					Response	standard;
 					standard.setStatusCode(200);
 					if (*(request.path().end() - 1) == '/')
