@@ -95,18 +95,22 @@ std::vector<ServerConfig> getConfigs(const char* path)
 	return configList;
 }
 
-
 std::string configFileToString(const char* path)
 {
 	std::ifstream		infile(path);
+	std::string			line;
 	std::stringstream	buffer;
 	
-	if (!infile.is_open())
+	if (!infile)
 	{
 		std::string invalidpath(path);
-		throw std::runtime_error(E_FILEOPEN + invalidpath);
+		throw std::runtime_error(E_FILEOPEN + invalidpath + '\n');
 	}
-	buffer << infile.rdbuf();
+	while (std::getline(infile, line))
+	{
+		if (line[line.find_first_not_of(WHITESPACE)] != '#')
+			buffer << line;
+	}
 	infile.close();
 	return buffer.str();
 }
@@ -125,10 +129,10 @@ std::string getConfigElement(std::string& configString)
 	
 	elementTitle = splitEraseStr(configString, "{");
 	if (trim(elementTitle) != "server")
-		throw std::runtime_error(E_ELMNTDECL + elementTitle);
+		throw std::runtime_error(E_ELMNTDECL + elementTitle + '\n');
 	len_close = configString.find("}");
 	if (configString.find("{") < len_close)
-		throw std::runtime_error(E_SUBELEMNT + configString);
+		throw std::runtime_error(E_SUBELEMNT + configString + '\n');
 	elementBody = splitEraseStr(configString, "}");
 	return trim(elementBody);
 }

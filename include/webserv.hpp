@@ -6,7 +6,7 @@
 /*   By: wmardin <wmardin@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/03/26 01:51:20 by pandalaf          #+#    #+#             */
-/*   Updated: 2023/04/30 10:36:25 by wmardin          ###   ########.fr       */
+/*   Updated: 2023/05/02 19:49:58 by wmardin          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -25,6 +25,9 @@
 
 // DEFAULT CONFIG PATH
 # define DEFAULTCONFIGPATH		"default/config/default.conf"
+
+// PSEUDOVARIABLES
+# define WHITESPACE	" \t\v\r\n"
 
 // CONFIGURATION ELEMENT IDENTIFIERS
 # define SERVERNAME	"server_name"
@@ -69,11 +72,14 @@
 // TYPEDEFS
 typedef std::map<std::string, std::string>::const_iterator	StringMap_it;
 typedef std::map<std::string, std::string> 					StringMap;
+typedef std::vector<std::string>							StringVec;
+typedef std::vector<std::string>::const_iterator			StringVec_it;
 
 // GLOBAL FUNCTIONS
 bool 			isAlnumString(const std::string&);
-std::string		trim(std::string& input);
+std::string		trim(std::string&);
 std::string		splitEraseStr(std::string&, std::string);
+std::string		splitEraseChars(std::string&, std::string);
 StringMap		splitEraseStrMap(std::string&, std::string, std::string, char);
 
 #endif

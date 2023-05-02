@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   Server.cpp                                         :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: pandalaf <pandalaf@student.42wolfsburg.    +#+  +:+       +#+        */
+/*   By: wmardin <wmardin@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/04/07 17:49:49 by pandalaf          #+#    #+#             */
-/*   Updated: 2023/04/28 17:30:50 by pandalaf         ###   ########.fr       */
+/*   Updated: 2023/05/02 20:06:21 by wmardin          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -147,8 +147,10 @@ void	Server::handleConnections()
 void Server::whoIsI()
 {
 	std::cout	<< '\n'
-				<< "Name:\t\t" << _name << '\n'
-				<< "Host:\t\t" << inet_ntoa(_serverAddress.sin_addr) << '\n'
+				<< "Name:";
+					for (StringVec_it it = _names.begin(); it != _names.end(); it++)
+						std::cout << "\t\t" << *it << '\n';
+	std::cout	<< "Host:\t\t" << inet_ntoa(_serverAddress.sin_addr) << '\n'
 				<< "Port:\t\t" << ntohs(_serverAddress.sin_port) << '\n'
 				
 				<< "GET:\t\t" << (_GET ? "yes" : "no") << '\n'
@@ -169,10 +171,17 @@ void Server::whoIsI()
 
 void Server::setName(std::string input)
 {
-	for (std::string::const_iterator it = input.begin(); it != input.end(); it++)
-		if (!isalnum(*it) && *it != '.' && *it != '_')
-			throw std::runtime_error(E_SERVERNAME + input + '\n');
-	_name = input;
+	std::string name;
+
+	while (!trim(input).empty())
+	{
+		name = splitEraseChars(input, WHITESPACE);
+		trim(name);
+		for (std::string::const_iterator it = name.begin(); it != name.end(); it++)
+			if (!isalnum(*it) && *it != '.' && *it != '_')
+				throw std::runtime_error(E_SERVERNAME + name + '\n');
+		_names.push_back(name);
+	}
 }
 
 void Server::setHost(std::string input)
