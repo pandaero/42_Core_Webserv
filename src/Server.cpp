@@ -6,7 +6,7 @@
 /*   By: pandalaf <pandalaf@student.42wolfsburg.    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/04/07 17:49:49 by pandalaf          #+#    #+#             */
-/*   Updated: 2023/05/02 16:53:00 by pandalaf         ###   ########.fr       */
+/*   Updated: 2023/05/03 20:52:34 by pandalaf         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -89,20 +89,29 @@ void	Server::handleConnections()
 	if (_clients.size() > 0)
 	{
 		int i = 0;
-		for (std::vector<Client>::iterator clientIt = _clients.begin(); clientIt != _clients.end(); ++clientIt)
+		for (std::list<Client>::iterator clientIt = _clients.begin(); clientIt != _clients.end(); ++clientIt, ++i)
 		{
 			if (_pollStructs[i + 1].revents & POLLIN)
 			{
-				char buffer[_clientMaxBody];
-				size_t	bytesReceived = recv(_pollStructs[i + 1].fd, buffer, RECEIVE_BUFFER, 0);
+				char buffer[RECV_CHUNK_SIZE];
+				size_t	bytesReceived = recv(_pollStructs[i + 1].fd, buffer, RECV_CHUNK_SIZE, 0);
 				if (bytesReceived <= 0)
 				{
 					close(_pollStructs[i + 1].fd);
 					_clients.erase(clientIt);
+					continue;
+				}
+				clientIt->_recvBuffer << buffer;
+				// check for \r\n\r\n
+				if (clientIt->_recvBuffer.str().find("\r\n\r\n") != std::string::npos && !clientIt->_gotRequest)
+				{
+					clientIt->_activeRequest = Request(clientIt->_recvBuffer.str());
+					clientIt->_gotRequest = true;
+					// handle header separately from body (prepare to take body)
 				}
 				else
 				{
-					std::cout << "Received " << bytesReceived << " bytes from client. Message: " << buffer << "." << std::endl;
+					std::cout << "Received " << bytesReceived << " bytes from client:\n\n" << buffer << std::endl;
 					Request		request(buffer);
 					// CGI handling (for php and potentially python scripts)
 					// if (request.path() == ".php")
@@ -117,15 +126,23 @@ void	Server::handleConnections()
 					// }
 					Response	standard;
 					standard.setStatusCode(200);
-					if (*(request.path().end() - 1) == '/')
+					std::cout << "Raw path: " << request._path << std::endl;
+					std::cout << "Pathity path path: " << _root << request._path << "index.html" << std::endl;
+					if (*(request._path.end() - 1) == '/')
 					{
 						// serve index (try html, htm, shtml, php), if not present, check directory listing setting to create it (or not)
-						standard.setFile(_root + '/' + request.path() + "index.html");
+						standard.setFile(_root + request._path + "index.html");
 					}
+					if (request.getFile() != "")
+						standard.setFile(_root + request._path);
 					std::cout << "Sending response." << std::endl;
 					standard.sendResponse(_pollStructs[i + 1].fd);
+					clientIt->_gotRequest = false;
+					// standard.setFile(_root + request._path + "styles.css");
+					// standard.sendResponse(_pollStructs[i + 1].fd);
+					// standard.setFile(_root + request._path + "cat.avif");
+					// standard.sendResponse(_pollStructs[i + 1].fd);
 				}
-				++i;
 			}	
 			// if (_pollStructs[i + 1].revents & POLLOUT)
 			// if (_pollStructs[i + 1].revents & POLLERR)

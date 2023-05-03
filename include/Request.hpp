@@ -6,7 +6,7 @@
 /*   By: pandalaf <pandalaf@student.42wolfsburg.    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/05/01 22:04:57 by pandalaf          #+#    #+#             */
-/*   Updated: 2023/05/01 23:25:38 by pandalaf         ###   ########.fr       */
+/*   Updated: 2023/05/03 20:51:04 by pandalaf         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -16,18 +16,24 @@
 # include "webserv.hpp"
 
 # include <utility>
-
-typedef std::vector<std::pair<std::string, std::string> > stringPairVec;
+# include <string>
+# include <map>
 
 class	Request
 {
 	public:
+		friend class	Server;
 		Request(std::string);
 		std::string	headerValue(std::string);
 
-		std::string	path();
+		std::string	getFile();
 
 	private:
-		stringPairVec	_headers;
+		std::string		_method;
+		std::string		_path;
+		std::string		_protocol;
+		int				_contentLength;
+
+		std::map<std::string, std::string> _headers;
 };
 #endif

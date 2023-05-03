@@ -6,7 +6,7 @@
 /*   By: pandalaf <pandalaf@student.42wolfsburg.    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/05/01 22:12:48 by pandalaf          #+#    #+#             */
-/*   Updated: 2023/05/02 00:02:03 by pandalaf         ###   ########.fr       */
+/*   Updated: 2023/05/03 19:34:3959 by pandalaf         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -14,33 +14,24 @@
 
 Request::Request(std::string requestData)
 {
-	std::vector<std::string> requestLines;
-	requestLines.reserve(100);
-	requestLines = splitString(requestData, "\r\n");
-	for (size_t i = 0; i < requestLines.size(); ++i)
-	{
-		std::pair<std::string, std::string>	headerPair;
-		std::vector<std::string>	tempLine = splitString(requestLines[i], ": ");
-		headerPair.first = tempLine[0];
-		headerPair.second = tempLine[1];
-		_headers.push_back(headerPair);
-	}
+	_contentLength = -1;
+	_method = splitEraseStr(requestData, " ");
+	_path = splitEraseStr(requestData, " ");
+	_protocol = splitEraseStr(requestData, "\r\n");
+	_headers = createHeaderMap(requestData, ":", "\r\n", "\r\n");
+	if (headerValue("content-length") != "NOT FOUND")
+		_contentLength = atoi(headerValue("content-length").c_str());
 }
 
 std::string	Request::headerValue(std::string header)
 {
-	for(size_t i = 0; i < _headers.size(); ++i)
-	{
-		if (header == _headers[i].first)
-			return (_headers[i].second);
-	}
+	std::string	query = strToLower(header);
+	if (_headers.find(header) != _headers.end())
+		return (_headers.find(header)->second);
 	return ("NOT FOUND");
 }
 
-std::string	Request::path()
+std::string	Request::getFile()
 {
-	std::string	message = headerValue("Message");
-	int	pathStart = message.find('/');
-	int	httpStart = message.find("HTTP/1.1");
-	return (message.substr(pathStart, httpStart));
+	return (_path.substr(_path.find_last_of('/'), _path.find(*(_path.end() - 1))));
 }

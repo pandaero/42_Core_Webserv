@@ -6,7 +6,7 @@
 /*   By: pandalaf <pandalaf@student.42wolfsburg.    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/03/26 01:51:20 by pandalaf          #+#    #+#             */
-/*   Updated: 2023/05/01 23:19:17 by pandalaf         ###   ########.fr       */
+/*   Updated: 2023/05/03 20:17:34 by pandalaf         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -18,8 +18,9 @@
 # include <vector>
 # include <map>
 
-// ===== ===== ===== ===== SIZE DEFINITIONS ===== ===== ===== =====
-# define RECEIVE_BUFFER			8192
+// ===== ===== ===== ===== SIZE Descriptions ===== ===== ===== =====
+# define RECV_CHUNK_SIZE		4096
+# define SEND_CHUNK_SIZE		4096
 # define MAX_MAXCLIENTBODY		10000
 # define MAX_MAXCONNECTIONS		1000
 # define MAX_BACKLOG			100
@@ -75,6 +76,7 @@ typedef enum contentTypes
 {
 	PLAINTEXT,
 	HTML,
+	CSS,
 	OCTETSTREAM,
 	ZIP,
 	PNG,
@@ -87,13 +89,17 @@ typedef enum contentTypes
 
 // ===== ===== ===== ===== GLOBAL FUNCTIONS ===== ===== ===== =====
 // Determines whether a string contains purely alphanumerical characters.
-bool 			isAlnumString(const std::string &);
-// Definition required.
+bool 			isAlnumStr(const std::string &);
+// Determines whether strings are the same (case-insensitive).
+bool			isSameNoCase(std::string, std::string);
+// Converts alphabetical characters to lowercase in a string.
+std::string		strToLower(std::string);
+// Description required.
 std::string		trim(std::string &);
-// Definition required.
+// Description required.
 std::string		splitEraseStr(std::string &, std::string);
-// Definition required.
-StringMap		splitEraseStrMap(std::string &, std::string, std::string, char);
+// Description required.
+StringMap		createHeaderMap(std::string &, std::string, std::string, std::string);
 // Determines the file/content type according to the file's full path. (based on dot-preceded extensions)
 contentType		extensionType(const std::string &);
 // Splits a string according to a string, outputs vector of strings.

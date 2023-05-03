@@ -1,6 +1,6 @@
 #include "../include/webserv.hpp"
 
-bool isAlnumString(const std::string& input)
+bool isAlnumStr(const std::string& input)
 {
 	for (std::string::const_iterator it = input.begin(); it != input.end(); it++)
 		if (!isalnum(*it))
@@ -19,26 +19,42 @@ std::string trim(std::string& input)
 	return input;
 }
 
-std::string splitEraseStr(std::string& input, std::string target)
+std::string splitEraseStr(std::string& input, std::string targetString)
 {
 	std::string element;
 	size_t len;
 
-	element = input.substr(0, len = input.find(target));
-	input.erase(0, len + target.length());
+	len = input.find(targetString);
+	if (len == std::string::npos)
+	{
+		element = input;
+		input.erase();
+	}
+	else
+	{
+		element = input.substr(0, len);
+		input.erase(0, len + targetString.length());
+	}
 	return element;
 }
 
-StringMap splitEraseStrMap(std::string& input, std::string endOfKey, std::string endOfValue, char endOfMap)
+StringMap createHeaderMap(std::string& input, std::string endOfKey, std::string endOfValue, std::string endOfMap)
 {
 	StringMap stringMap;
 	std::string key, value;
 
-	while (!input.empty() && input[0] != endOfMap)
+	while (!input.empty())
 	{
+		if (input.find(endOfMap) == 0)
+		{
+			input = input.substr(endOfMap.size());
+			return stringMap;
+		}
 		key = splitEraseStr(input, endOfKey);
+		trim(key);
 		value = splitEraseStr(input, endOfValue);
-		stringMap.insert(std::make_pair(key, value));
+		trim(value);
+		stringMap.insert(std::make_pair(strToLower(key), value));
 	}
 	return stringMap;
 }
@@ -51,6 +67,8 @@ contentType	extensionType(const std::string & filePath)
 		return (OCTETSTREAM);
 	if (filePath.find(".txt", pos) != std::string::npos)
 		return (PLAINTEXT);
+	else if (filePath.find(".css", pos) != std::string::npos)
+		return (CSS);
 	else if (filePath.find(".html", pos) != std::string::npos)
 		return (HTML);
 	else if (filePath.find(".zip", pos) != std::string::npos)
@@ -79,13 +97,26 @@ std::vector<std::string>	splitString(std::string str, const std::string & del)
 		out.push_back(str);
 		return (out);
 	}
-	int end = str.find(del);
-	while (end != -1)
+	size_t end = str.find(del);
+	while (end != std::string::npos)
 	{
 		out.push_back(str.substr(0, end));
 		str.erase(str.begin(), str.begin() + end + 1);
 		end = str.find(del);
 	}
-	out.push_back(str.substr(0, end));
+	size_t	endPos = str.find(*(str.end() - 1));
+	out.push_back(str.substr(0, endPos));
 	return (out);
+}
+
+bool isSameNoCase(std::string str_a, std::string str_b)
+{
+	return strToLower(str_a) == strToLower(str_b);
+}
+
+std::string strToLower(std::string str)
+{
+	for (std::string::iterator it = str.begin(); it != str.end(); it++)
+		*it = tolower(*it);
+	return str;
 }

@@ -6,7 +6,7 @@
 /*   By: pandalaf <pandalaf@student.42wolfsburg.    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/04/07 19:17:18 by pandalaf          #+#    #+#             */
-/*   Updated: 2023/05/01 22:35:08 by pandalaf         ###   ########.fr       */
+/*   Updated: 2023/05/03 20:51:41 by pandalaf         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -20,7 +20,8 @@
 # include "ServerConfig.hpp"
 
 # include <string>
-# include <vector>
+// # include <vector>
+# include <list>
 # include <iostream>
 # include <sstream>
 # include <exception>
@@ -34,7 +35,7 @@
 # include <sys/poll.h>
 # include <netinet/in.h>
 
-class ServerConfig; //why necessary? It's in Config.hpp - sometimes it doesn't get included, doesn't hurt 
+class ServerConfig;
 
 class	Server
 {
@@ -83,7 +84,7 @@ class	Server
 		size_t				_numConns;
 		pollfd *			_pollStructs;
 		sockaddr_in			_serverAddress;
-		std::vector<Client>	_clients;
+		std::list<Client>	_clients;
 
 		void	checkMethodAccess(std::string);
 		void	checkReadAccess(std::string);

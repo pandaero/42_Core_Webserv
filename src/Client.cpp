@@ -6,7 +6,7 @@
 /*   By: pandalaf <pandalaf@student.42wolfsburg.    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/03/28 20:51:05 by pandalaf          #+#    #+#             */
-/*   Updated: 2023/04/07 20:19:53 by pandalaf         ###   ########.fr       */
+/*   Updated: 2023/05/03 18:51:58 by pandalaf         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -22,6 +22,7 @@ Client::Client(int serverSocketfd)
 		close(_clientSocketfd);
 		throw connectionDeniedException();
 	}
+	_gotRequest = false;
 }
 
 int	Client::getSocketfd()

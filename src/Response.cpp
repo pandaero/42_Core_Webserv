@@ -6,7 +6,7 @@
 /*   By: pandalaf <pandalaf@student.42wolfsburg.    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/04/01 17:05:35 by pandalaf          #+#    #+#             */
-/*   Updated: 2023/05/01 21:59:30 by pandalaf         ###   ########.fr       */
+/*   Updated: 2023/05/03 14:43:42 by pandalaf         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -52,6 +52,8 @@ void	Response::setStatusCode(int code)
 void	Response::setFile(std::string filePath)
 {
 	_contentType = extensionType(filePath);
+	// DEBUG
+	std::cout << "Opening: " << filePath << std::endl;
 	_filePath = filePath;
 	FILE *	file = std::fopen(filePath.c_str(), "rb");
 	if (!file)
@@ -79,6 +81,9 @@ void	Response::buildResponse()
 				break;
 			case HTML:
 				headerStream << "text/html";
+				break;
+			case CSS:
+				headerStream << "text/css";
 				break;
 			case ZIP:
 				headerStream << "application/zip";
@@ -124,12 +129,14 @@ int	Response::sendResponse(int socketfd)
 	}
 	// Open file and send contents through socket
 	std::ifstream	file(_filePath.c_str(), std::ios::binary);
-	if (!file)
+	if (file.fail())
 	{
 		std::cerr << "Error: Response: send: could not open file.";
 		return (-1);
 	}
-	char	buffer[1024];
+	char	buffer[1];
+	// DEBUG
+	std::cout << "sending file: " << _filePath << std::endl;
 	while (file.read(buffer, sizeof(buffer)))
 	{
 		if ((fileBytesSent += send(socketfd, buffer, file.gcount(), 0)) == -1)
@@ -137,12 +144,16 @@ int	Response::sendResponse(int socketfd)
 			std::cerr << "Error: Response: send: could not send file data.";
 			return (-1);
 		}
+		// DEBUG
+		std::cout << "the buffer:\n" << buffer << std::endl;
 	}
 	if (!file.eof())
 	{
 		std::cerr << "Error: Response: send: could not read entire file.";
 		return (-1);
 	}
+	// DEBUG
+	std::cout << "Reached EOF" << std::endl;
 	file.close();
 	// Send termination CRLFs
 	std::string	terminationSequence("\r\n\r\n");
