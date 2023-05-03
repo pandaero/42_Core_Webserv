@@ -6,7 +6,7 @@
 /*   By: wmardin <wmardin@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/03/26 01:51:20 by pandalaf          #+#    #+#             */
-/*   Updated: 2023/04/30 10:36:25 by wmardin          ###   ########.fr       */
+/*   Updated: 2023/05/03 09:05:21 by wmardin          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -26,22 +26,26 @@
 // DEFAULT CONFIG PATH
 # define DEFAULTCONFIGPATH		"default/config/default.conf"
 
+// PSEUDOVARIABLES
+# define WHITESPACE	" \t\v\r\n"
+
 // CONFIGURATION ELEMENT IDENTIFIERS
-# define SERVERNAME	"server_name"
-# define HOST		"host"
-# define PORT		"listen"
-# define GET		"GET"
-# define POST		"POST"
-# define DELETE		"DELETE"
-# define DIRLISTING	"dirListing"
-# define ROOT		"root"
-# define DIR		"dir"
-# define UPLOADDIR	"uploadDir"
-# define CGIDIR		"cgiDir"
-# define ERRORPAGE	"errorPage"
-# define CLIMAXBODY	"clientMaxBody"
-# define MAXCONNS	"maxConnections"
-# define BACKLOG	"backlog"
+# define SERVERNAME		"server_name"
+# define HOST			"host"
+# define PORT			"listen"
+# define GET			"GET"
+# define POST			"POST"
+# define DELETE			"DELETE"
+# define DIRLISTING		"dirListing"
+# define ROOT			"root"
+# define DIR			"dir"
+# define UPLOADDIR		"uploadDir"
+# define CGIDIR			"cgiDir"
+# define DEFAULTERRPAGE	"defaultErrorPage"
+# define ERRORPAGE		"error_page"
+# define CLIMAXBODY		"clientMaxBody"
+# define MAXCONNS		"maxConnections"
+# define BACKLOG		"backlog"
 
 // ERROR MESSAGES
 // ServerConfig
@@ -49,6 +53,10 @@
 # define E_NOSERVER		"Error: ServerConfig: No valid server configs found."
 # define E_ELMNTDECL	"Error: ServerConfig: Invalid element declaration, (only \"server\" allowed): "
 # define E_SUBELEMNT	"Error: ServerConfig: Subelements not allowed: "
+# define E_INVALERRNUM	"Error: ServerConfig: Invalid HTML response code (range is from 100 to 599): "
+
+# define I_INVALIDKEY	"Info: ServerConfig: Unrecognized identifier in config file: '"
+
 
 // Server
 # define E_SERVERNAME			"Error: Server: Invalid characters in server name input. Only alphanumerical, <<.>> and <<_>> allowed: "
@@ -69,11 +77,14 @@
 // TYPEDEFS
 typedef std::map<std::string, std::string>::const_iterator	StringMap_it;
 typedef std::map<std::string, std::string> 					StringMap;
+typedef std::vector<std::string>							StringVec;
+typedef std::vector<std::string>::const_iterator			StringVec_it;
 
 // GLOBAL FUNCTIONS
 bool 			isAlnumString(const std::string&);
-std::string		trim(std::string& input);
+std::string		trim(std::string&);
 std::string		splitEraseStr(std::string&, std::string);
+std::string		splitEraseChars(std::string&, std::string);
 StringMap		splitEraseStrMap(std::string&, std::string, std::string, char);
 
 #endif

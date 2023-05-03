@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   Server.hpp                                         :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: pandalaf <pandalaf@student.42wolfsburg.    +#+  +:+       +#+        */
+/*   By: wmardin <wmardin@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/04/07 19:17:18 by pandalaf          #+#    #+#             */
-/*   Updated: 2023/04/28 17:30:51 by pandalaf         ###   ########.fr       */
+/*   Updated: 2023/05/02 23:16:02 by wmardin          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -57,32 +57,33 @@ class	Server
 		void	setDir(std::string);
 		void	setUploadDir(std::string);
 		void	setCgiDir(std::string);
-		void	setErrorPage(std::string);
+		void	setDefaultErrorPage(std::string);
+		void	setErrorPages(std::map<size_t, std::string>);
 		void	setClientMaxBody(std::string);
 		void	setMaxConnections(std::string);
 		void	setBacklog(std::string);
 
 	private:
-		std::string			_name;
+		std::vector<std::string>		_names;
 		
-		bool				_GET;
-		bool				_POST;
-		bool				_DELETE;
-		bool				_dirListing;
+		bool							_GET;
+		bool							_POST;
+		bool							_DELETE;
+		bool							_dirListing;
 		
-		std::string			_root;
-		std::string			_dir;
-		std::string			_uploadDir;
-		std::string			_cgiDir;
-		std::string			_errorPage;
-		
-		size_t				_clientMaxBody;
-		size_t				_backlog;
-		size_t				_maxConns;
-		size_t				_numConns;
-		pollfd *			_pollStructs;
-		sockaddr_in			_serverAddress;
-		std::vector<Client>	_clients;
+		std::string						_root;
+		std::string						_dir;
+		std::string						_uploadDir;
+		std::string						_cgiDir;
+		std::string						_defaultErrorPage;
+		std::map<size_t, std::string>	_errorPages;
+		size_t							_clientMaxBody;
+		size_t							_backlog;
+		size_t							_maxConns;
+		size_t							_numConns;
+		pollfd *						_pollStructs;
+		sockaddr_in						_serverAddress;
+		std::vector<Client>				_clients;
 
 		void	checkMethodAccess(std::string);
 		void	checkReadAccess(std::string);
