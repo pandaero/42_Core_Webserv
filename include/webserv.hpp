@@ -6,7 +6,7 @@
 /*   By: wmardin <wmardin@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/03/26 01:51:20 by pandalaf          #+#    #+#             */
-/*   Updated: 2023/05/02 23:17:48 by wmardin          ###   ########.fr       */
+/*   Updated: 2023/05/03 09:05:21 by wmardin          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -54,6 +54,9 @@
 # define E_ELMNTDECL	"Error: ServerConfig: Invalid element declaration, (only \"server\" allowed): "
 # define E_SUBELEMNT	"Error: ServerConfig: Subelements not allowed: "
 # define E_INVALERRNUM	"Error: ServerConfig: Invalid HTML response code (range is from 100 to 599): "
+
+# define I_INVALIDKEY	"Info: ServerConfig: Unrecognized identifier in config file: '"
+
 
 // Server
 # define E_SERVERNAME			"Error: Server: Invalid characters in server name input. Only alphanumerical, <<.>> and <<_>> allowed: "

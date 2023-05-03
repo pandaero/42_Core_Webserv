@@ -44,15 +44,35 @@ void ServerConfig::setField(std::string key, std::string value)
 	else if (key == PORT)
 		port = value;
 	
-	// Bools
-	else if (key == GET && value == "yes")
-		get = true;
-	else if (key == POST && value == "yes")
-		post = true;
-	else if (key == DELETE && value == "yes")
-		delete_ = true;
-	else if (key == DIRLISTING && value == "yes")
-		dirListing = true;
+	// Bools (these ifs are split to evade the last else)
+	else if (key == GET)
+	{
+		if (value == "yes")
+			get = true;
+		else
+			get = false;
+	}
+	else if (key == POST)
+	{
+		if (value == "yes")
+			post = true;
+		else
+			post = false;
+	}
+	else if (key == DELETE)
+	{
+		if (value == "yes")
+			delete_ = true;
+		else
+			delete_ = false;
+	}
+	else if (key == DIRLISTING)
+	{
+		if (value == "yes")
+			dirListing = true;
+		else
+			dirListing = false;
+	}
 	
 	// Directories
 	else if (key == ROOT)
@@ -78,11 +98,9 @@ void ServerConfig::setField(std::string key, std::string value)
 			if (errNum < 100 || errNum > 599)
 				throw std::runtime_error(E_INVALERRNUM + element + '\n');
 			errorNumbers.push_back(errNum);
-			std::cout << "in while" << errNum << std::endl;
 			element = splitEraseChars(value, " ");
 			trim(element);
 		}
-		std::cout << element << std::endl;
 		for (size_t i = 0; i < errorNumbers.size(); i++)
 			errorPages.insert(std::make_pair(errorNumbers[i], element));	
 	}
@@ -93,6 +111,8 @@ void ServerConfig::setField(std::string key, std::string value)
 		maxConnections = value;
 	else if (key == BACKLOG)
 		backlog = value;
+	else
+		std::cerr << I_INVALIDKEY << key << "'. Connected value: '" << value << "'." << std::endl;
 }
 
 // UTIL FUNCTIONS
@@ -109,7 +129,7 @@ std::vector<ServerConfig> getConfigs(const char* path)
 		ServerConfig newConfig(getConfigElement(configData));
 		configList.push_back(newConfig);
 	}
-	std::cout << "Finished parsing input. " << configList.size() << " config elements built." << std::endl;
+	std::cout << "Info: getConfigs: " << configList.size() << (configList.size() == 1 ? " config element built." : " config elements built.") << std::endl;
 	if (configList.empty())
 		throw std::runtime_error(E_NOSERVER);
 	return configList;
