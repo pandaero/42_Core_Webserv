@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   webserv.hpp                                        :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: pandalaf <pandalaf@student.42wolfsburg.    +#+  +:+       +#+        */
+/*   By: wmardin <wmardin@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/03/26 01:51:20 by pandalaf          #+#    #+#             */
-/*   Updated: 2023/05/03 20:17:34 by pandalaf         ###   ########.fr       */
+/*   Updated: 2023/05/06 18:01:50 by wmardin          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -35,15 +35,18 @@
 # define GET		"GET"
 # define POST		"POST"
 # define DELETE		"DELETE"
-# define DIRLISTING	"dirListing"
+# define DIRLISTING	"dir_listing"
 # define ROOT		"root"
 # define DIR		"dir"
-# define UPLOADDIR	"uploadDir"
-# define CGIDIR		"cgiDir"
-# define ERRORPAGE	"errorPage"
-# define CLIMAXBODY	"clientMaxBody"
-# define MAXCONNS	"maxConnections"
+# define UPLOADDIR	"upload_dir"
+# define CGIDIR		"cig_dir"
+# define ERRORPAGE	"error_page"
+# define CLIMAXBODY	"client_maxbody"
+# define MAXCONNS	"max_connections"
 # define BACKLOG	"backlog"
+# define LOCATION	"location"
+# define METHODS	"methods"
+# define ALTLOC		"alt_location"
 
 // ===== ===== ===== ===== ERROR MESSAGES ===== ===== ===== =====
 // ServerConfig
