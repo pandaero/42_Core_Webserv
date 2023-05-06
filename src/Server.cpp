@@ -6,7 +6,7 @@
 /*   By: wmardin <wmardin@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/04/07 17:49:49 by pandalaf          #+#    #+#             */
-/*   Updated: 2023/05/06 19:32:32 by wmardin          ###   ########.fr       */
+/*   Updated: 2023/05/06 19:50:55 by wmardin          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -30,7 +30,8 @@ Server::Server(ServerConfig config):
 	setDir(config.dir);
 	setUploadDir(config.uploadDir);
 	setCgiDir(config.cgiDir);
-	setErrorPage(config.errorPage);
+	setDefaultErrorPage(config.defaultErrorPage);
+	setErrorPages(config.errorPages);
 	
 	setClientMaxBody(config.clientMaxBody);
 	setBacklog(config.backlog);
@@ -167,8 +168,10 @@ void	Server::handleConnections()
 void Server::whoIsI()
 {
 	std::cout	<< '\n'
-				<< "Name:\t\t" << _name << '\n'
-				<< "Host:\t\t" << inet_ntoa(_serverAddress.sin_addr) << '\n'
+				<< "Name(s):\n";
+					for (StringVec_it it = _names.begin(); it != _names.end(); it++)
+						std::cout << "\t\t" << *it << '\n';
+	std::cout	<< "Host:\t\t" << inet_ntoa(_serverAddress.sin_addr) << '\n'
 				<< "Port:\t\t" << ntohs(_serverAddress.sin_port) << '\n'
 				
 				<< "GET:\t\t" << (_GET ? "yes" : "no") << '\n'
@@ -180,19 +183,28 @@ void Server::whoIsI()
 				<< "Dir:\t\t" << _dir << '\n'
 				<< "Upload Dir:\t" << _uploadDir << '\n'
 				<< "CGI Dir:\t" << _cgiDir << '\n'
-				<< "Error Page:\t" << _errorPage << '\n'
-				
-				<< "Cl. max body:\t" << _clientMaxBody << '\n'
+				<< "Default ErrPage:" << _defaultErrorPage << '\n'
+				<< "Error Pages:\n";
+					for (std::map<size_t, std::string>::iterator it = _errorPages.begin(); it != _errorPages.end(); it++)
+						std::cout << "\t\t" << it->first << '\t' << it->second << '\n';
+	std::cout	<< "Cl. max body:\t" << _clientMaxBody << '\n'
 				<< "Backlog:\t" << _backlog << '\n'
 				<< "Max Conns:\t" << _maxConns << std::endl;
 }
 
 void Server::setName(std::string input)
 {
-	for (std::string::const_iterator it = input.begin(); it != input.end(); it++)
-		if (!isalnum(*it) && *it != '.' && *it != '_')
-			throw std::runtime_error(E_SERVERNAME + input + '\n');
-	_name = input;
+	std::string name;
+
+	while (!trim(input).empty())
+	{
+		name = splitEraseChars(input, WHITESPACE);
+		trim(name);
+		for (std::string::const_iterator it = name.begin(); it != name.end(); it++)
+			if (!isalnum(*it) && *it != '.' && *it != '_')
+				throw std::runtime_error(E_SERVERNAME + name + '\n');
+		_names.push_back(name);
+	}
 }
 
 void Server::setHost(std::string input)
@@ -262,10 +274,18 @@ void Server::setCgiDir(std::string input)
 	_cgiDir = input;
 }
 
-void Server::setErrorPage(std::string input)
+void Server::setDefaultErrorPage(std::string input)
 {
 	checkReadAccess(input);
-	_errorPage = input;
+	_defaultErrorPage = input;
+}
+
+void Server::setErrorPages(std::map<size_t, std::string> input)
+{
+	for (size_t i = 0; i < input.size(); i++)
+	for (std::map<size_t, std::string>::iterator it = input.begin(); it != input.end(); it++)
+		checkReadAccess(it->second);
+	_errorPages = input;
 }
 
 void Server::setClientMaxBody(std::string input)

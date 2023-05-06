@@ -27,7 +27,7 @@ void ServerConfig::parseConfigElement(std::string input)
 	
 	while (!trim(input).empty())
 	{
-		key = splitEraseStr(input, " ");
+		key = splitEraseChars(input, " \t");
 		trim(input);
 		value = splitEraseStr(input, ";");
 		setField(key, value);
@@ -44,15 +44,35 @@ void ServerConfig::setField(std::string key, std::string value)
 	else if (key == PORT)
 		port = value;
 	
-	// Bools
-	else if (key == GET && value == "yes")
-		get = true;
-	else if (key == POST && value == "yes")
-		post = true;
-	else if (key == DELETE && value == "yes")
-		delete_ = true;
-	else if (key == DIRLISTING && value == "yes")
-		dirListing = true;
+	// Bools (these ifs are split to evade the last else)
+	else if (key == GET)
+	{
+		if (value == "yes")
+			get = true;
+		else
+			get = false;
+	}
+	else if (key == POST)
+	{
+		if (value == "yes")
+			post = true;
+		else
+			post = false;
+	}
+	else if (key == DELETE)
+	{
+		if (value == "yes")
+			delete_ = true;
+		else
+			delete_ = false;
+	}
+	else if (key == DIRLISTING)
+	{
+		if (value == "yes")
+			dirListing = true;
+		else
+			dirListing = false;
+	}
 	
 	// Directories
 	else if (key == ROOT)
@@ -63,9 +83,29 @@ void ServerConfig::setField(std::string key, std::string value)
 		uploadDir = value;
 	else if (key == CGIDIR)
 		cgiDir = value;
+	/* else if (key == DEFAULTERRPAGE)
+		defaultErrorPage = value; 
+		implement subsquigglies for error pages and take default
+		*/
 	else if (key == ERRORPAGE)
-		errorPage = value;
-	
+	{
+		std::string element;
+		std::vector<size_t> errorNumbers;
+		
+		element = splitEraseChars(value, " ");
+		trim(element);
+		while (element.find_first_not_of("0123456789") == std::string::npos)
+		{
+			size_t errNum = atoi(element.c_str());
+			if (errNum < 100 || errNum > 599)
+				throw std::runtime_error(E_INVALERRNUM + element + '\n');
+			errorNumbers.push_back(errNum);
+			element = splitEraseChars(value, " ");
+			trim(element);
+		}
+		for (size_t i = 0; i < errorNumbers.size(); i++)
+			errorPages.insert(std::make_pair(errorNumbers[i], element));	
+	}
 	// Size restrictions
 	else if (key == CLIMAXBODY)
 		clientMaxBody = value;
@@ -73,6 +113,8 @@ void ServerConfig::setField(std::string key, std::string value)
 		maxConnections = value;
 	else if (key == BACKLOG)
 		backlog = value;
+	else
+		std::cerr << I_INVALIDKEY << key << "'. Connected value: '" << value << "'." << std::endl;
 }
 
 // UTIL FUNCTIONS
@@ -89,24 +131,28 @@ std::vector<ServerConfig> getConfigs(const char* path)
 		ServerConfig newConfig(getConfigElement(configData));
 		configList.push_back(newConfig);
 	}
-	std::cout << "Finished parsing input. " << configList.size() << " config elements built." << std::endl;
+	std::cout << "Info: getConfigs: " << configList.size() << (configList.size() == 1 ? " config element built." : " config elements built.") << std::endl;
 	if (configList.empty())
 		throw std::runtime_error(E_NOSERVER);
 	return configList;
 }
 
-
 std::string configFileToString(const char* path)
 {
 	std::ifstream		infile(path);
+	std::string			line;
 	std::stringstream	buffer;
 	
-	if (!infile.is_open())
+	if (!infile)
 	{
 		std::string invalidpath(path);
-		throw std::runtime_error(E_FILEOPEN + invalidpath);
+		throw std::runtime_error(E_FILEOPEN + invalidpath + '\n');
 	}
-	buffer << infile.rdbuf();
+	while (std::getline(infile, line))
+	{
+		if (line[line.find_first_not_of(WHITESPACE)] != '#')
+			buffer << line;
+	}
 	infile.close();
 	return buffer.str();
 }
@@ -125,10 +171,10 @@ std::string getConfigElement(std::string& configString)
 	
 	elementTitle = splitEraseStr(configString, "{");
 	if (trim(elementTitle) != "server")
-		throw std::runtime_error(E_ELMNTDECL + elementTitle);
+		throw std::runtime_error(E_ELMNTDECL + elementTitle + '\n');
 	len_close = configString.find("}");
 	if (configString.find("{") < len_close)
-		throw std::runtime_error(E_SUBELEMNT + configString);
+		throw std::runtime_error(E_SUBELEMNT + configString + '\n');
 	elementBody = splitEraseStr(configString, "}");
 	return trim(elementBody);
 }

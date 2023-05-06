@@ -6,7 +6,7 @@
 /*   By: wmardin <wmardin@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/03/26 01:51:20 by pandalaf          #+#    #+#             */
-/*   Updated: 2023/05/06 18:01:50 by wmardin          ###   ########.fr       */
+/*   Updated: 2023/05/06 19:49:23 by wmardin          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -39,7 +39,7 @@
 # define ROOT		"root"
 # define DIR		"dir"
 # define UPLOADDIR	"upload_dir"
-# define CGIDIR		"cig_dir"
+# define CGIDIR		"cgi_dir"
 # define ERRORPAGE	"error_page"
 # define CLIMAXBODY	"client_maxbody"
 # define MAXCONNS	"max_connections"
@@ -48,12 +48,18 @@
 # define METHODS	"methods"
 # define ALTLOC		"alt_location"
 
+// PSEUDOVARIABLES
+# define WHITESPACE	" \t\v\r\n"
+
 // ===== ===== ===== ===== ERROR MESSAGES ===== ===== ===== =====
 // ServerConfig
 # define E_FILEOPEN		"Error: ServerConfig: Could not open config file: "
 # define E_NOSERVER		"Error: ServerConfig: No valid server configs found."
 # define E_ELMNTDECL	"Error: ServerConfig: Invalid element declaration, (only \"server\" allowed): "
 # define E_SUBELEMNT	"Error: ServerConfig: Subelements not allowed: "
+# define E_INVALERRNUM	"Error: ServerConfig: Invalid HTML response code (range is from 100 to 599): "
+
+# define I_INVALIDKEY	"Info: ServerConfig: Unrecognized identifier in config file: '"
 
 // Server
 # define E_SERVERNAME			"Error: Server: Invalid characters in server name input. Only alphanumerical, <<.>> and <<_>> allowed: "
@@ -74,6 +80,8 @@
 // ===== ===== ===== ===== TYPEDEFS ===== ===== ===== =====
 typedef std::map<std::string, std::string>::const_iterator	StringMap_it;
 typedef std::map<std::string, std::string> 					StringMap;
+typedef std::vector<std::string>							StringVec;
+typedef std::vector<std::string>::const_iterator			StringVec_it;
 
 typedef enum contentTypes
 {
@@ -101,6 +109,8 @@ std::string		strToLower(std::string);
 std::string		trim(std::string &);
 // Description required.
 std::string		splitEraseStr(std::string &, std::string);
+// Description required.
+std::string		splitEraseChars(std::string&, std::string);
 // Description required.
 StringMap		createHeaderMap(std::string &, std::string, std::string, std::string);
 // Determines the file/content type according to the file's full path. (based on dot-preceded extensions)
