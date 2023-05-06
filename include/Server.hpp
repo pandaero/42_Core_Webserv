@@ -6,7 +6,7 @@
 /*   By: wmardin <wmardin@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/04/07 19:17:18 by pandalaf          #+#    #+#             */
-/*   Updated: 2023/05/06 17:14:39 by wmardin          ###   ########.fr       */
+/*   Updated: 2023/05/06 19:32:18 by wmardin          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -20,7 +20,6 @@
 # include "ServerConfig.hpp"
 
 # include <string>
-// # include <vector>
 # include <list>
 # include <iostream>
 # include <sstream>
@@ -40,6 +39,8 @@ class ServerConfig;
 class	Server
 {
 	public:
+		friend class	Response;
+		
 		Server(ServerConfig);
 		~Server();
 		
@@ -64,6 +65,10 @@ class	Server
 		void	setMaxConnections(std::string);
 		void	setBacklog(std::string);
 
+		std::string	getStatusPage(int);
+		
+		void	errorHandler(int, int);
+
 	private:
 		std::string			_name;
 		
@@ -79,7 +84,7 @@ class	Server
 		std::string			_errorPage;
 		
 		size_t				_clientMaxBody;
-		size_t				_backlog;
+		size_t				_backlog; // kill this shite?
 		size_t				_maxConns;
 		size_t				_numConns;
 		pollfd *			_pollStructs;

@@ -6,7 +6,7 @@
 /*   By: wmardin <wmardin@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/04/07 17:49:49 by pandalaf          #+#    #+#             */
-/*   Updated: 2023/05/06 17:19:05 by wmardin          ###   ########.fr       */
+/*   Updated: 2023/05/06 19:32:32 by wmardin          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -103,12 +103,25 @@ void	Server::handleConnections()
 				}
 				clientIt->_recvBuffer.append(buffer);
 				// check for \r\n\r\n
+				std::cout << clientIt->_recvBuffer << std::endl;
 				if (!clientIt->_gotRequest && clientIt->_recvBuffer.find("\r\n\r\n") != std::string::npos)
 				{
 					clientIt->_activeRequest = Request(clientIt->_recvBuffer);
 					clientIt->_gotRequest = true;
-					// handle header separately from body (prepare to take body)
+					clientIt->_recvBuffer.erase(0, clientIt->_recvBuffer.find("\r\n\r\n") + 4);
+					if (clientIt->_activeRequest._contentLength > (int) _clientMaxBody)
+					{
+						errorHandler(413, clientIt->getSocketfd());
+						return;
+					}
+						//build size too big (twss) 413 error response and dont keep reading
+					std::cout << clientIt->_activeRequest._method << std::endl;
+					std::cout << clientIt->_recvBuffer << std::endl;				
 				}
+				// handle the body
+				//	is the body complete?
+				// 	is the body too long (maxclientsize)
+				
 				else
 				{
 					std::cout << "Received " << bytesReceived << " bytes from client:\n\n" << buffer << std::endl;
@@ -136,7 +149,7 @@ void	Server::handleConnections()
 					if (request.getFile() != "")
 						standard.setFile(_root + request._path);
 					std::cout << "Sending response." << std::endl;
-					standard.sendResponse(_pollStructs[i + 1].fd);
+					standard.send(_pollStructs[i + 1].fd);
 					clientIt->_gotRequest = false;
 					// standard.setFile(_root + request._path + "styles.css");
 					// standard.sendResponse(_pollStructs[i + 1].fd);
@@ -281,6 +294,19 @@ void Server::setBacklog(std::string input)
 	if (_backlog > MAX_BACKLOG)
 		throw std::runtime_error(E_BACKLOGVAL + input + '\n');
 }
+
+std::string Server::getStatusPage(int code)
+{
+	if (_errorPage)
+}
+
+void Server::errorHandler(int errNum, int clientfd)
+{
+	Response	response(errNum);
+	response.send(clientfd);
+}
+
+// PRIVATE MEMBER FUNCTIONS
 
 void Server::checkMethodAccess(std::string path)
 {

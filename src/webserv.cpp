@@ -73,7 +73,7 @@ contentType	extensionType(const std::string & filePath)
 		return (HTML);
 	else if (filePath.find(".zip", pos) != std::string::npos)
 		return (ZIP);
-	else if (filePath.find(".PNG", pos) != std::string::npos)
+	else if (filePath.find(".png", pos) != std::string::npos)
 		return (PNG);
 	else if (filePath.find(".jpeg", pos) != std::string::npos || filePath.find(".jpg", pos) != std::string::npos)
 		return (JPEG);

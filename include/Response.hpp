@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   Response.hpp                                       :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: pandalaf <pandalaf@student.42wolfsburg.    +#+  +:+       +#+        */
+/*   By: wmardin <wmardin@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/04/01 17:00:19 by pandalaf          #+#    #+#             */
-/*   Updated: 2023/04/30 23:35:10 by pandalaf         ###   ########.fr       */
+/*   Updated: 2023/05/06 19:26:46 by wmardin          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -14,7 +14,14 @@
 # define RESPONSE_HPP
 
 # include "webserv.hpp"
+# include "Server.hpp"
 
+
+# include <fstream>
+# include <sstream>
+# include <iostream>
+# include <cstring>
+# include <cstdlib>
 # include <string>
 # include <cstdio>
 # include <sys/socket.h>
@@ -23,16 +30,17 @@ class	Response
 {
 	public:
 		Response();
+		Response(int, const Server &);
 		~Response();
 
 		void	setStatusCode(int);
 	
 		void	setFile(std::string);
 
-		int		sendResponse(int);
+		int		send(int);
 
 	private:
-		void		buildResponse();
+		void		build();
 
 		std::string _responseHeader;
 		
