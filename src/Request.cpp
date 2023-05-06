@@ -25,7 +25,7 @@ Request::Request(std::string requestData)
 	_protocol = splitEraseStr(requestData, "\r\n");
 	_headers = createHeaderMap(requestData, ":", "\r\n", "\r\n");
 	if (headerValue("content-length") != "NOT FOUND")
-		_contentLength = atoi(headerValue("content-length").c_str());
+		_contentLength = std::atoi(headerValue("content-length").c_str());
 }
 
 std::string	Request::headerValue(std::string header)

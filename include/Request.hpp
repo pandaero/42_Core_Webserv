@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   Request.hpp                                        :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: wmardin <wmardin@student.42.fr>            +#+  +:+       +#+        */
+/*   By: pandalaf <pandalaf@student.42wolfsburg.    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/05/01 22:04:57 by pandalaf          #+#    #+#             */
-/*   Updated: 2023/05/06 17:24:16 by wmardin          ###   ########.fr       */
+/*   Updated: 2023/05/06 17:37:55 by pandalaf         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -18,6 +18,7 @@
 # include <utility>
 # include <string>
 # include <map>
+# include <cstdlib>
 
 class	Request
 {
