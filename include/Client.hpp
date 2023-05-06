@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   Client.hpp                                         :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: pandalaf <pandalaf@student.42wolfsburg.    +#+  +:+       +#+        */
+/*   By: wmardin <wmardin@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/03/28 20:29:39 by pandalaf          #+#    #+#             */
-/*   Updated: 2023/05/03 19:14:01 by pandalaf         ###   ########.fr       */
+/*   Updated: 2023/05/06 17:16:46 by wmardin          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -30,12 +30,12 @@ class	Client
 		int		getSocketfd();
 
 	private:
-		int					_clientSocketfd;
-		socklen_t			_clientSockLen;
-		sockaddr_in			_clientAddress;
-		std::stringstream	_recvBuffer;
-		Request				_activeRequest;
-		bool				_gotRequest;
+		int				_clientSocketfd;
+		socklen_t		_clientSockLen;
+		sockaddr_in		_clientAddress;
+		std::string		_recvBuffer;
+		Request			_activeRequest;
+		bool			_gotRequest;
 
 	class	connectionDeniedException: public std::exception
 	{

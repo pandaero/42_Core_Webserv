@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   Server.cpp                                         :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: pandalaf <pandalaf@student.42wolfsburg.    +#+  +:+       +#+        */
+/*   By: wmardin <wmardin@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/04/07 17:49:49 by pandalaf          #+#    #+#             */
-/*   Updated: 2023/05/03 20:52:34 by pandalaf         ###   ########.fr       */
+/*   Updated: 2023/05/06 17:19:05 by wmardin          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -101,11 +101,11 @@ void	Server::handleConnections()
 					_clients.erase(clientIt);
 					continue;
 				}
-				clientIt->_recvBuffer << buffer;
+				clientIt->_recvBuffer.append(buffer);
 				// check for \r\n\r\n
-				if (clientIt->_recvBuffer.str().find("\r\n\r\n") != std::string::npos && !clientIt->_gotRequest)
+				if (!clientIt->_gotRequest && clientIt->_recvBuffer.find("\r\n\r\n") != std::string::npos)
 				{
-					clientIt->_activeRequest = Request(clientIt->_recvBuffer.str());
+					clientIt->_activeRequest = Request(clientIt->_recvBuffer);
 					clientIt->_gotRequest = true;
 					// handle header separately from body (prepare to take body)
 				}

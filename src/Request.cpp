@@ -12,6 +12,11 @@
 
 #include "../include/Request.hpp"
 
+Request::Request()
+{
+	_contentLength = -1;
+}
+
 Request::Request(std::string requestData)
 {
 	_contentLength = -1;
