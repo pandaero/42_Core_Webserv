@@ -10,31 +10,17 @@
 class ServerConfig
 {
 	public:
-		ServerConfig();
 		ServerConfig(std::string);
 		~ServerConfig();
 
-		void setDefault();
-		//void setField(std::string, std::string);
-		void parseConfigElement(std::string);
+		strMap	getConfigPairs() const;
+		strMap	getConfigErrorPaths() const;
 
-		std::map<std::string, std::string>	_configPairs;
-		/* std::string	serverName;
-		std::string	host;
-		std::string port;
-		bool 		get;
-		bool 		post;
-		bool 		delete_;
-		bool 		dirListing;
-		std::string root;
-		std::string dir;
-		std::string uploadDir;
-		std::string cgiDir;
-		std::string	defaultErrorPage;
-		std::map<size_t, std::string> errorPages;
-		std::string clientMaxBody;
-		std::string maxConnections;
-		std::string backlog; */
+	private:
+		strMap	_configPairs;
+		strMap	_errorPages;
+		// locations configs
+		// cgi configs
 };
 
 // Global functions for building ServerConfig objects

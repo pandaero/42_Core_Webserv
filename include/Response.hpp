@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   Response.hpp                                       :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: wmardin <wmardin@student.42.fr>            +#+  +:+       +#+        */
+/*   By: pandalaf <pandalaf@student.42wolfsburg.    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/04/01 17:00:19 by pandalaf          #+#    #+#             */
-/*   Updated: 2023/05/07 12:05:34 by wmardin          ###   ########.fr       */
+/*   Updated: 2023/05/07 12:53:53 by pandalaf         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -15,7 +15,6 @@
 
 # include "webserv.hpp"
 # include "Server.hpp"
-
 
 # include <fstream>
 # include <sstream>

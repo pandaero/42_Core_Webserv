@@ -57,9 +57,9 @@ std::string splitEraseChars(std::string& input, std::string targetChars)
 	return element;
 }
 
-StringMap createHeaderMap(std::string& input, std::string endOfKey, std::string endOfValue, std::string endOfMap)
+strMap createHeaderMap(std::string& input, std::string endOfKey, std::string endOfValue, std::string endOfMap)
 {
-	StringMap stringMap;
+	strMap stringMap;
 	std::string key, value;
 
 	while (!input.empty())

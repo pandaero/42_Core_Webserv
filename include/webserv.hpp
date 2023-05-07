@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   webserv.hpp                                        :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: wmardin <wmardin@student.42.fr>            +#+  +:+       +#+        */
+/*   By: pandalaf <pandalaf@student.42wolfsburg.    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/03/26 01:51:20 by pandalaf          #+#    #+#             */
-/*   Updated: 2023/05/07 12:17:51 by wmardin          ###   ########.fr       */
+/*   Updated: 2023/05/07 14:52:18 by pandalaf         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -18,38 +18,45 @@
 # include <vector>
 # include <map>
 
+// PSEUDOVARIABLES
+# define WHITESPACE	" \t\v\r\n"
+
 // ===== ===== ===== ===== SIZE Descriptions ===== ===== ===== =====
 # define RECV_CHUNK_SIZE		4096
 # define SEND_CHUNK_SIZE		4096
 # define MAX_MAXCLIENTBODY		10000
-# define MAX_MAXCONNECTIONS		1000
+// # define MAX_MAXCONNECTIONS		1000
 # define MAX_BACKLOG			100
 
-// ===== ===== ===== ===== DEFAULT CONFIG PATH ===== ===== ===== =====
-# define DEFAULTCONFIGPATH		"default/config/default.conf"
+// ===== ===== ===== ===== DEFAULT CONFIG PATHS ===== ===== ===== =====
+# define DEFAULTCONFIGPATH	"default/config/default.conf"
+# define DEFAULTERRORPAGE	"default/error/default.html"
 
 // ===== ===== ===== ===== CONFIGURATION ELEMENT IDENTIFIERS ===== ===== ===== =====
 # define SERVERNAME	"server_name"
 # define HOST		"host"
 # define PORT		"listen"
-# define GET		"GET"
-# define POST		"POST"
-# define DELETE		"DELETE"
-# define DIRLISTING	"dir_listing"
 # define ROOT		"root"
-# define DIR		"dir"
-# define UPLOADDIR	"upload_dir"
-# define CGIDIR		"cgi_dir"
-# define ERRORPAGE	"error_page"
 # define CLIMAXBODY	"client_max_body"
-# define MAXCONNS	"max_connections"
 # define BACKLOG	"backlog"
-# define LOCATION	"location"
-# define METHODS	"methods"
-# define ALTLOC		"alt_location"
+# define MAXCONNS	"max_connections"
 
-// PSEUDOVARIABLES
-# define WHITESPACE	" \t\v\r\n"
+// ===== ===== ===== ===== CONFIGURATION SUB-ELEMENT IDENTIFIERS ===== ===== ===== =====
+// error_page
+# define ERRORPAGETITLE	"error_pages"
+# define ERRPAGEDEFAULT	"default"
+// location
+# define LOCATIONTITLE	"location"
+# define DIRLISTING		"dir_listing"
+# define ALTLOC			"alt_location"
+# define METHODS		"methods"
+# define GET			"GET"
+# define POST			"POST"
+# define DELETE			"DELETE"
+// cgi
+# define CGITITLE		"cgi"
+# define PYTHON			"py"
+# define PHP			"php"
 
 // ===== ===== ===== ===== ERROR MESSAGES ===== ===== ===== =====
 // ServerConfig
@@ -78,10 +85,10 @@
 # define E_ACC_EXEC				"Error: Server: Cannot execute from path: "
 
 // ===== ===== ===== ===== TYPEDEFS ===== ===== ===== =====
-typedef std::map<std::string, std::string>::const_iterator	StringMap_it;
-typedef std::map<std::string, std::string> 					StringMap;
-typedef std::vector<std::string>							StringVec;
-typedef std::vector<std::string>::const_iterator			StringVec_it;
+typedef std::map<std::string, std::string> 					strMap;
+typedef std::map<std::string, std::string>::const_iterator	strMap_it;
+typedef std::vector<std::string>							strVec;
+typedef std::vector<std::string>::const_iterator			strVec_it;
 
 typedef enum contentTypes
 {
@@ -112,7 +119,7 @@ std::string		splitEraseStr(std::string &, std::string);
 // Description required.
 std::string		splitEraseChars(std::string&, std::string);
 // Description required.
-StringMap		createHeaderMap(std::string &, std::string, std::string, std::string);
+strMap		createHeaderMap(std::string &, std::string, std::string, std::string);
 // Determines the file/content type according to the file's full path. (based on dot-preceded extensions)
 contentType		extensionType(const std::string &);
 // Splits a string according to a string, outputs vector of strings.

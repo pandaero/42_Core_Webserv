@@ -7,7 +7,7 @@ int main()
 	std::vector<ServerConfig>	configVec;
 	size_t						serverCount;
 
-	configVec = getConfigs("default/config/nginx_style.conf");
+	configVec = getConfigs("default/config/site.conf");
 	serverCount = configVec.size();
 
 	Server *	serverArr[serverCount];

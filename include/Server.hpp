@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   Server.hpp                                         :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: wmardin <wmardin@student.42.fr>            +#+  +:+       +#+        */
+/*   By: pandalaf <pandalaf@student.42wolfsburg.    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/04/07 19:17:18 by pandalaf          #+#    #+#             */
-/*   Updated: 2023/05/07 12:15:55 by wmardin          ###   ########.fr       */
+/*   Updated: 2023/05/07 14:55:18 by pandalaf         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -41,7 +41,7 @@ class	Server
 	public:
 		friend class	Response;
 		
-		Server(ServerConfig);
+		Server(const ServerConfig &);
 		~Server();
 		
 		void	startListening();
@@ -49,7 +49,7 @@ class	Server
 		void	handleConnections();
 		void	whoIsI();
 
-		void	setName(std::string);
+		void	setNames(std::string);
 		void	setHost(std::string);
 		void	setPort(std::string);
 		void	setGet(bool);
@@ -72,25 +72,30 @@ class	Server
 
 	private:
 		std::vector<std::string>		_names;
+		strMap							_filePaths;
+		std::map<size_t, std::string>	_errorPagesPaths;
+		std::map<std::string, size_t>	_serverParams;
+		// Location stuffs
+		// CGI stuffs
+
+		pollfd *						_pollStructs;
+		sockaddr_in						_serverAddress;
+		std::vector<Client>				_clients;
 		
+		// TO BE DEMOLISHED:
 		bool							_GET;
 		bool							_POST;
 		bool							_DELETE;
 		bool							_dirListing;
-		
 		std::string						_root;
 		std::string						_dir;
 		std::string						_uploadDir;
 		std::string						_cgiDir;
 		std::string						_defaultErrorPagePath;
-		std::map<size_t, std::string>	_errorPagesPath;
 		size_t							_clientMaxBody;
 		size_t							_backlog; // kill this?
 		size_t							_maxConns;
 		size_t							_numConns;
-		pollfd *						_pollStructs;
-		sockaddr_in						_serverAddress;
-		std::vector<Client>				_clients;
 
 		void	checkMethodAccess(std::string);
 		void	checkReadAccess(std::string);

@@ -1,20 +1,8 @@
 #include "../include/ServerConfig.hpp"
 
-ServerConfig::ServerConfig()
+ServerConfig::ServerConfig(std::string serverConfigStr)
 {
-	setDefault();
-}
-ServerConfig::ServerConfig(std::string input)
-{
-	setDefault();
-	parseConfigElement(input);
-}
-
-ServerConfig::~ServerConfig()
-{}
-
-void ServerConfig::setDefault()
-{
+	// Parse default config
 	std::string	defaultConfigData, defaultConfigElement;
 	std::string	key, value;
 	
@@ -27,12 +15,7 @@ void ServerConfig::setDefault()
 		value = splitEraseStr(defaultConfigElement, ";");
 		_configPairs.insert(std::make_pair(key, value));
 	}
-}
-
-void ServerConfig::parseConfigElement(std::string serverConfigStr)
-{
-	std::string		key, value;
-	
+	// Overwrite default with config
 	while (!trim(serverConfigStr).empty())
 	{
 		key = splitEraseChars(serverConfigStr, " \t");
@@ -45,6 +28,8 @@ void ServerConfig::parseConfigElement(std::string serverConfigStr)
 		}
 	}
 }
+
+ServerConfig::~ServerConfig(){}
 
 /*
 void ServerConfig::setField(std::string key, std::string value)

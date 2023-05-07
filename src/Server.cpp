@@ -3,28 +3,30 @@
 /*                                                        :::      ::::::::   */
 /*   Server.cpp                                         :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: wmardin <wmardin@student.42.fr>            +#+  +:+       +#+        */
+/*   By: pandalaf <pandalaf@student.42wolfsburg.    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/04/07 17:49:49 by pandalaf          #+#    #+#             */
-/*   Updated: 2023/05/07 12:15:22 by wmardin          ###   ########.fr       */
+/*   Updated: 2023/05/07 14:56:02 by pandalaf         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #include "../include/Server.hpp"
 
-Server::Server(ServerConfig config):
-	_numConns(1),
-	_pollStructs(NULL)
+Server::Server(const ServerConfig & config):
+	_pollStructs(NULL),
+	_numConns(1)
 {
 	(void)_numConns;
-	setName(config.serverName);
-	setHost(config.host);
-	setPort(config.port);
+
+	strMap	activeConfig = config.getConfigPairs();
+	strMap	activeConfigErrors = config.getConfigErrorPaths();
+
+	setNames(activeConfig.find(SERVERNAME)->second);
+	setHost(activeConfig.find(HOST)->second);
+	setPort(activeConfig.find(PORT)->second);
+	_filePaths.insert(make_pair(ROOT, activeConfig.find(ROOT)->second));
 	
-	setGet(config.get);
-	setPost(config.post);
-	setDelete(config.delete_);
-	setDirListing(config.dirListing);
+	_filePaths.insert(make_pair(DEFAULTERRORPAGE, activeConfig.find(DEFAULTERRORPAGE)->second));
 
 	setRoot(config.root);
 	setDir(config.dir);
@@ -192,7 +194,7 @@ void Server::whoIsI()
 				<< "Max Conns:\t" << _maxConns << std::endl;
 }
 
-void Server::setName(std::string input)
+void Server::setNames(std::string input)
 {
 	std::string name;
 
