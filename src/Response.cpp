@@ -6,7 +6,7 @@
 /*   By: wmardin <wmardin@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/04/01 17:05:35 by pandalaf          #+#    #+#             */
-/*   Updated: 2023/05/06 19:27:42 by wmardin          ###   ########.fr       */
+/*   Updated: 2023/05/07 12:15:06 by wmardin          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -17,10 +17,10 @@ Response::Response()
 
 }
 
-Response::Response(int errNum, const Server & server)
+Response::Response(int code, const Server & server)
 {
-	setStatusCode(errNum);
-	setFile(server.);
+	setStatusCode(code);
+	setFile(server.getStatusPage(code));
 }
 
 Response::~Response()

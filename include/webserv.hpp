@@ -6,7 +6,7 @@
 /*   By: wmardin <wmardin@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/03/26 01:51:20 by pandalaf          #+#    #+#             */
-/*   Updated: 2023/05/06 19:49:23 by wmardin          ###   ########.fr       */
+/*   Updated: 2023/05/07 12:17:51 by wmardin          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -41,7 +41,7 @@
 # define UPLOADDIR	"upload_dir"
 # define CGIDIR		"cgi_dir"
 # define ERRORPAGE	"error_page"
-# define CLIMAXBODY	"client_maxbody"
+# define CLIMAXBODY	"client_max_body"
 # define MAXCONNS	"max_connections"
 # define BACKLOG	"backlog"
 # define LOCATION	"location"

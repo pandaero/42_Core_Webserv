@@ -6,7 +6,7 @@
 /*   By: wmardin <wmardin@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/04/07 17:49:49 by pandalaf          #+#    #+#             */
-/*   Updated: 2023/05/06 19:50:55 by wmardin          ###   ########.fr       */
+/*   Updated: 2023/05/07 12:15:22 by wmardin          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -90,7 +90,7 @@ void	Server::handleConnections()
 	if (_clients.size() > 0)
 	{
 		int i = 0;
-		for (std::list<Client>::iterator clientIt = _clients.begin(); clientIt != _clients.end(); ++clientIt, ++i)
+		for (std::vector<Client>::iterator clientIt = _clients.begin(); clientIt != _clients.end(); ++clientIt, ++i)
 		{
 			if (_pollStructs[i + 1].revents & POLLIN)
 			{
@@ -183,9 +183,9 @@ void Server::whoIsI()
 				<< "Dir:\t\t" << _dir << '\n'
 				<< "Upload Dir:\t" << _uploadDir << '\n'
 				<< "CGI Dir:\t" << _cgiDir << '\n'
-				<< "Default ErrPage:" << _defaultErrorPage << '\n'
+				<< "Default ErrPage:" << _defaultErrorPagePath << '\n'
 				<< "Error Pages:\n";
-					for (std::map<size_t, std::string>::iterator it = _errorPages.begin(); it != _errorPages.end(); it++)
+					for (std::map<size_t, std::string>::iterator it = _errorPagesPath.begin(); it != _errorPagesPath.end(); it++)
 						std::cout << "\t\t" << it->first << '\t' << it->second << '\n';
 	std::cout	<< "Cl. max body:\t" << _clientMaxBody << '\n'
 				<< "Backlog:\t" << _backlog << '\n'
@@ -277,7 +277,7 @@ void Server::setCgiDir(std::string input)
 void Server::setDefaultErrorPage(std::string input)
 {
 	checkReadAccess(input);
-	_defaultErrorPage = input;
+	_defaultErrorPagePath = input;
 }
 
 void Server::setErrorPages(std::map<size_t, std::string> input)
@@ -285,7 +285,7 @@ void Server::setErrorPages(std::map<size_t, std::string> input)
 	for (size_t i = 0; i < input.size(); i++)
 	for (std::map<size_t, std::string>::iterator it = input.begin(); it != input.end(); it++)
 		checkReadAccess(it->second);
-	_errorPages = input;
+	_errorPagesPath = input;
 }
 
 void Server::setClientMaxBody(std::string input)
@@ -315,14 +315,17 @@ void Server::setBacklog(std::string input)
 		throw std::runtime_error(E_BACKLOGVAL + input + '\n');
 }
 
-std::string Server::getStatusPage(int code)
+std::string Server::getStatusPage(int code) const
 {
-	if (_errorPage)
+	if (_errorPagesPath.find(code) != _errorPagesPath.end())
+		return _errorPagesPath.find(code)->second;
+	else
+		return _defaultErrorPagePath;
 }
 
-void Server::errorHandler(int errNum, int clientfd)
+void Server::errorHandler(int code, int clientfd)
 {
-	Response	response(errNum);
+	Response	response(code, *this);
 	response.send(clientfd);
 }
 

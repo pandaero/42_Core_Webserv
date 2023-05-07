@@ -1,7 +1,8 @@
-#ifndef CONFIG_HPP
-# define CONFIG_HPP
+#ifndef SERVERCONFIG_HPP
+# define SERVERCONFIG_HPP
 
 # include <fstream>
+# include <map>
 
 # include "Server.hpp"
 # include "webserv.hpp"
@@ -14,10 +15,11 @@ class ServerConfig
 		~ServerConfig();
 
 		void setDefault();
-		void setField(std::string, std::string);
+		//void setField(std::string, std::string);
 		void parseConfigElement(std::string);
 
-		std::string	serverName;
+		std::map<std::string, std::string>	_configPairs;
+		/* std::string	serverName;
 		std::string	host;
 		std::string port;
 		bool 		get;
@@ -32,7 +34,7 @@ class ServerConfig
 		std::map<size_t, std::string> errorPages;
 		std::string clientMaxBody;
 		std::string maxConnections;
-		std::string backlog;
+		std::string backlog; */
 };
 
 // Global functions for building ServerConfig objects

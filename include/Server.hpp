@@ -6,7 +6,7 @@
 /*   By: wmardin <wmardin@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/04/07 19:17:18 by pandalaf          #+#    #+#             */
-/*   Updated: 2023/05/06 19:44:22 by wmardin          ###   ########.fr       */
+/*   Updated: 2023/05/07 12:15:55 by wmardin          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -66,7 +66,7 @@ class	Server
 		void	setMaxConnections(std::string);
 		void	setBacklog(std::string);
 
-		std::string	getStatusPage(int);
+		std::string	getStatusPage(int) const;
 		
 		void	errorHandler(int, int);
 
@@ -82,8 +82,8 @@ class	Server
 		std::string						_dir;
 		std::string						_uploadDir;
 		std::string						_cgiDir;
-		std::string						_defaultErrorPage;
-		std::map<size_t, std::string>	_errorPages;
+		std::string						_defaultErrorPagePath;
+		std::map<size_t, std::string>	_errorPagesPath;
 		size_t							_clientMaxBody;
 		size_t							_backlog; // kill this?
 		size_t							_maxConns;

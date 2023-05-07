@@ -15,25 +15,38 @@ ServerConfig::~ServerConfig()
 
 void ServerConfig::setDefault()
 {
-	std::string	defaultConfigData(configFileToString(DEFAULTCONFIGPATH));
-	std::string	defaultConfigElement(getConfigElement(defaultConfigData));
-	parseConfigElement(defaultConfigElement);
-}
-
-void ServerConfig::parseConfigElement(std::string input)
-{
-	std::string		key;
-	std::string		value;
+	std::string	defaultConfigData, defaultConfigElement;
+	std::string	key, value;
 	
-	while (!trim(input).empty())
+	defaultConfigData = configFileToString(DEFAULTCONFIGPATH);
+	defaultConfigElement = getConfigElement(defaultConfigData);	
+	while (!trim(defaultConfigElement).empty())
 	{
-		key = splitEraseChars(input, " \t");
-		trim(input);
-		value = splitEraseStr(input, ";");
-		setField(key, value);
+		key = splitEraseChars(defaultConfigElement, " \t");
+		trim(defaultConfigElement);
+		value = splitEraseStr(defaultConfigElement, ";");
+		_configPairs.insert(std::make_pair(key, value));
 	}
 }
 
+void ServerConfig::parseConfigElement(std::string serverConfigStr)
+{
+	std::string		key, value;
+	
+	while (!trim(serverConfigStr).empty())
+	{
+		key = splitEraseChars(serverConfigStr, " \t");
+		trim(serverConfigStr);
+		value = splitEraseStr(serverConfigStr, ";");
+		if (_configPairs.find(key) != _configPairs.end())
+		{
+			_configPairs.erase(_configPairs.find(key));
+			_configPairs.insert(make_pair(key, value));
+		}
+	}
+}
+
+/*
 void ServerConfig::setField(std::string key, std::string value)
 {
 	// Main Settings
@@ -83,10 +96,7 @@ void ServerConfig::setField(std::string key, std::string value)
 		uploadDir = value;
 	else if (key == CGIDIR)
 		cgiDir = value;
-	/* else if (key == DEFAULTERRPAGE)
-		defaultErrorPage = value; 
-		implement subsquigglies for error pages and take default
-		*/
+
 	else if (key == ERRORPAGE)
 	{
 		std::string element;
@@ -116,6 +126,7 @@ void ServerConfig::setField(std::string key, std::string value)
 	else
 		std::cerr << I_INVALIDKEY << key << "'. Connected value: '" << value << "'." << std::endl;
 }
+*/
 
 // UTIL FUNCTIONS
 

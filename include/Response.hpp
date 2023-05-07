@@ -6,7 +6,7 @@
 /*   By: wmardin <wmardin@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/04/01 17:00:19 by pandalaf          #+#    #+#             */
-/*   Updated: 2023/05/06 19:26:46 by wmardin          ###   ########.fr       */
+/*   Updated: 2023/05/07 12:05:34 by wmardin          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -25,6 +25,8 @@
 # include <string>
 # include <cstdio>
 # include <sys/socket.h>
+
+class	Server;
 
 class	Response
 {
