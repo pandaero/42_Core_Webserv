@@ -1,32 +1,32 @@
 /* ************************************************************************** */
 /*                                                                            */
 /*                                                        :::      ::::::::   */
-/*   configFile.cpp                                     :+:      :+:    :+:   */
+/*   ConfigFile.cpp                                     :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: wmardin <wmardin@student.42.fr>            +#+  +:+       +#+        */
+/*   By: pandalaf <pandalaf@student.42wolfsburg.    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/05/09 16:03:29 by wmardin           #+#    #+#             */
-/*   Updated: 2023/05/09 16:50:52 by wmardin          ###   ########.fr       */
+/*   Updated: 2023/05/09 17:38:08 by pandalaf         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
-#include "../include/configFile.hpp"
+#include "../include/ConfigFile.hpp"
 
-configFile::configFile(const char* path)
+ConfigFile::ConfigFile(const char* path)
 {
 	_configData = fileToString(path);
 	parseConfigData(); 
 }
 
-configFile::~configFile()
+ConfigFile::~ConfigFile()
 {}
 
-std::vector<ServerConfig> configFile::getConfigs() const
+std::vector<ServerConfig> ConfigFile::getConfigs() const
 {
 	return _serverConfigs;
 }
 
-std::string configFile::fileToString(const char* path)
+std::string ConfigFile::fileToString(const char* path)
 {
 	std::ifstream		infile(path);
 	std::string			line;
@@ -47,12 +47,12 @@ std::string configFile::fileToString(const char* path)
 	return buffer.str();
 }
 
-void configFile::parseConfigData()
+void ConfigFile::parseConfigData()
 {
 	trim(_configData);
 	while (!_configData.empty())
 	{
-		ServerConfig newConfig(getConfigElement(_configData));
+		ServerConfig newConfig(getServerConfigElement());
 		_serverConfigs.push_back(newConfig);
 	}
 	std::cout << "Info: getConfigs: " << _serverConfigs.size() << (_serverConfigs.size() == 1 ? " config element built." : " config elements built.") << std::endl;
@@ -60,7 +60,7 @@ void configFile::parseConfigData()
 		throw std::runtime_error(E_NOSERVER);
 }
 
-std::string configFile::getServerConfigElement()
+std::string ConfigFile::getServerConfigElement()
 {
 	std::string		elementTitle, elementBody;
 	size_t			len_close;
@@ -84,7 +84,7 @@ std::string configFile::getServerConfigElement()
 	return trim(elementBody);
 }
 
-size_t configFile::endOfElement(std::string elementBody)
+size_t ConfigFile::endOfElement(std::string elementBody)
 {
 	size_t	i, counter;
 

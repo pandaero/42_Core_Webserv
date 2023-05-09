@@ -6,7 +6,7 @@
 /*   By: pandalaf <pandalaf@student.42wolfsburg.    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/04/01 17:00:19 by pandalaf          #+#    #+#             */
-/*   Updated: 2023/05/07 12:53:53 by pandalaf         ###   ########.fr       */
+/*   Updated: 2023/05/09 18:26:47 by pandalaf         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -31,12 +31,13 @@ class	Response
 {
 	public:
 		Response();
+		Response(const Request &, const Server &);
 		Response(int, const Server &);
 		~Response();
 
 		void	setStatusCode(int);
 	
-		void	setFile(std::string);
+		int		setFile(std::string);
 
 		int		send(int);
 

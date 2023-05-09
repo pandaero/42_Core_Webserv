@@ -6,8 +6,8 @@ ServerConfig::ServerConfig(std::string serverConfigStr)
 	std::string	defaultConfigData, defaultConfigElement;
 	std::string	key, value;
 	
-	defaultConfigData = configFileToString(DEFAULTCONFIGPATH);
-	defaultConfigElement = getConfigElement(defaultConfigData);	
+	// defaultConfigData = configFileToString(DEFAULTCONFIGPATH);
+	// defaultConfigElement = getConfigElement(defaultConfigData);
 	while (!trim(defaultConfigElement).empty())
 	{
 		key = splitEraseChars(defaultConfigElement, " \t");
@@ -125,11 +125,9 @@ Does not allow declaration of subelements at this point.
 */
 #define SERVER	"server"
 // remove define for subelement not allowed
-typedef enum parse_mode
+typedef enum
 {
 	server,
 	error_pages,
 	location
-};
-
-
+} parse_mode;

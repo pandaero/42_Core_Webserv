@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   webserv.hpp                                        :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: wmardin <wmardin@student.42.fr>            +#+  +:+       +#+        */
+/*   By: pandalaf <pandalaf@student.42wolfsburg.    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/03/26 01:51:20 by pandalaf          #+#    #+#             */
-/*   Updated: 2023/05/09 16:35:36 by wmardin          ###   ########.fr       */
+/*   Updated: 2023/05/09 19:39:21 by pandalaf         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -19,7 +19,8 @@
 # include <map>
 
 // PSEUDOVARIABLES
-# define WHITESPACE	" \t\v\r\n"
+# define WHITESPACE		" \t\v\r\n"
+# define TERMINATION	"\r\n\r\n"
 
 // ===== ===== ===== ===== SIZE Descriptions ===== ===== ===== =====
 # define RECV_CHUNK_SIZE		4096

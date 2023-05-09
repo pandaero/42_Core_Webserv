@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   configFile.hpp                                     :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: wmardin <wmardin@student.42.fr>            +#+  +:+       +#+        */
+/*   By: pandalaf <pandalaf@student.42wolfsburg.    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/05/09 16:01:24 by wmardin           #+#    #+#             */
-/*   Updated: 2023/05/09 16:43:03 by wmardin          ###   ########.fr       */
+/*   Updated: 2023/05/09 17:05:39 by pandalaf         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -20,11 +20,11 @@
 # include "webserv.hpp"
 # include "ServerConfig.hpp"
 
-class configFile
+class ConfigFile
 {
 	public:
-		configFile(const char*);
-		~configFile();
+		ConfigFile(const char*);
+		~ConfigFile();
 
 		std::vector<ServerConfig> getConfigs() const;
 

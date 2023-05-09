@@ -6,7 +6,7 @@
 /*   By: pandalaf <pandalaf@student.42wolfsburg.    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/04/07 19:17:18 by pandalaf          #+#    #+#             */
-/*   Updated: 2023/05/07 14:55:18 by pandalaf         ###   ########.fr       */
+/*   Updated: 2023/05/09 18:25:31 by pandalaf         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -41,6 +41,9 @@ class	Server
 	public:
 		friend class	Response;
 		
+		// DEBUG
+		Server();
+
 		Server(const ServerConfig &);
 		~Server();
 		
@@ -67,6 +70,7 @@ class	Server
 		void	setBacklog(std::string);
 
 		std::string	getStatusPage(int) const;
+		std::string	getRoot() const;
 		
 		void	errorHandler(int, int);
 

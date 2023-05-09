@@ -4,26 +4,34 @@
 
 int main()
 {
-	std::vector<ServerConfig>	configVec;
-	size_t						serverCount;
+	//std::vector<ServerConfig>	configVec;
+	size_t						serverCount = 1;
 
-	configVec = getConfigs("default/config/site.conf");
-	serverCount = configVec.size();
+	// configFile	config("");
+	// configVec = config.getConfigs();
+
+	// configVec = getConfigs("default/config/site.conf");
+	// serverCount = configVec.size();
 
 	Server *	serverArr[serverCount];
-	for (size_t i = 0; i < serverCount; i++)
-	{
-		serverArr[i] = new Server(configVec[i]);
-		serverArr[i]->whoIsI();
-	}
+	// for (size_t i = 0; i < serverCount; i++)
+	// {
+	// 	serverArr[i] = new Server(configVec[i]);
+	// 	serverArr[i]->whoIsI();
+	// }
+
+	serverArr[0] = new Server();
 
 	while (true)
 	{
-		for (size_t i = 0; i < serverCount; ++i)
+	//	for (size_t i = 0; i < serverCount; ++i)
+		size_t i = 0;
 		{
+			std::cout << "Polling Server i: " << i << std::endl;
 			try
 			{
 				serverArr[i]->poll();
+				std::cout << "Try poll success.\n";
 			}
 			catch (std::exception & exc)
 			{
@@ -32,6 +40,7 @@ int main()
 				continue;
 			}
 			serverArr[i]->handleConnections();
+			std::cout << "Server i: " << i << std::endl;
 		}
 	}
 }

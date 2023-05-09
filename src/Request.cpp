@@ -19,6 +19,8 @@ Request::Request()
 
 Request::Request(std::string requestData)
 {
+	//DEBUG
+	std::cout << "Request getting made" << std::endl;
 	_contentLength = -1;
 	_method = splitEraseStr(requestData, " ");
 	_path = splitEraseStr(requestData, " ");
@@ -26,6 +28,7 @@ Request::Request(std::string requestData)
 	_headers = createHeaderMap(requestData, ":", "\r\n", "\r\n");
 	if (headerValue("content-length") != "NOT FOUND")
 		_contentLength = std::atoi(headerValue("content-length").c_str());
+	std::cout << "Request constructed" << std::endl;
 }
 
 std::string	Request::headerValue(std::string header)
@@ -36,7 +39,17 @@ std::string	Request::headerValue(std::string header)
 	return ("NOT FOUND");
 }
 
-std::string	Request::getFile()
+std::string	Request::getFile() const
 {
 	return (_path.substr(_path.find_last_of('/'), _path.find(*(_path.end() - 1))));
+}
+
+std::string	Request::getPath() const
+{
+	return (_path);
+}
+
+int	Request::getContentLength() const
+{
+	return (_contentLength);
 }
