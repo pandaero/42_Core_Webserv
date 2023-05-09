@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   Server.cpp                                         :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: pandalaf <pandalaf@student.42wolfsburg.    +#+  +:+       +#+        */
+/*   By: wmardin <wmardin@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/04/07 17:49:49 by pandalaf          #+#    #+#             */
-/*   Updated: 2023/05/07 14:56:02 by pandalaf         ###   ########.fr       */
+/*   Updated: 2023/05/09 15:40:09 by wmardin          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -28,7 +28,7 @@ Server::Server(const ServerConfig & config):
 	
 	_filePaths.insert(make_pair(DEFAULTERRORPAGE, activeConfig.find(DEFAULTERRORPAGE)->second));
 
-	setRoot(config.root);
+	/* setRoot(config.root);
 	setDir(config.dir);
 	setUploadDir(config.uploadDir);
 	setCgiDir(config.cgiDir);
@@ -37,7 +37,7 @@ Server::Server(const ServerConfig & config):
 	
 	setClientMaxBody(config.clientMaxBody);
 	setBacklog(config.backlog);
-	setMaxConnections(config.maxConnections);
+	setMaxConnections(config.maxConnections); */
 
 	_pollStructs = new pollfd[_maxConns];
 	startListening();
@@ -171,7 +171,7 @@ void Server::whoIsI()
 {
 	std::cout	<< '\n'
 				<< "Name(s):\n";
-					for (StringVec_it it = _names.begin(); it != _names.end(); it++)
+					for (strVec_it it = _names.begin(); it != _names.end(); it++)
 						std::cout << "\t\t" << *it << '\n';
 	std::cout	<< "Host:\t\t" << inet_ntoa(_serverAddress.sin_addr) << '\n'
 				<< "Port:\t\t" << ntohs(_serverAddress.sin_port) << '\n'
@@ -187,7 +187,7 @@ void Server::whoIsI()
 				<< "CGI Dir:\t" << _cgiDir << '\n'
 				<< "Default ErrPage:" << _defaultErrorPagePath << '\n'
 				<< "Error Pages:\n";
-					for (std::map<size_t, std::string>::iterator it = _errorPagesPath.begin(); it != _errorPagesPath.end(); it++)
+					for (std::map<size_t, std::string>::iterator it = _errorPagesPaths.begin(); it != _errorPagesPath.end(); it++)
 						std::cout << "\t\t" << it->first << '\t' << it->second << '\n';
 	std::cout	<< "Cl. max body:\t" << _clientMaxBody << '\n'
 				<< "Backlog:\t" << _backlog << '\n'
@@ -282,13 +282,13 @@ void Server::setDefaultErrorPage(std::string input)
 	_defaultErrorPagePath = input;
 }
 
-void Server::setErrorPages(std::map<size_t, std::string> input)
+/* void Server::setErrorPages(std::map<size_t, std::string> input)
 {
 	for (size_t i = 0; i < input.size(); i++)
 	for (std::map<size_t, std::string>::iterator it = input.begin(); it != input.end(); it++)
 		checkReadAccess(it->second);
 	_errorPagesPath = input;
-}
+} */
 
 void Server::setClientMaxBody(std::string input)
 {
@@ -319,8 +319,8 @@ void Server::setBacklog(std::string input)
 
 std::string Server::getStatusPage(int code) const
 {
-	if (_errorPagesPath.find(code) != _errorPagesPath.end())
-		return _errorPagesPath.find(code)->second;
+	if (_errorPagesPaths.find(code) != _errorPagesPaths.end())
+		return _errorPagesPaths.find(code)->second;
 	else
 		return _defaultErrorPagePath;
 }

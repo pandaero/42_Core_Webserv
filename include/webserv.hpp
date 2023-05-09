@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   webserv.hpp                                        :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: pandalaf <pandalaf@student.42wolfsburg.    +#+  +:+       +#+        */
+/*   By: wmardin <wmardin@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/03/26 01:51:20 by pandalaf          #+#    #+#             */
-/*   Updated: 2023/05/07 14:52:18 by pandalaf         ###   ########.fr       */
+/*   Updated: 2023/05/09 16:35:36 by wmardin          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -25,7 +25,7 @@
 # define RECV_CHUNK_SIZE		4096
 # define SEND_CHUNK_SIZE		4096
 # define MAX_MAXCLIENTBODY		10000
-// # define MAX_MAXCONNECTIONS		1000
+# define MAX_MAXCONNECTIONS		1000
 # define MAX_BACKLOG			100
 
 // ===== ===== ===== ===== DEFAULT CONFIG PATHS ===== ===== ===== =====
@@ -33,6 +33,7 @@
 # define DEFAULTERRORPAGE	"default/error/default.html"
 
 // ===== ===== ===== ===== CONFIGURATION ELEMENT IDENTIFIERS ===== ===== ===== =====
+# define SERVER		"server"
 # define SERVERNAME	"server_name"
 # define HOST		"host"
 # define PORT		"listen"
