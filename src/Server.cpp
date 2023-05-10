@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   Server.cpp                                         :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: pandalaf <pandalaf@student.42wolfsburg.    +#+  +:+       +#+        */
+/*   By: wmardin <wmardin@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/04/07 17:49:49 by pandalaf          #+#    #+#             */
-/*   Updated: 2023/05/09 20:46:58 by pandalaf         ###   ########.fr       */
+/*   Updated: 2023/05/10 12:25:31 by wmardin          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -21,7 +21,7 @@ Server::Server():
 	setNames("default");
 	setHost("ANY");
 	setPort("50000");
-	_filePaths.insert(std::make_pair(ROOT, "default/site"));_filePaths.insert(std::make_pair(DEFAULTERRORPAGE, "default/error/default.html"));
+	_filePaths.insert(std::make_pair(ROOT, "default/site"));_filePaths.insert(std::make_pair(PATH_DEFAULTERRPAGE, "default/error/default.html"));
 	_serverParams.insert(std::make_pair(CLIMAXBODY, 1024));
 
 	/* setRoot(config.root);

@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   webserv.hpp                                        :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: pandalaf <pandalaf@student.42wolfsburg.    +#+  +:+       +#+        */
+/*   By: wmardin <wmardin@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/03/26 01:51:20 by pandalaf          #+#    #+#             */
-/*   Updated: 2023/05/09 19:39:21 by pandalaf         ###   ########.fr       */
+/*   Updated: 2023/05/10 22:58:31 by wmardin          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -30,8 +30,8 @@
 # define MAX_BACKLOG			100
 
 // ===== ===== ===== ===== DEFAULT CONFIG PATHS ===== ===== ===== =====
-# define DEFAULTCONFIGPATH	"default/config/default.conf"
-# define DEFAULTERRORPAGE	"default/error/default.html"
+# define PATH_DEFAULTCONFIG		"default/config/default.conf"
+# define PATH_DEFAULTERRPAGE	"default/error/default.html"
 
 // ===== ===== ===== ===== CONFIGURATION ELEMENT IDENTIFIERS ===== ===== ===== =====
 # define SERVER		"server"
@@ -61,11 +61,14 @@
 # define PHP			"php"
 
 // ===== ===== ===== ===== ERROR MESSAGES ===== ===== ===== =====
+// ConfigFile
+# define E_INVALBRACES	"Error: ConfigFile: Invalid placement of curly braces: "
+
 // ServerConfig
 # define E_FILEOPEN		"Error: ServerConfig: Could not open config file: "
 # define E_NOSERVER		"Error: ServerConfig: No valid server configs found."
 # define E_ELMNTDECL	"Error: ServerConfig: Invalid element declaration, (only \"server\" allowed): "
-# define E_SUBELEMNT	"Error: ServerConfig: Subelements not allowed: "
+# define E_SUBELEMNT	"Error: ServerConfig: Second level subelements not allowed: "
 # define E_INVALERRNUM	"Error: ServerConfig: Invalid HTML response code (range is from 100 to 599): "
 
 # define I_INVALIDKEY	"Info: ServerConfig: Unrecognized identifier in config file: '"
@@ -87,10 +90,21 @@
 # define E_ACC_EXEC				"Error: Server: Cannot execute from path: "
 
 // ===== ===== ===== ===== TYPEDEFS ===== ===== ===== =====
-typedef std::map<std::string, std::string> 					strMap;
-typedef std::map<std::string, std::string>::const_iterator	strMap_it;
-typedef std::vector<std::string>							strVec;
-typedef std::vector<std::string>::const_iterator			strVec_it;
+typedef struct
+{
+	bool			get;
+	bool			post;
+	bool			delete_;
+	bool			dir_listing;
+	std::string		alt_location;
+}	s_locInfo;
+typedef std::map<std::string, std::string> 				strMap;
+typedef std::map<std::string, std::string>::iterator	strMap_it;
+typedef std::vector<std::string>						strVec;
+typedef std::vector<std::string>::iterator				strVec_it;
+typedef std::map<std::string, s_locInfo>				strLocMap;
+typedef std::map<std::string, s_locInfo>::iterator		strLocMap_it;
+
 
 typedef enum contentTypes
 {
@@ -112,18 +126,19 @@ typedef enum contentTypes
 bool 			isAlnumStr(const std::string &);
 // Determines whether strings are the same (case-insensitive).
 bool			isSameNoCase(std::string, std::string);
-// Converts alphabetical characters to lowercase in a string.
+// Converts the alphabetical characters in a string to lowercase.
 std::string		strToLower(std::string);
-// Description required.
+// Removes the characters defined by the macro WHITESPACE from the beginning and end of a string.
 std::string		trim(std::string &);
-// Description required.
+// Returns a substring from the beginning of the passed string to the beginning of the first occurence of the 2nd argument. Deletes the substring and the 2nd argument from the passed string.
 std::string		splitEraseStr(std::string &, std::string);
-// Description required.
+// Returns a substring from the beginning of the passed string to the first occurence of any char from the 2nd argument. Deletes the substring and the encountered char from the passed string.
 std::string		splitEraseChars(std::string&, std::string);
-// Description required.
+// Returns a string-string map. First argument is the input. 2nd and 3rd arguments are the end of the key and the end of the value. 4th argument signals the end of the region to be parsed. The key is converted to lower case.
 strMap		createHeaderMap(std::string &, std::string, std::string, std::string);
 // Determines the file/content type according to the file's full path. (based on dot-preceded extensions)
 contentType		extensionType(const std::string &);
 // Splits a string according to a string, outputs vector of strings.
 std::vector<std::string>	splitString(std::string, const std::string &);
+
 #endif

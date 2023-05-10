@@ -10,22 +10,27 @@
 class ServerConfig
 {
 	public:
+		ServerConfig();
 		ServerConfig(std::string);
+		ServerConfig(const ServerConfig&);
 		~ServerConfig();
 
+		ServerConfig& operator=(const ServerConfig&);
+		
 		strMap	getConfigPairs() const;
 		strMap	getConfigErrorPaths() const;
 
 	private:
-		strMap	_configPairs;
-		strMap	_errorPages;
+		void		parseErrorPages(std::string&);
+		void		parseLocation(std::string&);
+		void		parseCgi(std::string&);
+		std::string	getSubElement(std::string&);
+		
+		strMap		_configPairs;
+		strMap		_errorPages;
+		strLocMap	_locations;
 		// locations configs
 		// cgi configs
 };
-
-// Global functions for building ServerConfig objects
-std::vector<ServerConfig>	getConfigs(const char*);
-std::string					configFileToString(const char*);
-std::string					getConfigElement(std::string&);
 
 #endif

@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   ConfigFile.cpp                                     :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: pandalaf <pandalaf@student.42wolfsburg.    +#+  +:+       +#+        */
+/*   By: wmardin <wmardin@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/05/09 16:03:29 by wmardin           #+#    #+#             */
-/*   Updated: 2023/05/09 17:38:08 by pandalaf         ###   ########.fr       */
+/*   Updated: 2023/05/10 13:17:09 by wmardin          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -14,7 +14,14 @@
 
 ConfigFile::ConfigFile(const char* path)
 {
-	_configData = fileToString(path);
+	// parse default ServerConfig object from internal default config file
+	loadFile(PATH_DEFAULTCONFIG);
+	ServerConfig	defaultConfig(getServerConfigElement());
+	_defaultServerConfig = defaultConfig;
+	std::cout << "Info: ConfigFile: Default ServerConfig successfully imported from " << PATH_DEFAULTCONFIG << std::endl;
+	
+	// parse intended ServerConfig objects from client supplied config file
+	loadFile(path);
 	parseConfigData(); 
 }
 
@@ -26,7 +33,7 @@ std::vector<ServerConfig> ConfigFile::getConfigs() const
 	return _serverConfigs;
 }
 
-std::string ConfigFile::fileToString(const char* path)
+void ConfigFile::loadFile(const char* path)
 {
 	std::ifstream		infile(path);
 	std::string			line;
@@ -44,15 +51,16 @@ std::string ConfigFile::fileToString(const char* path)
 		buffer << line;
 	}
 	infile.close();
-	return buffer.str();
+	_configData = buffer.str();
+	trim(_configData);
 }
 
 void ConfigFile::parseConfigData()
 {
-	trim(_configData);
 	while (!_configData.empty())
 	{
-		ServerConfig newConfig(getServerConfigElement());
+		ServerConfig newConfig(_defaultServerConfig);
+		newConfig.loadSettings(getServerConfigElement());
 		_serverConfigs.push_back(newConfig);
 	}
 	std::cout << "Info: getConfigs: " << _serverConfigs.size() << (_serverConfigs.size() == 1 ? " config element built." : " config elements built.") << std::endl;
@@ -68,19 +76,13 @@ std::string ConfigFile::getServerConfigElement()
 	elementTitle = splitEraseStr(_configData, "{");
 	if (trim(elementTitle) != SERVER)
 		throw std::runtime_error(E_ELMNTDECL + elementTitle + '\n');
-	
-	//len_open = configString.find("{");
-
-	
-	// get subelement
-	// while get subeleement
-	//	parse subeleemtn
 	len_close = endOfElement(_configData);
-	elementBody = _configData.substr(0, len_close);
-	_configData.erase(0, len_close + 1);
-	//elementBody = splitEraseStr(configString, "}");
+	if (len_close == (size_t)-1)
+		throw std::runtime_error(E_INVALBRACES + _configData + '\n');
+	elementBody = _configData.substr(0, len_close - 1);
+	_configData.erase(0, len_close);
 	std::cout << "elementbody: " << elementBody << std::endl;
-	std::cout << "configString: " << _configData << std::endl;
+	std::cout << "remaining in configData: " << _configData << std::endl;
 	return trim(elementBody);
 }
 
@@ -97,5 +99,7 @@ size_t ConfigFile::endOfElement(std::string elementBody)
 		if (elementBody[i] == '}')
 			counter--;
 	}
+	if (counter > 0)
+		return -1;
 	return i;
 }
