@@ -3,12 +3,7 @@
 #include "../include/ConfigFile.hpp"
 #include "../include/webserv.hpp"
 
-int main ()
-{
-	ConfigFile("default/config/site.conf");
-}
-
-/* int main()
+int main()
 {
 	//std::vector<ServerConfig>	configVec;
 	size_t						serverCount = 1;
@@ -50,4 +45,3 @@ int main ()
 		}
 	}
 }
- */

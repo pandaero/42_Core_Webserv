@@ -17,15 +17,15 @@ ServerConfig::ServerConfig(std::string defaultConfigStr)
 		key = splitEraseChars(defaultConfigStr, WHITESPACE);
 		trim(defaultConfigStr);
 		if (key == ERRORPAGETITLE)
-			parseErrorPages(defaultConfigStr);
+			parseDefaultErrorPages(defaultConfigStr);
 		else if (key == LOCATIONTITLE)
 			parseLocation(defaultConfigStr);
 		else if (key == CGITITLE)
-			parseCgi(defaultConfigStr);
+			parseDefaultCgi(defaultConfigStr);
 		else 
 		{
 			value = splitEraseChars(defaultConfigStr, ";");
-			_errorPages.insert(make_pair(key, value));
+			_configPairs.insert(make_pair(key, value));
 		}
 	}
 }
@@ -42,7 +42,35 @@ ServerConfig& ServerConfig::operator=(const ServerConfig& src)
 	_configPairs = src._configPairs;
 	_errorPages = src._errorPages;
 	_locations = src._locations;
+	_cgiPaths = src._cgiPaths;
 	return *this;
+}
+
+void ServerConfig::applySettings(std::string userConfigStr)
+{
+	std::string	key, value;
+	strMap_it	iter;
+	
+	while (!trim(userConfigStr).empty())
+	{
+		key = splitEraseChars(userConfigStr, WHITESPACE);
+		trim(userConfigStr);
+		if (key == ERRORPAGETITLE)
+			parseUserErrorPages(userConfigStr);
+		else if (key == LOCATIONTITLE)
+			parseLocation(userConfigStr);
+		else if (key == CGITITLE)
+			parseUserCgi(userConfigStr);
+		else 
+		{
+			value = splitEraseChars(userConfigStr, ";");
+			iter = _configPairs.find(key);
+			if (iter != _configPairs.end())
+				iter->second = value;
+			else
+				std::cerr << I_INVALIDKEY << key << std::endl;
+		}
+	}
 }
 
 strMap ServerConfig::getConfigPairs() const
@@ -50,9 +78,19 @@ strMap ServerConfig::getConfigPairs() const
 	return _configPairs;
 }
 
-strMap ServerConfig::getConfigErrorPaths() const
+strMap ServerConfig::getErrorPaths() const
 {
 	return _errorPages;
+}
+
+strLocMap ServerConfig::getLocations() const
+{
+	return _locations;
+}
+
+strMap	ServerConfig::getCgiPaths() const
+{
+	return _cgiPaths;
 }
 
 /*
@@ -64,12 +102,11 @@ Removed the ability to assign multiple codes to one page.
 Can reimplement without much work, but it would add weight to the function
 and not really serve an important purpose.
 */
-void ServerConfig::parseErrorPages(std::string& serverConfigStr)
+void ServerConfig::parseDefaultErrorPages(std::string& defaultConfigStr)
 {
 	std::string	subelement, key, value;
-	strMap_it	iter;
 	
-	subelement = getSubElement(serverConfigStr);
+	subelement = getSubElement(defaultConfigStr);
 	while (!trim(subelement).empty())
 	{
 		key = splitEraseChars(subelement, WHITESPACE);
@@ -79,90 +116,121 @@ void ServerConfig::parseErrorPages(std::string& serverConfigStr)
 	}
 }
 
-void ServerConfig::parseLocation(std::string& serverConfigStr)
+void ServerConfig::parseUserErrorPages(std::string& userConfigStr)
 {
-	std::string		path, subelement, key, value;
-	strLocMap_it	iter;
+	std::string	subelement, key, value;
+	strMap_it	iter;
 	
-	path = splitEraseChars(serverConfigStr, " ");
-	subelement = getSubElement(serverConfigStr);
+	subelement = getSubElement(userConfigStr);
 	while (!trim(subelement).empty())
 	{
-		s_locInfo	locInfo;
-
 		key = splitEraseChars(subelement, WHITESPACE);
 		trim(subelement);
 		value = splitEraseChars(subelement, ";");
-		_locations.insert(std::make_pair(key, locInfo));
-
-		
-
-
+		iter = _errorPages.find(key);
+		if (iter != _errorPages.end())
+			iter->second = value;
+		else
+			std::cerr << I_INVALIDKEY << key << std::endl;
 	}
 }
 
-std::string ServerConfig::getSubElement(std::string& serverConfigStr)
+/*
+Had to abandon the elegant "take what you find in the default and put it into the map" style
+because the location element is structured differently: it has an extra identifier, the path.
+Made a struct to gather the info and we still end up with just a map.
+
+This rigid structure has one positive: the exact same function can be used to parse the default
+and the user config file (because the function performs input checking).
+*/
+void ServerConfig::parseLocation(std::string& defaultConfigStr)
+{
+	std::string		path, subelement, key, value;
+	strLocMap_it	iter;
+	s_locInfo		locInfo;
+	
+	path = splitEraseChars(defaultConfigStr, " ");
+	subelement = getSubElement(defaultConfigStr);
+	while (!trim(subelement).empty())
+	{
+		key = splitEraseChars(subelement, WHITESPACE);
+		trim(subelement);
+		value = splitEraseChars(subelement, ";");
+		if (key == METHODS)
+		{
+			if (value.find(GET) != std::string::npos)
+				locInfo.get = true;
+			else
+				locInfo.get = false;
+			if (value.find(POST) != std::string::npos)
+				locInfo.get = true;
+			else
+				locInfo.get = false;
+			if (value.find(DELETE) != std::string::npos)
+				locInfo.delete_ = true;
+			else
+				locInfo.delete_ = false;
+		}
+		else if (key == DIRLISTING)
+			locInfo.dir_listing = value;
+		else if (key == ALTLOC)
+			locInfo.alt_location = value;
+		else
+			std::cerr << I_INVALIDKEY << key << std::endl;
+	}
+	_locations.insert(std::make_pair(path, locInfo));
+}
+
+void ServerConfig::parseDefaultCgi(std::string& defaultConfigStr)
+{
+	std::string	subelement, key, value;
+	
+	subelement = getSubElement(defaultConfigStr);
+	while (!trim(subelement).empty())
+	{
+		key = splitEraseChars(subelement, WHITESPACE);
+		trim(subelement);
+		value = splitEraseChars(subelement, ";");
+		_cgiPaths.insert(std::make_pair(key, value));
+	}
+}
+
+void ServerConfig::parseUserCgi(std::string& userConfigStr)
+{
+	std::string	subelement, key, value;
+	strMap_it	iter;
+	
+	subelement = getSubElement(userConfigStr);
+	while (!trim(subelement).empty())
+	{
+		key = splitEraseChars(subelement, WHITESPACE);
+		trim(subelement);
+		value = splitEraseChars(subelement, ";");
+		iter = _cgiPaths.find(key);
+		if (iter != _errorPages.end())
+			iter->second = value;
+		else
+			std::cerr << I_INVALIDKEY << key << std::endl;
+	}
+}
+
+std::string ServerConfig::getSubElement(std::string& configStr)
 {
 	size_t			len_close;
 	std::string		elementBody;
 	
-	len_close = serverConfigStr.find("}");
-	if (serverConfigStr.find("{") < len_close)
-		throw std::runtime_error(E_SUBELEMNT + serverConfigStr);
-	elementBody = splitEraseChars(serverConfigStr, "}");
+	len_close = configStr.find("}");
+	if (configStr.find("{", 1) < len_close)
+		throw std::runtime_error(E_SUBELEMNT + configStr);
+	elementBody = splitEraseChars(configStr, "}");
 	return trim(elementBody);
 }
+
 
 /*
 void ServerConfig::setField(std::string key, std::string value)
 {
-	// Main Settings
-	if (key == SERVERNAME)
-		serverName = value;
-	else if (key == HOST)
-		host = value;
-	else if (key == PORT)
-		port = value;
-	
-	// Bools (these ifs are split to evade the last else)
-	else if (key == GET)
-	{
-		if (value == "yes")
-			get = true;
-		else
-			get = false;
-	}
-	else if (key == POST)
-	{
-		if (value == "yes")
-			post = true;
-		else
-			post = false;
-	}
-	else if (key == DELETE)
-	{
-		if (value == "yes")
-			delete_ = true;
-		else
-			delete_ = false;
-	}
-	else if (key == DIRLISTING)
-	{
-		if (value == "yes")
-			dirListing = true;
-		else
-			dirListing = false;
-	}
-	
-	// Directories
-	else if (key == ROOT)
-		root = value;
-	else if (key == DIR)
-		dir = value;
-	else if (key == UPLOADDIR)
-		uploadDir = value;
-	else if (key == CGIDIR)
-		cgiDir = value;
+
 
 	else if (key == ERRORPAGE)
 	{
@@ -183,32 +251,5 @@ void ServerConfig::setField(std::string key, std::string value)
 		for (size_t i = 0; i < errorNumbers.size(); i++)
 			errorPages.insert(std::make_pair(errorNumbers[i], element));	
 	}
-	// Size restrictions
-	else if (key == CLIMAXBODY)
-		clientMaxBody = value;
-	else if (key == MAXCONNS)
-		maxConnections = value;
-	else if (key == BACKLOG)
-		backlog = value;
-	else
-		std::cerr << I_INVALIDKEY << key << "'. Connected value: '" << value << "'." << std::endl;
 }
 */
-
-// UTIL FUNCTIONS
-
-
-
-/*
-For now, only accepts "server" elements. Probably sufficient for the subject.
-But quickly expandable if we have to add other elements.
-
-Does not allow declaration of subelements at this point.
-*/
-// remove define for subelement not allowed
-typedef enum
-{
-	server,
-	error_pages,
-	location
-} parse_mode;

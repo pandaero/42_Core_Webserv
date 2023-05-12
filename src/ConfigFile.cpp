@@ -6,7 +6,7 @@
 /*   By: wmardin <wmardin@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/05/09 16:03:29 by wmardin           #+#    #+#             */
-/*   Updated: 2023/05/10 13:17:09 by wmardin          ###   ########.fr       */
+/*   Updated: 2023/05/12 20:45:45 by wmardin          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -18,11 +18,13 @@ ConfigFile::ConfigFile(const char* path)
 	loadFile(PATH_DEFAULTCONFIG);
 	ServerConfig	defaultConfig(getServerConfigElement());
 	_defaultServerConfig = defaultConfig;
-	std::cout << "Info: ConfigFile: Default ServerConfig successfully imported from " << PATH_DEFAULTCONFIG << std::endl;
+	std::cout << I_DEFAULTIMPORT << PATH_DEFAULTCONFIG << std::endl;
 	
 	// parse intended ServerConfig objects from client supplied config file
 	loadFile(path);
-	parseConfigData(); 
+	parseConfigData();
+	//std::cout << I_CONFIGIMPORT << std::endl;
+
 }
 
 ConfigFile::~ConfigFile()
@@ -60,10 +62,9 @@ void ConfigFile::parseConfigData()
 	while (!_configData.empty())
 	{
 		ServerConfig newConfig(_defaultServerConfig);
-		newConfig.loadSettings(getServerConfigElement());
+		newConfig.applySettings(getServerConfigElement());
 		_serverConfigs.push_back(newConfig);
 	}
-	std::cout << "Info: getConfigs: " << _serverConfigs.size() << (_serverConfigs.size() == 1 ? " config element built." : " config elements built.") << std::endl;
 	if (_serverConfigs.empty())
 		throw std::runtime_error(E_NOSERVER);
 }
@@ -81,8 +82,6 @@ std::string ConfigFile::getServerConfigElement()
 		throw std::runtime_error(E_INVALBRACES + _configData + '\n');
 	elementBody = _configData.substr(0, len_close - 1);
 	_configData.erase(0, len_close);
-	std::cout << "elementbody: " << elementBody << std::endl;
-	std::cout << "remaining in configData: " << _configData << std::endl;
 	return trim(elementBody);
 }
 

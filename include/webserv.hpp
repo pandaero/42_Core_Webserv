@@ -6,7 +6,7 @@
 /*   By: wmardin <wmardin@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/03/26 01:51:20 by pandalaf          #+#    #+#             */
-/*   Updated: 2023/05/10 22:58:31 by wmardin          ###   ########.fr       */
+/*   Updated: 2023/05/12 20:06:33 by wmardin          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -62,7 +62,10 @@
 
 // ===== ===== ===== ===== ERROR MESSAGES ===== ===== ===== =====
 // ConfigFile
-# define E_INVALBRACES	"Error: ConfigFile: Invalid placement of curly braces: "
+# define E_INVALBRACES		"Error: ConfigFile: Invalid placement of curly braces: "
+
+# define I_DEFAULTIMPORT	"Info: ConfigFile: Default ServerConfig successfully imported from "
+# define I_CONFIGIMPORT		"Info: ConfigFile: " << _serverConfigs.size() << (_serverConfigs.size() == 1 ? " config element" : " config elements") <<" imported from " << path << "."
 
 // ServerConfig
 # define E_FILEOPEN		"Error: ServerConfig: Could not open config file: "
@@ -71,7 +74,7 @@
 # define E_SUBELEMNT	"Error: ServerConfig: Second level subelements not allowed: "
 # define E_INVALERRNUM	"Error: ServerConfig: Invalid HTML response code (range is from 100 to 599): "
 
-# define I_INVALIDKEY	"Info: ServerConfig: Unrecognized identifier in config file: '"
+# define I_INVALIDKEY	"Info: ServerConfig: Unrecognized identifier in config file: "
 
 // Server
 # define E_SERVERNAME			"Error: Server: Invalid characters in server name input. Only alphanumerical, <<.>> and <<_>> allowed: "
@@ -95,7 +98,7 @@ typedef struct
 	bool			get;
 	bool			post;
 	bool			delete_;
-	bool			dir_listing;
+	std::string		dir_listing;
 	std::string		alt_location;
 }	s_locInfo;
 typedef std::map<std::string, std::string> 				strMap;

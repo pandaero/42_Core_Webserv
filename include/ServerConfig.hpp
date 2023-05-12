@@ -17,20 +17,25 @@ class ServerConfig
 
 		ServerConfig& operator=(const ServerConfig&);
 		
-		strMap	getConfigPairs() const;
-		strMap	getConfigErrorPaths() const;
+		void	applySettings(std::string);
+		
+		strMap		getConfigPairs() const;
+		strMap		getErrorPaths() const;
+		strLocMap	getLocations() const;
+		strMap		getCgiPaths() const;
 
 	private:
-		void		parseErrorPages(std::string&);
+		void		parseDefaultErrorPages(std::string&);
+		void 		parseUserErrorPages(std::string&);
 		void		parseLocation(std::string&);
-		void		parseCgi(std::string&);
+		void		parseDefaultCgi(std::string&);
+		void		parseUserCgi(std::string&);
 		std::string	getSubElement(std::string&);
 		
 		strMap		_configPairs;
 		strMap		_errorPages;
 		strLocMap	_locations;
-		// locations configs
-		// cgi configs
+		strMap		_cgiPaths;
 };
 
 #endif
