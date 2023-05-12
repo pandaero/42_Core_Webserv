@@ -6,7 +6,7 @@
 /*   By: wmardin <wmardin@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/03/26 01:51:20 by pandalaf          #+#    #+#             */
-/*   Updated: 2023/05/12 20:06:33 by wmardin          ###   ########.fr       */
+/*   Updated: 2023/05/12 23:59:36 by wmardin          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -107,7 +107,8 @@ typedef std::vector<std::string>						strVec;
 typedef std::vector<std::string>::iterator				strVec_it;
 typedef std::map<std::string, s_locInfo>				strLocMap;
 typedef std::map<std::string, s_locInfo>::iterator		strLocMap_it;
-
+typedef	std::map<int, std::string>						intStrMap;
+typedef	std::map<int, std::string>::iterator			intStrMap_it;
 
 typedef enum contentTypes
 {
@@ -131,14 +132,16 @@ bool 			isAlnumStr(const std::string &);
 bool			isSameNoCase(std::string, std::string);
 // Converts the alphabetical characters in a string to lowercase.
 std::string		strToLower(std::string);
-// Removes the characters defined by the macro WHITESPACE from the beginning and end of a string.
+// Removes the characters defined by the macro WHITESPACE from the beginning and end of a string ref.
 std::string		trim(std::string &);
-// Returns a substring from the beginning of the passed string to the beginning of the first occurence of the 2nd argument. Deletes the substring and the 2nd argument from the passed string.
+// Returns a substring from the beginning of the passed string ref to the beginning of the first occurence of the 2nd argument. Deletes the substring and the 2nd argument from the passed string.
 std::string		splitEraseStr(std::string &, std::string);
-// Returns a substring from the beginning of the passed string to the first occurence of any char from the 2nd argument. Deletes the substring and the encountered char from the passed string.
+// Returns a substring from the beginning of the passed string ref to the first occurence of any char from the 2nd argument. Deletes the substring and the encountered char from the passed string.
 std::string		splitEraseChars(std::string&, std::string);
-// Returns a string-string map. First argument is the input. 2nd and 3rd arguments are the end of the key and the end of the value. 4th argument signals the end of the region to be parsed. The key is converted to lower case.
-strMap		createHeaderMap(std::string &, std::string, std::string, std::string);
+// Returns a string-string map. First argument is the string ref to operate on. 2nd and 3rd arguments are the end of the key and the end of the value. 4th argument signals the end of the region to be parsed. The key is converted to lower case.
+strMap			createHeaderMap(std::string &, std::string, std::string, std::string);
+// Returns a string vector. First argument is the string ref to operate on. 2nd argument is a string containing the characters of which any single one delimits the final strings. The 3rd argument represents the string that denotes the end of the region to be processed.
+strVec 			splitEraseStrVec(std::string& input, std::string targetChars, std::string endOfParsing);
 // Determines the file/content type according to the file's full path. (based on dot-preceded extensions)
 contentType		extensionType(const std::string &);
 // Splits a string according to a string, outputs vector of strings.

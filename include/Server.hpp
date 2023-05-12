@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   Server.hpp                                         :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: pandalaf <pandalaf@student.42wolfsburg.    +#+  +:+       +#+        */
+/*   By: wmardin <wmardin@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/04/07 19:17:18 by pandalaf          #+#    #+#             */
-/*   Updated: 2023/05/09 18:25:31 by pandalaf         ###   ########.fr       */
+/*   Updated: 2023/05/13 00:02:14 by wmardin          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -77,7 +77,7 @@ class	Server
 	private:
 		std::vector<std::string>		_names;
 		strMap							_filePaths;
-		std::map<size_t, std::string>	_errorPagesPaths;
+		intStrMap						_errorPagesPaths;
 		std::map<std::string, size_t>	_serverParams;
 		// Location stuffs
 		// CGI stuffs

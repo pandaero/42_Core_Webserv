@@ -10,8 +10,8 @@ bool isAlnumStr(const std::string& input)
 
 std::string trim(std::string& input)
 {
-	size_t start = input.find_first_not_of(WHITESPACE);
-	size_t end = input.find_last_not_of(WHITESPACE);
+	size_t	start = input.find_first_not_of(WHITESPACE);
+	size_t	end = input.find_last_not_of(WHITESPACE);
 	if (start == std::string::npos)
 		input = "";
 	else
@@ -21,8 +21,8 @@ std::string trim(std::string& input)
 
 std::string splitEraseStr(std::string& input, std::string targetString)
 {
-	std::string element;
-	size_t len;
+	std::string	element;
+	size_t 		len;
 
 	len = input.find(targetString);
 	if (len == std::string::npos)
@@ -41,7 +41,7 @@ std::string splitEraseStr(std::string& input, std::string targetString)
 std::string splitEraseChars(std::string& input, std::string targetChars)
 {
 	std::string element;
-	size_t len;
+	size_t 		len;
 
 	len = input.find_first_of(targetChars);
 	if (len == std::string::npos)
@@ -59,7 +59,7 @@ std::string splitEraseChars(std::string& input, std::string targetChars)
 
 strMap createHeaderMap(std::string& input, std::string endOfKey, std::string endOfValue, std::string endOfMap)
 {
-	strMap stringMap;
+	strMap 		stringMap;
 	std::string key, value;
 
 	while (!input.empty())
@@ -76,6 +76,21 @@ strMap createHeaderMap(std::string& input, std::string endOfKey, std::string end
 		stringMap.insert(std::make_pair(strToLower(key), value));
 	}
 	return stringMap;
+}
+
+strVec splitEraseStrVec(std::string& input, std::string targetChars, std::string endOfParsing)
+{
+	strVec 		stringVector;
+	std::string	parseRegion, element;
+	
+	parseRegion = splitEraseChars(input, endOfParsing);
+	while (!parseRegion.empty())
+	{
+		element = splitEraseChars(parseRegion, targetChars);
+		trim(element);
+		stringVector.push_back(element);
+	}
+	return stringVector;
 }
 
 contentType	extensionType(const std::string & filePath)

@@ -78,7 +78,7 @@ strMap ServerConfig::getConfigPairs() const
 	return _configPairs;
 }
 
-strMap ServerConfig::getErrorPaths() const
+intStrMap ServerConfig::getErrorPaths() const
 {
 	return _errorPages;
 }
@@ -97,37 +97,44 @@ strMap	ServerConfig::getCgiPaths() const
 Should the user be able to select new error codes and assign their values?
 This is not the function that does that (this is the default parser), but
 wanted to add the note here to not forget it.
-
-Removed the ability to assign multiple codes to one page.
-Can reimplement without much work, but it would add weight to the function
-and not really serve an important purpose.
 */
 void ServerConfig::parseDefaultErrorPages(std::string& defaultConfigStr)
 {
-	std::string	subelement, key, value;
-	
-	subelement = getSubElement(defaultConfigStr);
-	while (!trim(subelement).empty())
+	std::string	elementBody, key, value;
+	strVec		lineStrings;
+
+	elementBody = getSubElement(defaultConfigStr);
+	while (!trim(elementBody).empty())
 	{
-		key = splitEraseChars(subelement, WHITESPACE);
-		trim(subelement);
-		value = splitEraseChars(subelement, ";");
-		_errorPages.insert(std::make_pair(key, value));
-	}
+		lineStrings = splitEraseStrVec(elementBody, WHITESPACE, ";");
+		value = lineStrings.back();
+		lineStrings.pop_back();
+		while (!lineStrings.empty())
+		{
+			key = lineStrings.back();
+			if (key == "default")
+				_errorPages.insert(std::make_pair(-1, value));
+			else
+				_errorPages.insert(std::make_pair(atoi(key.c_str()), value));
+			lineStrings.pop_back();
+		}
+	}	
 }
 
 void ServerConfig::parseUserErrorPages(std::string& userConfigStr)
 {
-	std::string	subelement, key, value;
-	strMap_it	iter;
+	std::string		elementBody, key, value;
+	int				code;
+	intStrMap_it	iter;
 	
-	subelement = getSubElement(userConfigStr);
-	while (!trim(subelement).empty())
+	elementBody = getSubElement(userConfigStr);
+	while (!trim(elementBody).empty())
 	{
-		key = splitEraseChars(subelement, WHITESPACE);
-		trim(subelement);
-		value = splitEraseChars(subelement, ";");
-		iter = _errorPages.find(key);
+		key = splitEraseChars(elementBody, WHITESPACE);
+		code = atoi(key.c_str());
+		trim(elementBody);
+		value = splitEraseChars(elementBody, ";");
+		iter = _errorPages.find(code);
 		if (iter != _errorPages.end())
 			iter->second = value;
 		else
@@ -145,17 +152,17 @@ and the user config file (because the function performs input checking).
 */
 void ServerConfig::parseLocation(std::string& defaultConfigStr)
 {
-	std::string		path, subelement, key, value;
+	std::string		path, elementBody, key, value;
 	strLocMap_it	iter;
 	s_locInfo		locInfo;
 	
 	path = splitEraseChars(defaultConfigStr, " ");
-	subelement = getSubElement(defaultConfigStr);
-	while (!trim(subelement).empty())
+	elementBody = getSubElement(defaultConfigStr);
+	while (!trim(elementBody).empty())
 	{
-		key = splitEraseChars(subelement, WHITESPACE);
-		trim(subelement);
-		value = splitEraseChars(subelement, ";");
+		key = splitEraseChars(elementBody, WHITESPACE);
+		trim(elementBody);
+		value = splitEraseChars(elementBody, ";");
 		if (key == METHODS)
 		{
 			if (value.find(GET) != std::string::npos)
@@ -183,31 +190,31 @@ void ServerConfig::parseLocation(std::string& defaultConfigStr)
 
 void ServerConfig::parseDefaultCgi(std::string& defaultConfigStr)
 {
-	std::string	subelement, key, value;
+	std::string	elementBody, key, value;
 	
-	subelement = getSubElement(defaultConfigStr);
-	while (!trim(subelement).empty())
+	elementBody = getSubElement(defaultConfigStr);
+	while (!trim(elementBody).empty())
 	{
-		key = splitEraseChars(subelement, WHITESPACE);
-		trim(subelement);
-		value = splitEraseChars(subelement, ";");
+		key = splitEraseChars(elementBody, WHITESPACE);
+		trim(elementBody);
+		value = splitEraseChars(elementBody, ";");
 		_cgiPaths.insert(std::make_pair(key, value));
 	}
 }
 
 void ServerConfig::parseUserCgi(std::string& userConfigStr)
 {
-	std::string	subelement, key, value;
+	std::string	elementBody, key, value;
 	strMap_it	iter;
 	
-	subelement = getSubElement(userConfigStr);
-	while (!trim(subelement).empty())
+	elementBody = getSubElement(userConfigStr);
+	while (!trim(elementBody).empty())
 	{
-		key = splitEraseChars(subelement, WHITESPACE);
-		trim(subelement);
-		value = splitEraseChars(subelement, ";");
+		key = splitEraseChars(elementBody, WHITESPACE);
+		trim(elementBody);
+		value = splitEraseChars(elementBody, ";");
 		iter = _cgiPaths.find(key);
-		if (iter != _errorPages.end())
+		if (iter != _cgiPaths.end())
 			iter->second = value;
 		else
 			std::cerr << I_INVALIDKEY << key << std::endl;
@@ -225,31 +232,3 @@ std::string ServerConfig::getSubElement(std::string& configStr)
 	elementBody = splitEraseChars(configStr, "}");
 	return trim(elementBody);
 }
-
-
-/*
-void ServerConfig::setField(std::string key, std::string value)
-{
-
-
-	else if (key == ERRORPAGE)
-	{
-		std::string element;
-		std::vector<size_t> errorNumbers;
-		
-		element = splitEraseChars(value, " ");
-		trim(element);
-		while (element.find_first_not_of("0123456789") == std::string::npos)
-		{
-			size_t errNum = atoi(element.c_str());
-			if (errNum < 100 || errNum > 599)
-				throw std::runtime_error(E_INVALERRNUM + element + '\n');
-			errorNumbers.push_back(errNum);
-			element = splitEraseChars(value, " ");
-			trim(element);
-		}
-		for (size_t i = 0; i < errorNumbers.size(); i++)
-			errorPages.insert(std::make_pair(errorNumbers[i], element));	
-	}
-}
-*/

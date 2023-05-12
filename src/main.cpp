@@ -23,6 +23,8 @@ int main()
 
 	serverArr[0] = new Server();
 
+	serverArr[0]->whoIsI();
+
 	while (true)
 	{
 	//	for (size_t i = 0; i < serverCount; ++i)

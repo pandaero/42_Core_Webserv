@@ -6,7 +6,7 @@
 /*   By: wmardin <wmardin@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/04/07 17:49:49 by pandalaf          #+#    #+#             */
-/*   Updated: 2023/05/10 12:25:31 by wmardin          ###   ########.fr       */
+/*   Updated: 2023/05/13 00:01:39 by wmardin          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -216,7 +216,7 @@ void Server::whoIsI()
 				<< "CGI Dir:\t" << _cgiDir << '\n'
 				<< "Default ErrPage:" << _defaultErrorPagePath << '\n'
 				<< "Error Pages:\n";
-					for (std::map<size_t, std::string>::iterator it = _errorPagesPaths.begin(); it != _errorPagesPaths.end(); it++)
+					for (intStrMap_it it = _errorPagesPaths.begin(); it != _errorPagesPaths.end(); it++)
 						std::cout << "\t\t" << it->first << '\t' << it->second << '\n';
 	std::cout	<< "Cl. max body:\t" << _clientMaxBody << '\n'
 				<< "Backlog:\t" << _backlog << '\n'

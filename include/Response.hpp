@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   Response.hpp                                       :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: pandalaf <pandalaf@student.42wolfsburg.    +#+  +:+       +#+        */
+/*   By: wmardin <wmardin@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/04/01 17:00:19 by pandalaf          #+#    #+#             */
-/*   Updated: 2023/05/09 18:26:47 by pandalaf         ###   ########.fr       */
+/*   Updated: 2023/05/13 00:04:28 by wmardin          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -35,11 +35,11 @@ class	Response
 		Response(int, const Server &);
 		~Response();
 
-		void	setStatusCode(int);
+		void			setStatusCode(int);
 	
-		int		setFile(std::string);
+		int				setFile(std::string);
 
-		int		send(int);
+		int				send(int);
 
 	private:
 		void		build();

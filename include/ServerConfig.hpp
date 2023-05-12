@@ -20,7 +20,7 @@ class ServerConfig
 		void	applySettings(std::string);
 		
 		strMap		getConfigPairs() const;
-		strMap		getErrorPaths() const;
+		intStrMap	getErrorPaths() const;
 		strLocMap	getLocations() const;
 		strMap		getCgiPaths() const;
 
@@ -33,7 +33,7 @@ class ServerConfig
 		std::string	getSubElement(std::string&);
 		
 		strMap		_configPairs;
-		strMap		_errorPages;
+		intStrMap	_errorPages;
 		strLocMap	_locations;
 		strMap		_cgiPaths;
 };
