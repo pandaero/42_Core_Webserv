@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   Response.hpp                                       :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: wmardin <wmardin@student.42.fr>            +#+  +:+       +#+        */
+/*   By: pandalaf <pandalaf@student.42wolfsburg.    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/04/01 17:00:19 by pandalaf          #+#    #+#             */
-/*   Updated: 2023/05/13 00:04:28 by wmardin          ###   ########.fr       */
+/*   Updated: 2023/05/13 12:43:01 by pandalaf         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -23,6 +23,7 @@
 # include <cstdlib>
 # include <string>
 # include <cstdio>
+# include <sys/stat.h>
 # include <sys/socket.h>
 
 class	Server;
@@ -37,9 +38,9 @@ class	Response
 
 		void			setStatusCode(int);
 	
-		int				setFile(std::string);
+		int				setFile(std::string, const Server &);
 
-		int				send(int);
+		int				send(int, const Server &);
 
 	private:
 		void		build();
@@ -50,7 +51,7 @@ class	Response
 		std::string	_statusMessage;
 
 		contentType	_contentType;
-		long		_fileSize;
+		off_t		_fileSize;
 		std::string	_filePath;
 };
 #endif

@@ -3,25 +3,23 @@
 /*                                                        :::      ::::::::   */
 /*   Response.cpp                                       :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: wmardin <wmardin@student.42.fr>            +#+  +:+       +#+        */
+/*   By: pandalaf <pandalaf@student.42wolfsburg.    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/04/01 17:05:35 by pandalaf          #+#    #+#             */
-/*   Updated: 2023/05/13 00:04:45 by wmardin          ###   ########.fr       */
+/*   Updated: 2023/05/13 13:00:13 by pandalaf         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #include "../include/Response.hpp"
 
-Response::Response()
-{
-
-}
+Response::Response(){}
 
 Response::Response(const Request & request, const Server & server)
 {
 	//DEBUG
 	std::cout << "Response getting made" << std::endl;
-	_statusCode = setFile(server.getRoot() + request.getPath());
+	// getPath depends on directory listing, and server root, etc.
+	_statusCode = setFile(server.getRoot() + request.getPath(), server);
 	setStatusCode(_statusCode);
 	// check for file access success etc.
 	std::cout << "Response got made with full path: " << server.getRoot() + request.getPath() << std::endl;
@@ -31,13 +29,10 @@ Response::Response(const Request & request, const Server & server)
 Response::Response(int code, const Server & server)
 {
 	setStatusCode(code);
-	setFile(server.getStatusPage(code));
+	setFile(server.getStatusPage(code), server);
 }
 
-Response::~Response()
-{
-
-}
+Response::~Response(){}
 
 void	Response::setStatusCode(int code)
 {
@@ -60,38 +55,41 @@ void	Response::setStatusCode(int code)
 	}
 }
 
-int	Response::setFile(std::string filePath)
+int	Response::setFile(std::string filePath, const Server & currentServer)
 {
 	// If SCHMANG happens, set to corresponding error code
-	int	ret = 200;
-	_contentType = extensionType(filePath);
 	// DEBUG
 	std::cout << "Opening: " << filePath << std::endl;
 	int acc = access(filePath.c_str(), F_OK);
 	if (acc)
 	{
-		ret = 404;
-		return (ret);
+		_filePath = currentServer.getStatusPage(404);
+		_contentType = extensionType(_filePath);
+		_fileSize = fileSize(filePath);
+		std::cout << "Error page path: " << _filePath << std::endl;
+		return (404);
 	}
 	_filePath = filePath;
-	FILE *	file = std::fopen(filePath.c_str(), "rb");
+	std::ifstream	file(filePath.c_str(), std::ios::binary);
 	if (!file)
 	{
 		std::cerr << "Error: Response: set: could not open file.";
-		setStatusCode(500);
+		_filePath = currentServer.getStatusPage(500);
+		_contentType = extensionType(filePath);
+		_fileSize = fileSize(filePath);
+		return (500);
 	}
-	std::fseek(file, 0, SEEK_END);
 	// Determine size (find correct method)
-	_fileSize = std::ftell(file);
-	std::fclose(file);
-	return (ret);
+	_fileSize = fileSize(filePath);
+	_contentType = extensionType(filePath);
+	return (200);
 }
 
 void	Response::build()
 {
 	std::stringstream	headerStream;
 
-	headerStream << "HTTP/1.1 " << _statusCode << " " << _statusMessage << "\r\n" << "Content-Length: 325";
+	headerStream << "HTTP/1.1 " << _statusCode << " " << _statusMessage << "\r\n";
 
 	if (!_filePath.empty())
 	{
@@ -137,7 +135,7 @@ void	Response::build()
 	_responseHeader = headerStream.str();
 }
 
-int	Response::send(int socketfd)
+int	Response::send(int socketfd, const Server & sendingServer)
 {
 	int headerBytesSent = 0;
 	int	fileBytesSent = 0;
@@ -153,16 +151,11 @@ int	Response::send(int socketfd)
 		return (-1);
 	}
 	std::ifstream	file;
-	if (_statusCode != 404)
-	{
-		// Open file and send contents through socket
+	// Send file or corresponding status page.
+	if (_statusCode == 200)
 		file.open(_filePath.c_str(), std::ios::binary);
-	}
 	else
-	{
-		// Set corresponding error file, need file-path map from server
-		file.open("default/error/404.html", std::ios::binary);
-	}
+		file.open(sendingServer.getStatusPage(_statusCode).c_str(), std::ios::binary);
 	if (file.fail())
 	{
 		std::cerr << "Error: Response: send: could not open file.";

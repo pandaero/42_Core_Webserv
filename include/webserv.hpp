@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   webserv.hpp                                        :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: wmardin <wmardin@student.42.fr>            +#+  +:+       +#+        */
+/*   By: pandalaf <pandalaf@student.42wolfsburg.    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/03/26 01:51:20 by pandalaf          #+#    #+#             */
-/*   Updated: 2023/05/12 23:59:36 by wmardin          ###   ########.fr       */
+/*   Updated: 2023/05/13 12:08:49 by pandalaf         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -17,6 +17,7 @@
 # include <iostream>
 # include <vector>
 # include <map>
+# include <sys/stat.h>
 
 // PSEUDOVARIABLES
 # define WHITESPACE		" \t\v\r\n"
@@ -144,7 +145,8 @@ strMap			createHeaderMap(std::string &, std::string, std::string, std::string);
 strVec 			splitEraseStrVec(std::string& input, std::string targetChars, std::string endOfParsing);
 // Determines the file/content type according to the file's full path. (based on dot-preceded extensions)
 contentType		extensionType(const std::string &);
+// Determines the size of a file.
+off_t			fileSize(std::string);
 // Splits a string according to a string, outputs vector of strings.
 std::vector<std::string>	splitString(std::string, const std::string &);
-
 #endif
