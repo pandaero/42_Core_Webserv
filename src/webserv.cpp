@@ -33,7 +33,7 @@ std::string splitEraseStr(std::string& input, std::string targetString)
 	else
 	{
 		element = input.substr(0, len);
-		input.erase(0, len + targetString.length());
+		input.erase(0, len);
 	}
 	return element;
 }
@@ -52,8 +52,10 @@ std::string splitEraseChars(std::string& input, std::string targetChars)
 	else
 	{
 		element = input.substr(0, len);
-		input.erase(0, len + 1);
+		input.erase(0, len);
+		trim(input);
 	}
+	trim(element);
 	return element;
 }
 
@@ -70,9 +72,7 @@ strMap createHeaderMap(std::string& input, std::string endOfKey, std::string end
 			return stringMap;
 		}
 		key = splitEraseStr(input, endOfKey);
-		trim(key);
 		value = splitEraseStr(input, endOfValue);
-		trim(value);
 		stringMap.insert(std::make_pair(strToLower(key), value));
 	}
 	return stringMap;
@@ -84,10 +84,10 @@ strVec splitEraseStrVec(std::string& input, std::string targetChars, std::string
 	std::string	parseRegion, element;
 	
 	parseRegion = splitEraseChars(input, endOfParsing);
+	input.erase(0, endOfParsing.size());
 	while (!parseRegion.empty())
 	{
 		element = splitEraseChars(parseRegion, targetChars);
-		trim(element);
 		stringVector.push_back(element);
 	}
 	return stringVector;
@@ -153,4 +153,36 @@ std::string strToLower(std::string str)
 	for (std::string::iterator it = str.begin(); it != str.end(); it++)
 		*it = tolower(*it);
 	return str;
+}
+
+std::string getInstruction(std::string& inputStr)
+{
+	std::string	instruction;
+	bool		braced = false;
+	int			i = 0, braces = 0;
+
+	while (inputStr[i] && braces > -1 && braces < 3)
+	{
+		if (inputStr[i] == ';' && !braces)
+			break;
+		else if (inputStr[i] == '{')
+		{
+			braces++;
+			braced = true;
+		}
+		else if (inputStr[i] == '}')
+			braces--;
+		i++;
+	}
+	if (braces != 0)
+		throw std::runtime_error(E_INVALIDBRACE + inputStr + '\n');
+	instruction = inputStr.substr(0, i);
+	inputStr.erase(0, i + 1);
+	if (braced)
+	{
+		instruction.replace(instruction.find("{"), 1, " ");
+		instruction.replace(instruction.find_last_of("}"), 1, " ");
+	}
+	trim(instruction);
+	return instruction;
 }

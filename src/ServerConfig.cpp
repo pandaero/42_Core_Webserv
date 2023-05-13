@@ -10,24 +10,22 @@ files.
 */
 ServerConfig::ServerConfig(std::string defaultConfigStr)
 {
-	std::string	key, value;
+	std::string	instruction, key, value;
 	
-	while (!trim(defaultConfigStr).empty())
+	while (!defaultConfigStr.empty())
 	{
-		key = splitEraseChars(defaultConfigStr, WHITESPACE);
-		trim(defaultConfigStr);
+		instruction = getInstruction(defaultConfigStr);
+		key = splitEraseChars(instruction, " \t\v\r\n{");
 		if (key == ERRORPAGETITLE)
-			parseDefaultErrorPages(defaultConfigStr);
+			parseDefaultErrorPages(instruction);
 		else if (key == LOCATIONTITLE)
-			parseLocation(defaultConfigStr);
+			parseLocation(instruction);
 		else if (key == CGITITLE)
-			parseDefaultCgi(defaultConfigStr);
+			parseDefaultCgi(instruction);
 		else 
-		{
-			value = splitEraseChars(defaultConfigStr, ";");
-			_configPairs.insert(make_pair(key, value));
-		}
+			_configPairs.insert(make_pair(key, instruction));
 	}
+	whoIsI();
 }
 
 ServerConfig::ServerConfig(const ServerConfig& src)
@@ -54,6 +52,7 @@ void ServerConfig::applySettings(std::string userConfigStr)
 	while (!trim(userConfigStr).empty())
 	{
 		key = splitEraseChars(userConfigStr, WHITESPACE);
+		trim(key);
 		trim(userConfigStr);
 		if (key == ERRORPAGETITLE)
 			parseUserErrorPages(userConfigStr);
@@ -71,6 +70,26 @@ void ServerConfig::applySettings(std::string userConfigStr)
 				std::cerr << I_INVALIDKEY << key << std::endl;
 		}
 	}
+}
+
+void ServerConfig::whoIsI()
+{
+	std::cout << "*****_configPairs*****\n";
+	for (strMap_it it = _configPairs.begin(); it != _configPairs.end(); it++)
+		std::cout << it->first << "\t\t" << it->second << std::endl;
+	
+	
+	std::cout << "*****_errorPages*****\n";
+	for (intStrMap_it it = _errorPages.begin(); it != _errorPages.end(); it++)
+		std::cout << it->first << "\t\t" << it->second << std::endl;
+
+	std::cout << "*****_locations*****\n";
+	for (strLocMap_it it = _locations.begin(); it != _locations.end(); it++)
+		std::cout << it->first << "\t\t" << "methods: " << (it->second.get == true ? "get" : "") << (it->second.post == true ? " post" : "") << (it->second.delete_ == true ? " delete" : "") << ". alt_location: " << it->second.alt_location << ". dir_listing: " << it->second.dir_listing << std::endl;
+	
+	std::cout << "*****_cgiPaths*****\n";
+	for (strMap_it it = _cgiPaths.begin(); it != _cgiPaths.end(); it++)
+		std::cout << it->first << "\t\t" << it->second  << std::endl;
 }
 
 strMap ServerConfig::getConfigPairs() const
@@ -98,15 +117,14 @@ Should the user be able to select new error codes and assign their values?
 This is not the function that does that (this is the default parser), but
 wanted to add the note here to not forget it.
 */
-void ServerConfig::parseDefaultErrorPages(std::string& defaultConfigStr)
+void ServerConfig::parseDefaultErrorPages(std::string& defaultErrorPages)
 {
-	std::string	elementBody, key, value;
+	std::string	key, value;
 	strVec		lineStrings;
 
-	elementBody = getSubElement(defaultConfigStr);
-	while (!trim(elementBody).empty())
+	while (!defaultErrorPages.empty())
 	{
-		lineStrings = splitEraseStrVec(elementBody, WHITESPACE, ";");
+		lineStrings = splitEraseStrVec(defaultErrorPages, WHITESPACE, ";");
 		value = lineStrings.back();
 		lineStrings.pop_back();
 		while (!lineStrings.empty())
@@ -121,19 +139,17 @@ void ServerConfig::parseDefaultErrorPages(std::string& defaultConfigStr)
 	}	
 }
 
-void ServerConfig::parseUserErrorPages(std::string& userConfigStr)
+void ServerConfig::parseUserErrorPages(std::string& userErrorPages)
 {
-	std::string		elementBody, key, value;
+	std::string		key, value;
 	int				code;
 	intStrMap_it	iter;
 	
-	elementBody = getSubElement(userConfigStr);
-	while (!trim(elementBody).empty())
+	while (!userErrorPages.empty())
 	{
-		key = splitEraseChars(elementBody, WHITESPACE);
+		key = splitEraseChars(userErrorPages, WHITESPACE);
 		code = atoi(key.c_str());
-		trim(elementBody);
-		value = splitEraseChars(elementBody, ";");
+		value = splitEraseChars(userErrorPages, ";");
 		iter = _errorPages.find(code);
 		if (iter != _errorPages.end())
 			iter->second = value;
@@ -150,69 +166,63 @@ Made a struct to gather the info and we still end up with just a map.
 This rigid structure has one positive: the exact same function can be used to parse the default
 and the user config file (because the function performs input checking).
 */
-void ServerConfig::parseLocation(std::string& defaultConfigStr)
+void ServerConfig::parseLocation(std::string& locationElement)
 {
-	std::string		path, elementBody, key, value;
+	std::string		path, instruction, key;
 	strLocMap_it	iter;
 	s_locInfo		locInfo;
 	
-	path = splitEraseChars(defaultConfigStr, " ");
-	elementBody = getSubElement(defaultConfigStr);
-	while (!trim(elementBody).empty())
+	path = splitEraseChars(locationElement, WHITESPACE);
+	while (!locationElement.empty())
 	{
-		key = splitEraseChars(elementBody, WHITESPACE);
-		trim(elementBody);
-		value = splitEraseChars(elementBody, ";");
+		instruction = getInstruction(locationElement);
+		key = splitEraseChars(instruction, WHITESPACE);
 		if (key == METHODS)
 		{
-			if (value.find(GET) != std::string::npos)
+			if (instruction.find(GET) != std::string::npos)
 				locInfo.get = true;
 			else
 				locInfo.get = false;
-			if (value.find(POST) != std::string::npos)
-				locInfo.get = true;
+			if (instruction.find(POST) != std::string::npos)
+				locInfo.post = true;
 			else
-				locInfo.get = false;
-			if (value.find(DELETE) != std::string::npos)
+				locInfo.post = false;
+			if (instruction.find(DELETE) != std::string::npos)
 				locInfo.delete_ = true;
 			else
 				locInfo.delete_ = false;
 		}
 		else if (key == DIRLISTING)
-			locInfo.dir_listing = value;
+			locInfo.dir_listing = instruction;
 		else if (key == ALTLOC)
-			locInfo.alt_location = value;
+			locInfo.alt_location = instruction;
 		else
 			std::cerr << I_INVALIDKEY << key << std::endl;
 	}
 	_locations.insert(std::make_pair(path, locInfo));
 }
 
-void ServerConfig::parseDefaultCgi(std::string& defaultConfigStr)
+void ServerConfig::parseDefaultCgi(std::string& defaultCgiElement)
 {
-	std::string	elementBody, key, value;
+	std::string	instruction, key;
 	
-	elementBody = getSubElement(defaultConfigStr);
-	while (!trim(elementBody).empty())
+	while (!defaultCgiElement.empty())
 	{
-		key = splitEraseChars(elementBody, WHITESPACE);
-		trim(elementBody);
-		value = splitEraseChars(elementBody, ";");
-		_cgiPaths.insert(std::make_pair(key, value));
+		instruction = getInstruction(defaultCgiElement);
+		key = splitEraseChars(instruction, WHITESPACE);
+		_cgiPaths.insert(std::make_pair(key, instruction));
 	}
 }
 
-void ServerConfig::parseUserCgi(std::string& userConfigStr)
+void ServerConfig::parseUserCgi(std::string& userCgi)
 {
-	std::string	elementBody, key, value;
+	std::string	key, value;
 	strMap_it	iter;
 	
-	elementBody = getSubElement(userConfigStr);
-	while (!trim(elementBody).empty())
+	while (!userCgi.empty())
 	{
-		key = splitEraseChars(elementBody, WHITESPACE);
-		trim(elementBody);
-		value = splitEraseChars(elementBody, ";");
+		key = splitEraseChars(userCgi, WHITESPACE);
+		value = splitEraseChars(userCgi, ";");
 		iter = _cgiPaths.find(key);
 		if (iter != _cgiPaths.end())
 			iter->second = value;
@@ -221,14 +231,28 @@ void ServerConfig::parseUserCgi(std::string& userConfigStr)
 	}
 }
 
-std::string ServerConfig::getSubElement(std::string& configStr)
+/* std::string ServerConfig::getSubElement(std::string& configStr)
 {
 	size_t			len_close;
 	std::string		elementBody;
 	
+	trim(configStr);
 	len_close = configStr.find("}");
-	if (configStr.find("{", 1) < len_close)
+	if (configStr.find("{") < len_close)
 		throw std::runtime_error(E_SUBELEMNT + configStr);
 	elementBody = splitEraseChars(configStr, "}");
 	return trim(elementBody);
-}
+} */
+
+/* std::string	ServerConfig::getInstruction(std::string& configStr)
+{
+	size_t		len_open, len_close;
+	
+	len_open = configStr.find("{");
+	if (configStr.find(";") < len_open)
+		return splitEraseChars(configStr, ";");
+	len_close = configStr.find("}");
+	if (configStr.find("{", len_open + 1) < len_close)
+		throw std::runtime_error(E_SUBELEMNT + configStr);
+	return splitEraseChars(configStr, "}");
+} */

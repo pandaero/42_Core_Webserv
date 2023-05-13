@@ -6,7 +6,7 @@
 /*   By: wmardin <wmardin@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/03/26 01:51:20 by pandalaf          #+#    #+#             */
-/*   Updated: 2023/05/12 23:59:36 by wmardin          ###   ########.fr       */
+/*   Updated: 2023/05/13 16:18:37 by wmardin          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -17,6 +17,7 @@
 # include <iostream>
 # include <vector>
 # include <map>
+# include <string>
 
 // PSEUDOVARIABLES
 # define WHITESPACE		" \t\v\r\n"
@@ -61,21 +62,22 @@
 # define PHP			"php"
 
 // ===== ===== ===== ===== ERROR MESSAGES ===== ===== ===== =====
-// ConfigFile
-# define E_INVALBRACES		"Error: ConfigFile: Invalid placement of curly braces: "
+// Global functions
+# define E_INVALIDBRACE		"Error: webserv: getInstruction: Invalid use of curly brace: "
 
+// ConfigFile
 # define I_DEFAULTIMPORT	"Info: ConfigFile: Default ServerConfig successfully imported from "
 # define I_CONFIGIMPORT		"Info: ConfigFile: " << _serverConfigs.size() << (_serverConfigs.size() == 1 ? " config element" : " config elements") <<" imported from " << path << "."
+# define E_ELMNTDECL		"Error: ConfigFile: Invalid element declaration, (only \"server\" allowed): "
 
 // ServerConfig
 # define E_FILEOPEN		"Error: ServerConfig: Could not open config file: "
 # define E_NOSERVER		"Error: ServerConfig: No valid server configs found."
-# define E_ELMNTDECL	"Error: ServerConfig: Invalid element declaration, (only \"server\" allowed): "
 # define E_SUBELEMNT	"Error: ServerConfig: Second level subelements not allowed: "
 # define E_INVALERRNUM	"Error: ServerConfig: Invalid HTML response code (range is from 100 to 599): "
 
-# define I_INVALIDKEY	"Info: ServerConfig: Unrecognized identifier in config file: "
-
+# define I_INVALIDKEY		"Info: ServerConfig: Unrecognized identifier in config file: "
+# define I_INVALIDHEADER	"Info: ServerConfig: Elements between valid subelement headers and beginning of subelement (opening curly brace) will be ignored: "
 // Server
 # define E_SERVERNAME			"Error: Server: Invalid characters in server name input. Only alphanumerical, <<.>> and <<_>> allowed: "
 # define E_HOSTADDRINPUT		"Error: Server: Invalid characters in host address input. Only numerical and dot allowed: "
@@ -146,5 +148,7 @@ strVec 			splitEraseStrVec(std::string& input, std::string targetChars, std::str
 contentType		extensionType(const std::string &);
 // Splits a string according to a string, outputs vector of strings.
 std::vector<std::string>	splitString(std::string, const std::string &);
+// Splits a string ref and returns the first instruction it contains, defined as all characters from the string ref's start until the next top-level semicolon. Deletes the instruction from the string ref.
+std::string		getInstruction(std::string& inputStr);
 
 #endif

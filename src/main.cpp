@@ -3,6 +3,22 @@
 #include "../include/ConfigFile.hpp"
 #include "../include/webserv.hpp"
 
+/* 
+int main()
+{
+	//ConfigFile	config("default/config/site.conf");
+	std::string path;
+	std::string input;
+
+	input = "/{ methods.			GET;dir_listing		NOTSET;alt_location	NOTSET;}";
+
+	//path = splitEraseChars(input, WHITESPACE);
+	path = splitEraseStr(input, "methods");
+	std::cout << "path: '" << path << "'" << std::endl;
+	std::cout << "input after: '" << input << "'" << std::endl;
+}
+*/
+
 int main()
 {
 	//std::vector<ServerConfig>	configVec;
@@ -20,6 +36,8 @@ int main()
 	// 	serverArr[i] = new Server(configVec[i]);
 	// 	serverArr[i]->whoIsI();
 	// }
+
+	ConfigFile	configFile("default/config/site.conf");
 
 	serverArr[0] = new Server();
 

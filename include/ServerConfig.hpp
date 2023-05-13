@@ -18,6 +18,7 @@ class ServerConfig
 		ServerConfig& operator=(const ServerConfig&);
 		
 		void	applySettings(std::string);
+		void	whoIsI();
 		
 		strMap		getConfigPairs() const;
 		intStrMap	getErrorPaths() const;
@@ -30,7 +31,6 @@ class ServerConfig
 		void		parseLocation(std::string&);
 		void		parseDefaultCgi(std::string&);
 		void		parseUserCgi(std::string&);
-		std::string	getSubElement(std::string&);
 		
 		strMap		_configPairs;
 		intStrMap	_errorPages;
