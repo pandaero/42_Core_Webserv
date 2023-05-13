@@ -6,7 +6,7 @@
 /*   By: wmardin <wmardin@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/03/26 01:51:20 by pandalaf          #+#    #+#             */
-/*   Updated: 2023/05/13 16:18:37 by wmardin          ###   ########.fr       */
+/*   Updated: 2023/05/13 21:11:48 by wmardin          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -67,7 +67,7 @@
 
 // ConfigFile
 # define I_DEFAULTIMPORT	"Info: ConfigFile: Default ServerConfig successfully imported from "
-# define I_CONFIGIMPORT		"Info: ConfigFile: " << _serverConfigs.size() << (_serverConfigs.size() == 1 ? " config element" : " config elements") <<" imported from " << path << "."
+# define I_CONFIGIMPORT		"Info: ConfigFile: " << _serverConfigs.size() << (_serverConfigs.size() == 1 ? " ServerConfig object" : " ServerConfig objects") <<" imported from " << userConfigPath << "."
 # define E_ELMNTDECL		"Error: ConfigFile: Invalid element declaration, (only \"server\" allowed): "
 
 // ServerConfig

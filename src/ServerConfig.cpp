@@ -10,7 +10,7 @@ files.
 */
 ServerConfig::ServerConfig(std::string defaultConfigStr)
 {
-	std::string	instruction, key, value;
+	std::string	instruction, key;
 	
 	while (!defaultConfigStr.empty())
 	{
@@ -46,30 +46,29 @@ ServerConfig& ServerConfig::operator=(const ServerConfig& src)
 
 void ServerConfig::applySettings(std::string userConfigStr)
 {
-	std::string	key, value;
+	std::string	instruction, key;
 	strMap_it	iter;
 	
-	while (!trim(userConfigStr).empty())
+	while (!userConfigStr.empty())
 	{
-		key = splitEraseChars(userConfigStr, WHITESPACE);
-		trim(key);
-		trim(userConfigStr);
+		instruction = getInstruction(userConfigStr);
+		key = splitEraseChars(instruction, " \t\v\r\n{");
 		if (key == ERRORPAGETITLE)
-			parseUserErrorPages(userConfigStr);
+			parseUserErrorPages(instruction);
 		else if (key == LOCATIONTITLE)
-			parseLocation(userConfigStr);
+			parseLocation(instruction);
 		else if (key == CGITITLE)
-			parseUserCgi(userConfigStr);
+			parseUserCgi(instruction);
 		else 
 		{
-			value = splitEraseChars(userConfigStr, ";");
 			iter = _configPairs.find(key);
 			if (iter != _configPairs.end())
-				iter->second = value;
+				iter->second = instruction;
 			else
 				std::cerr << I_INVALIDKEY << key << std::endl;
 		}
 	}
+	whoIsI();
 }
 
 void ServerConfig::whoIsI()
@@ -112,11 +111,6 @@ strMap	ServerConfig::getCgiPaths() const
 	return _cgiPaths;
 }
 
-/*
-Should the user be able to select new error codes and assign their values?
-This is not the function that does that (this is the default parser), but
-wanted to add the note here to not forget it.
-*/
 void ServerConfig::parseDefaultErrorPages(std::string& defaultErrorPages)
 {
 	std::string	key, value;
@@ -142,30 +136,26 @@ void ServerConfig::parseDefaultErrorPages(std::string& defaultErrorPages)
 void ServerConfig::parseUserErrorPages(std::string& userErrorPages)
 {
 	std::string		key, value;
-	int				code;
-	intStrMap_it	iter;
+	strVec			lineStrings;
 	
 	while (!userErrorPages.empty())
 	{
-		key = splitEraseChars(userErrorPages, WHITESPACE);
-		code = atoi(key.c_str());
-		value = splitEraseChars(userErrorPages, ";");
-		iter = _errorPages.find(code);
-		if (iter != _errorPages.end())
-			iter->second = value;
-		else
-			std::cerr << I_INVALIDKEY << key << std::endl;
+		lineStrings = splitEraseStrVec(userErrorPages, WHITESPACE, ";");
+		value = lineStrings.back();
+		lineStrings.pop_back();
+		while (!lineStrings.empty())
+		{
+			key = lineStrings.back();
+			if (key == "default" && _errorPages.find(-1) != _errorPages.end())
+				_errorPages.find(-1)->second = value;
+			else if (_errorPages.find(atoi(key.c_str())) != _errorPages.end())
+				_errorPages.find(atoi(key.c_str()))->second = value;
+			else
+				std::cerr << I_INVALIDKEY << key << std::endl;
+		}
 	}
 }
 
-/*
-Had to abandon the elegant "take what you find in the default and put it into the map" style
-because the location element is structured differently: it has an extra identifier, the path.
-Made a struct to gather the info and we still end up with just a map.
-
-This rigid structure has one positive: the exact same function can be used to parse the default
-and the user config file (because the function performs input checking).
-*/
 void ServerConfig::parseLocation(std::string& locationElement)
 {
 	std::string		path, instruction, key;
@@ -214,45 +204,19 @@ void ServerConfig::parseDefaultCgi(std::string& defaultCgiElement)
 	}
 }
 
-void ServerConfig::parseUserCgi(std::string& userCgi)
+void ServerConfig::parseUserCgi(std::string& userCgiElement)
 {
-	std::string	key, value;
+	std::string	instruction, key;
 	strMap_it	iter;
 	
-	while (!userCgi.empty())
+	while (!userCgiElement.empty())
 	{
-		key = splitEraseChars(userCgi, WHITESPACE);
-		value = splitEraseChars(userCgi, ";");
+		instruction = getInstruction(userCgiElement);
+		key = splitEraseChars(instruction, WHITESPACE);
 		iter = _cgiPaths.find(key);
 		if (iter != _cgiPaths.end())
-			iter->second = value;
+			iter->second = instruction;
 		else
 			std::cerr << I_INVALIDKEY << key << std::endl;
 	}
 }
-
-/* std::string ServerConfig::getSubElement(std::string& configStr)
-{
-	size_t			len_close;
-	std::string		elementBody;
-	
-	trim(configStr);
-	len_close = configStr.find("}");
-	if (configStr.find("{") < len_close)
-		throw std::runtime_error(E_SUBELEMNT + configStr);
-	elementBody = splitEraseChars(configStr, "}");
-	return trim(elementBody);
-} */
-
-/* std::string	ServerConfig::getInstruction(std::string& configStr)
-{
-	size_t		len_open, len_close;
-	
-	len_open = configStr.find("{");
-	if (configStr.find(";") < len_open)
-		return splitEraseChars(configStr, ";");
-	len_close = configStr.find("}");
-	if (configStr.find("{", len_open + 1) < len_close)
-		throw std::runtime_error(E_SUBELEMNT + configStr);
-	return splitEraseChars(configStr, "}");
-} */
