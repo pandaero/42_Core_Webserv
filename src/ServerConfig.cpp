@@ -25,7 +25,6 @@ ServerConfig::ServerConfig(std::string defaultConfigStr)
 		else 
 			_configPairs.insert(make_pair(key, instruction));
 	}
-	whoIsI();
 }
 
 ServerConfig::ServerConfig(const ServerConfig& src)
@@ -68,7 +67,6 @@ void ServerConfig::applySettings(std::string userConfigStr)
 				std::cerr << I_INVALIDKEY << key << std::endl;
 		}
 	}
-	whoIsI();
 }
 
 void ServerConfig::whoIsI()
@@ -152,6 +150,7 @@ void ServerConfig::parseUserErrorPages(std::string& userErrorPages)
 				_errorPages.find(atoi(key.c_str()))->second = value;
 			else
 				std::cerr << I_INVALIDKEY << key << std::endl;
+			lineStrings.pop_back();
 		}
 	}
 }

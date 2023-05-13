@@ -158,31 +158,39 @@ std::string strToLower(std::string str)
 std::string getInstruction(std::string& inputStr)
 {
 	std::string	instruction;
-	bool		braced = false;
-	int			i = 0, braces = 0;
+	size_t		len_semicolon;
 
-	while (inputStr[i] && braces > -1 && braces < 3)
+	// check for semicolon delimiting the instruction;
+	len_semicolon = inputStr.find(";");
+	if (len_semicolon < inputStr.find("{"))
 	{
-		if (inputStr[i] == ';' && !braces)
-			break;
-		else if (inputStr[i] == '{')
-		{
+		instruction = inputStr.substr(0, len_semicolon);
+		inputStr.erase(0, len_semicolon + 1);
+		trim(instruction);
+		return instruction;
+	}
+
+	// Curly braces must now delimit the instruction
+	size_t	i;
+	int		braces;
+
+	i = inputStr.find("{");
+	if (i == std::string::npos || inputStr.find("}") < i)
+		throw std::runtime_error(E_INVALIDENDTOKEN + inputStr + '\n');
+	braces = 1;
+	while (inputStr[++i] && braces > 0 && braces < 3)
+	{
+		if (inputStr[i] == '{')
 			braces++;
-			braced = true;
-		}
 		else if (inputStr[i] == '}')
 			braces--;
-		i++;
 	}
 	if (braces != 0)
 		throw std::runtime_error(E_INVALIDBRACE + inputStr + '\n');
 	instruction = inputStr.substr(0, i);
-	inputStr.erase(0, i + 1);
-	if (braced)
-	{
-		instruction.replace(instruction.find("{"), 1, " ");
-		instruction.replace(instruction.find_last_of("}"), 1, " ");
-	}
+	inputStr.erase(0, i);
+	instruction.replace(instruction.find("{"), 1, " ");
+	instruction.replace(instruction.find_last_of("}"), 1, " ");
 	trim(instruction);
 	return instruction;
 }

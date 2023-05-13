@@ -3,19 +3,23 @@
 #include "../include/ConfigFile.hpp"
 #include "../include/webserv.hpp"
 
+/*
+main to test ConfigFile object. Can be deleted. Kept it here in case 
+you wanted to try shit out.
+To read the ServerConfigs, use their member function whoIsi.
+*/
+
 /* 
 int main()
 {
-	//ConfigFile	config("default/config/site.conf");
-	std::string path;
-	std::string input;
+	ConfigFile					configFile("default/config/site.conf");
+	std::vector<ServerConfig>	configVec;
 
-	input = "/{ methods.			GET;dir_listing		NOTSET;alt_location	NOTSET;}";
+	configVec = configFile.getConfigs();
 
-	//path = splitEraseChars(input, WHITESPACE);
-	path = splitEraseStr(input, "methods");
-	std::cout << "path: '" << path << "'" << std::endl;
-	std::cout << "input after: '" << input << "'" << std::endl;
+	configVec[1].whoIsI();
+
+
 }
 */
 

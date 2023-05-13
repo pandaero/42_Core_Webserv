@@ -6,7 +6,7 @@
 /*   By: wmardin <wmardin@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/03/26 01:51:20 by pandalaf          #+#    #+#             */
-/*   Updated: 2023/05/13 21:11:48 by wmardin          ###   ########.fr       */
+/*   Updated: 2023/05/13 21:24:44 by wmardin          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -64,6 +64,7 @@
 // ===== ===== ===== ===== ERROR MESSAGES ===== ===== ===== =====
 // Global functions
 # define E_INVALIDBRACE		"Error: webserv: getInstruction: Invalid use of curly brace: "
+# define E_INVALIDENDTOKEN	"Error: webserv: getInstruction: Missing end token ('{', '}' or ';'): "
 
 // ConfigFile
 # define I_DEFAULTIMPORT	"Info: ConfigFile: Default ServerConfig successfully imported from "
