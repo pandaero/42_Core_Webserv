@@ -7,6 +7,8 @@ This constructor is only called when reading the default config.
 The key values contained in the passed string will all be accepted,
 forming the template to check against when parsing user supplied config
 files.
+Note: parseLocation has only one version for default and client parsing
+because it performs its own and rigid input checks.
 */
 ServerConfig::ServerConfig(std::string defaultConfigStr)
 {
@@ -31,8 +33,6 @@ ServerConfig::ServerConfig(const ServerConfig& src)
 {
 	*this = src;
 }
-
-ServerConfig::~ServerConfig() {}
 
 ServerConfig& ServerConfig::operator=(const ServerConfig& src)
 {

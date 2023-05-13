@@ -13,7 +13,6 @@ class ServerConfig
 		ServerConfig();
 		ServerConfig(std::string);
 		ServerConfig(const ServerConfig&);
-		~ServerConfig();
 
 		ServerConfig& operator=(const ServerConfig&);
 		
