@@ -53,3 +53,22 @@ int	Request::getContentLength() const
 {
 	return (_contentLength);
 }
+
+strMap Request::createHeaderMap(std::string& input, std::string endOfKey, std::string endOfValue, std::string endOfMap)
+{
+	strMap 		stringMap;
+	std::string key, value;
+
+	while (!input.empty())
+	{
+		if (input.find(endOfMap) == 0)
+		{
+			input = input.substr(endOfMap.size());
+			return stringMap;
+		}
+		key = splitEraseStr(input, endOfKey);
+		value = splitEraseStr(input, endOfValue);
+		stringMap.insert(std::make_pair(strToLower(key), value));
+	}
+	return stringMap;
+}
