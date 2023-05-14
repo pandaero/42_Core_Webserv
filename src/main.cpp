@@ -3,6 +3,26 @@
 #include "../include/ConfigFile.hpp"
 #include "../include/webserv.hpp"
 
+/*
+main to test ConfigFile object. Can be deleted. Kept it here in case 
+you wanted to try shit out.
+To read the ServerConfigs, use their member function whoIsi.
+*/
+
+/* 
+int main()
+{
+	ConfigFile					configFile("default/config/site.conf");
+	std::vector<ServerConfig>	configVec;
+
+	configVec = configFile.getConfigs();
+
+	configVec[1].whoIsI();
+
+
+}
+*/
+
 int main()
 {
 	//std::vector<ServerConfig>	configVec;
@@ -20,6 +40,8 @@ int main()
 	// 	serverArr[i] = new Server(configVec[i]);
 	// 	serverArr[i]->whoIsI();
 	// }
+
+	ConfigFile	configFile("default/config/site.conf");
 
 	serverArr[0] = new Server();
 
