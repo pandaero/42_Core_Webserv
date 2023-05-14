@@ -27,7 +27,7 @@ class	Request
 		Request(std::string);
 		std::string	headerValue(std::string);
 
-		std::string	getFile() const;
+		std::string	getFilename() const;
 		std::string getPath() const;
 
 		int	getContentLength() const;

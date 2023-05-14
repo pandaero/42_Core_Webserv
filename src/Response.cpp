@@ -6,7 +6,7 @@
 /*   By: pandalaf <pandalaf@student.42wolfsburg.    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/04/01 17:05:35 by pandalaf          #+#    #+#             */
-/*   Updated: 2023/05/13 13:00:13 by pandalaf         ###   ########.fr       */
+/*   Updated: 2023/05/14 15:00:16 by pandalaf         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -18,19 +18,21 @@ Response::Response(const Request & request, const Server & server)
 {
 	//DEBUG
 	std::cout << "Response getting made" << std::endl;
-	// getPath depends on directory listing, and server root, etc.
-	_statusCode = setFile(server.getRoot() + request.getPath(), server);
-	setStatusCode(_statusCode);
+	// getPath depends on directory listing, and server root, etc. getFile?
+	setFile(request.getPath(), server);
+
+	// _statusCode = setFile(server.getRoot() + request.getPath(), server);
+	// setStatusCode(_statusCode);
 	// check for file access success etc.
-	std::cout << "Response got made with full path: " << server.getRoot() + request.getPath() << std::endl;
+	std::cout << "Response got made with full path: " << _filePath << std::endl;
 }
 
 //BULLSHIT CONSTRUCTOR? - set file to error page, perhaps
-Response::Response(int code, const Server & server)
-{
-	setStatusCode(code);
-	setFile(server.getStatusPage(code), server);
-}
+// Response::Response(int code, const Server & server)
+// {
+// 	setStatusCode(code);
+// 	setFile(server.getStatusPage(code), server);
+// }
 
 Response::~Response(){}
 
@@ -55,34 +57,42 @@ void	Response::setStatusCode(int code)
 	}
 }
 
-int	Response::setFile(std::string filePath, const Server & currentServer)
+void	Response::setFile(std::string locationPath, const Server & currentServer)
 {
+	// Map location / URL to folder structure
+	std::string	realPath = currentServer.getRoot() + locationPath;
+	if (realPath.find_last_of('/') == realPath.size() - 1)
+		realPath.erase(realPath.find_last_of('/'));
+	// Consider dir listing in case of dir and serve corresponding (created) dir listing
 	// If SCHMANG happens, set to corresponding error code
 	// DEBUG
-	std::cout << "Opening: " << filePath << std::endl;
-	int acc = access(filePath.c_str(), F_OK);
+	std::cout << "Opening: " << realPath << std::endl;
+	int acc = access(realPath.c_str(), F_OK);
 	if (acc)
 	{
 		_filePath = currentServer.getStatusPage(404);
 		_contentType = extensionType(_filePath);
-		_fileSize = fileSize(filePath);
-		std::cout << "Error page path: " << _filePath << std::endl;
-		return (404);
+		_fileSize = fileSize(_filePath);
+		std::cerr << "Error page path: " << _filePath << std::endl;
+		setStatusCode(404);
+		return;
 	}
-	_filePath = filePath;
-	std::ifstream	file(filePath.c_str(), std::ios::binary);
+	_filePath = realPath;
+	std::ifstream	file(_filePath.c_str(), std::ios::binary);
 	if (!file)
 	{
 		std::cerr << "Error: Response: set: could not open file.";
 		_filePath = currentServer.getStatusPage(500);
-		_contentType = extensionType(filePath);
-		_fileSize = fileSize(filePath);
-		return (500);
+		_contentType = extensionType(_filePath);
+		_fileSize = fileSize(_filePath);
+		setStatusCode(500);
+		return;
 	}
 	// Determine size (find correct method)
-	_fileSize = fileSize(filePath);
-	_contentType = extensionType(filePath);
-	return (200);
+	_fileSize = fileSize(realPath);
+	_contentType = extensionType(realPath);
+	setStatusCode(200);
+	return;
 }
 
 void	Response::build()
@@ -158,7 +168,7 @@ int	Response::send(int socketfd, const Server & sendingServer)
 		file.open(sendingServer.getStatusPage(_statusCode).c_str(), std::ios::binary);
 	if (file.fail())
 	{
-		std::cerr << "Error: Response: send: could not open file.";
+		std::cerr << "Error: Response: send: could not open file." << std::endl;
 		return (-1);
 	}
 	char	buffer[1];
