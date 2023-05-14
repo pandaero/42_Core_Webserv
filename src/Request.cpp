@@ -22,8 +22,8 @@ Request::Request(std::string requestData)
 	//DEBUG
 	std::cout << "Request getting made" << std::endl;
 	_contentLength = -1;
-	_method = splitEraseChars(requestData, " ");
-	_path = splitEraseChars(requestData, " ");
+	_method = splitEraseStr(requestData, " ");
+	_path = splitEraseStr(requestData, " ");
 	_protocol = splitEraseStr(requestData, "\r\n");
 	_headers = createHeaderMap(requestData, ":", "\r\n", "\r\n");
 	if (headerValue("content-length") != "NOT FOUND")

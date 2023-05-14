@@ -33,12 +33,13 @@ std::string splitEraseStr(std::string& input, std::string targetString)
 	else
 	{
 		element = input.substr(0, len);
-		input.erase(0, len);
+		input.erase(0, len + targetString.size());
 	}
+	trim(element);
 	return element;
 }
 
-std::string splitEraseChars(std::string& input, std::string targetChars)
+std::string splitEraseTrimChars(std::string& input, std::string targetChars)
 {
 	std::string element;
 	size_t 		len;
@@ -64,11 +65,11 @@ strVec splitEraseStrVec(std::string& input, std::string targetChars, std::string
 	strVec 		stringVector;
 	std::string	parseRegion, element;
 	
-	parseRegion = splitEraseChars(input, endOfParsing);
+	parseRegion = splitEraseTrimChars(input, endOfParsing);
 	input.erase(0, endOfParsing.size());
 	while (!parseRegion.empty())
 	{
-		element = splitEraseChars(parseRegion, targetChars);
+		element = splitEraseTrimChars(parseRegion, targetChars);
 		stringVector.push_back(element);
 	}
 	return stringVector;

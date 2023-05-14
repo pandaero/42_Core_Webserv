@@ -17,7 +17,7 @@ ServerConfig::ServerConfig(std::string defaultConfigStr)
 	while (!defaultConfigStr.empty())
 	{
 		instruction = getInstruction(defaultConfigStr);
-		key = splitEraseChars(instruction, " \t\v\r\n{");
+		key = splitEraseTrimChars(instruction, " \t\v\r\n{");
 		if (key == ERRORPAGETITLE)
 			parseDefaultErrorPages(instruction);
 		else if (key == LOCATIONTITLE)
@@ -51,7 +51,7 @@ void ServerConfig::applySettings(std::string userConfigStr)
 	while (!userConfigStr.empty())
 	{
 		instruction = getInstruction(userConfigStr);
-		key = splitEraseChars(instruction, " \t\v\r\n{");
+		key = splitEraseTrimChars(instruction, " \t\v\r\n{");
 		if (key == ERRORPAGETITLE)
 			parseUserErrorPages(instruction);
 		else if (key == LOCATIONTITLE)
@@ -161,11 +161,11 @@ void ServerConfig::parseLocation(std::string& locationElement)
 	strLocMap_it	iter;
 	s_locInfo		locInfo;
 	
-	path = splitEraseChars(locationElement, WHITESPACE);
+	path = splitEraseTrimChars(locationElement, WHITESPACE);
 	while (!locationElement.empty())
 	{
 		instruction = getInstruction(locationElement);
-		key = splitEraseChars(instruction, WHITESPACE);
+		key = splitEraseTrimChars(instruction, WHITESPACE);
 		if (key == METHODS)
 		{
 			if (instruction.find(GET) != std::string::npos)
@@ -198,7 +198,7 @@ void ServerConfig::parseDefaultCgi(std::string& defaultCgiElement)
 	while (!defaultCgiElement.empty())
 	{
 		instruction = getInstruction(defaultCgiElement);
-		key = splitEraseChars(instruction, WHITESPACE);
+		key = splitEraseTrimChars(instruction, WHITESPACE);
 		_cgiPaths.insert(std::make_pair(key, instruction));
 	}
 }
@@ -211,7 +211,7 @@ void ServerConfig::parseUserCgi(std::string& userCgiElement)
 	while (!userCgiElement.empty())
 	{
 		instruction = getInstruction(userCgiElement);
-		key = splitEraseChars(instruction, WHITESPACE);
+		key = splitEraseTrimChars(instruction, WHITESPACE);
 		iter = _cgiPaths.find(key);
 		if (iter != _cgiPaths.end())
 			iter->second = instruction;

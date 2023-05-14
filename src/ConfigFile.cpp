@@ -6,7 +6,7 @@
 /*   By: wmardin <wmardin@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/05/09 16:03:29 by wmardin           #+#    #+#             */
-/*   Updated: 2023/05/13 22:18:44 by wmardin          ###   ########.fr       */
+/*   Updated: 2023/05/14 10:18:56 by wmardin          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -67,7 +67,7 @@ std::string ConfigFile::getServerConfigElement(std::string& configData)
 {
 	std::string	elementTitle;
 	
-	elementTitle = splitEraseChars(configData, "{");
+	elementTitle = splitEraseTrimChars(configData, "{");
 	if (elementTitle != SERVER)
 		throw std::runtime_error(E_ELMNTDECL + elementTitle + '\n');
 	return getInstruction(configData);
