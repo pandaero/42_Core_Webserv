@@ -6,7 +6,7 @@
 /*   By: pandalaf <pandalaf@student.42wolfsburg.    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/05/01 22:04:57 by pandalaf          #+#    #+#             */
-/*   Updated: 2023/05/09 18:23:26 by pandalaf         ###   ########.fr       */
+/*   Updated: 2023/05/13 13:13:03 by pandalaf         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -27,7 +27,7 @@ class	Request
 		Request(std::string);
 		std::string	headerValue(std::string);
 
-		std::string	getFile() const;
+		std::string	getFilename() const;
 		std::string getPath() const;
 
 		int	getContentLength() const;
