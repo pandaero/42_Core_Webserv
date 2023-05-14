@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   Request.hpp                                        :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: pandalaf <pandalaf@student.42wolfsburg.    +#+  +:+       +#+        */
+/*   By: wmardin <wmardin@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/05/01 22:04:57 by pandalaf          #+#    #+#             */
-/*   Updated: 2023/05/13 13:13:03 by pandalaf         ###   ########.fr       */
+/*   Updated: 2023/05/14 10:05:33 by wmardin          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -33,11 +33,12 @@ class	Request
 		int	getContentLength() const;
 
 	private:
+		strMap		createHeaderMap(std::string &, std::string, std::string, std::string);
+
 		std::string	_method;
 		std::string	_path;
 		std::string	_protocol;
 		int			_contentLength;
-
-		std::map<std::string, std::string> _headers;
+		strMap		_headers;
 };
 #endif

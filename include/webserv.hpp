@@ -6,7 +6,7 @@
 /*   By: pandalaf <pandalaf@student.42wolfsburg.    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/03/26 01:51:20 by pandalaf          #+#    #+#             */
-/*   Updated: 2023/05/13 12:08:49 by pandalaf         ###   ########.fr       */
+/*   Updated: 2023/05/14 10:25:10 by wmardin          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -17,6 +17,7 @@
 # include <iostream>
 # include <vector>
 # include <map>
+# include <string>
 # include <sys/stat.h>
 
 // PSEUDOVARIABLES
@@ -62,21 +63,23 @@
 # define PHP			"php"
 
 // ===== ===== ===== ===== ERROR MESSAGES ===== ===== ===== =====
-// ConfigFile
-# define E_INVALBRACES		"Error: ConfigFile: Invalid placement of curly braces: "
+// Global functions
+# define E_INVALIDBRACE		"Error: webserv: getInstruction: Invalid use of curly brace: "
+# define E_INVALIDENDTOKEN	"Error: webserv: getInstruction: Missing end token ('{', '}' or ';'): "
 
+// ConfigFile
 # define I_DEFAULTIMPORT	"Info: ConfigFile: Default ServerConfig successfully imported from "
-# define I_CONFIGIMPORT		"Info: ConfigFile: " << _serverConfigs.size() << (_serverConfigs.size() == 1 ? " config element" : " config elements") <<" imported from " << path << "."
+# define I_CONFIGIMPORT		"Info: ConfigFile: " << _serverConfigs.size() << (_serverConfigs.size() == 1 ? " ServerConfig object" : " ServerConfig objects") <<" imported from " << userConfigPath << "."
+# define E_ELMNTDECL		"Error: ConfigFile: Invalid element declaration, (only \"server\" allowed): "
 
 // ServerConfig
 # define E_FILEOPEN		"Error: ServerConfig: Could not open config file: "
 # define E_NOSERVER		"Error: ServerConfig: No valid server configs found."
-# define E_ELMNTDECL	"Error: ServerConfig: Invalid element declaration, (only \"server\" allowed): "
 # define E_SUBELEMNT	"Error: ServerConfig: Second level subelements not allowed: "
 # define E_INVALERRNUM	"Error: ServerConfig: Invalid HTML response code (range is from 100 to 599): "
 
-# define I_INVALIDKEY	"Info: ServerConfig: Unrecognized identifier in config file: "
-
+# define I_INVALIDKEY		"Info: ServerConfig: Unrecognized identifier in config file: "
+# define I_INVALIDHEADER	"Info: ServerConfig: Elements between valid subelement headers and beginning of subelement (opening curly brace) will be ignored: "
 // Server
 # define E_SERVERNAME			"Error: Server: Invalid characters in server name input. Only alphanumerical, <<.>> and <<_>> allowed: "
 # define E_HOSTADDRINPUT		"Error: Server: Invalid characters in host address input. Only numerical and dot allowed: "
@@ -137,11 +140,9 @@ std::string		strToLower(std::string);
 std::string		trim(std::string &);
 // Returns a substring from the beginning of the passed string ref to the beginning of the first occurence of the 2nd argument. Deletes the substring and the 2nd argument from the passed string.
 std::string		splitEraseStr(std::string &, std::string);
-// Returns a substring from the beginning of the passed string ref to the first occurence of any char from the 2nd argument. Deletes the substring and the encountered char from the passed string.
-std::string		splitEraseChars(std::string&, std::string);
-// Returns a string-string map. First argument is the string ref to operate on. 2nd and 3rd arguments are the end of the key and the end of the value. 4th argument signals the end of the region to be parsed. The key is converted to lower case.
-strMap			createHeaderMap(std::string &, std::string, std::string, std::string);
-// Returns a string vector. First argument is the string ref to operate on. 2nd argument is a string containing the characters of which any single one delimits the final strings. The 3rd argument represents the string that denotes the end of the region to be processed.
+// Returns a substring from the beginning of the passed string ref to the first occurence of any char from the 2nd argument. Deletes the substring from the passed string, but not the encountered delimiting char. Calls trim function on both the remainder of the string ref and the returned element.
+std::string		splitEraseTrimChars(std::string&, std::string);
+// Returns a string vector. First argument is the string ref to operate on. 2nd argument is a string containing the characters of which any single one delimits the final strings. The 3rd argument denotes the end of the region to be processed.
 strVec 			splitEraseStrVec(std::string& input, std::string targetChars, std::string endOfParsing);
 // Determines the file/content type according to the file's full path. (based on dot-preceded extensions)
 contentType		extensionType(const std::string &);
@@ -149,4 +150,6 @@ contentType		extensionType(const std::string &);
 off_t			fileSize(std::string);
 // Splits a string according to a string, outputs vector of strings.
 std::vector<std::string>	splitString(std::string, const std::string &);
+// Splits a string ref and returns the first instruction it contains, defined as all characters from the string ref's start until the next top-level semicolon. Deletes the instruction from the string ref.
+std::string		getInstruction(std::string& inputStr);
 #endif

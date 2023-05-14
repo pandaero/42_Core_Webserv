@@ -33,12 +33,13 @@ std::string splitEraseStr(std::string& input, std::string targetString)
 	else
 	{
 		element = input.substr(0, len);
-		input.erase(0, len + targetString.length());
+		input.erase(0, len + targetString.size());
 	}
+	trim(element);
 	return element;
 }
 
-std::string splitEraseChars(std::string& input, std::string targetChars)
+std::string splitEraseTrimChars(std::string& input, std::string targetChars)
 {
 	std::string element;
 	size_t 		len;
@@ -52,30 +53,11 @@ std::string splitEraseChars(std::string& input, std::string targetChars)
 	else
 	{
 		element = input.substr(0, len);
-		input.erase(0, len + 1);
+		input.erase(0, len);
+		trim(input);
 	}
+	trim(element);
 	return element;
-}
-
-strMap createHeaderMap(std::string& input, std::string endOfKey, std::string endOfValue, std::string endOfMap)
-{
-	strMap 		stringMap;
-	std::string key, value;
-
-	while (!input.empty())
-	{
-		if (input.find(endOfMap) == 0)
-		{
-			input = input.substr(endOfMap.size());
-			return stringMap;
-		}
-		key = splitEraseStr(input, endOfKey);
-		trim(key);
-		value = splitEraseStr(input, endOfValue);
-		trim(value);
-		stringMap.insert(std::make_pair(strToLower(key), value));
-	}
-	return stringMap;
 }
 
 strVec splitEraseStrVec(std::string& input, std::string targetChars, std::string endOfParsing)
@@ -83,11 +65,11 @@ strVec splitEraseStrVec(std::string& input, std::string targetChars, std::string
 	strVec 		stringVector;
 	std::string	parseRegion, element;
 	
-	parseRegion = splitEraseChars(input, endOfParsing);
+	parseRegion = splitEraseTrimChars(input, endOfParsing);
+	input.erase(0, endOfParsing.size());
 	while (!parseRegion.empty())
 	{
-		element = splitEraseChars(parseRegion, targetChars);
-		trim(element);
+		element = splitEraseTrimChars(parseRegion, targetChars);
 		stringVector.push_back(element);
 	}
 	return stringVector;
@@ -162,4 +144,44 @@ std::string strToLower(std::string str)
 	for (std::string::iterator it = str.begin(); it != str.end(); it++)
 		*it = tolower(*it);
 	return str;
+}
+
+std::string getInstruction(std::string& inputStr)
+{
+	std::string	instruction;
+	size_t		len_semicolon;
+
+	// check for semicolon delimiting the instruction;
+	len_semicolon = inputStr.find(";");
+	if (len_semicolon < inputStr.find("{"))
+	{
+		instruction = inputStr.substr(0, len_semicolon);
+		inputStr.erase(0, len_semicolon + 1);
+		trim(instruction);
+		return instruction;
+	}
+
+	// Curly braces must now delimit the instruction
+	size_t	i;
+	int		braces;
+
+	i = inputStr.find("{");
+	if (i == std::string::npos || inputStr.find("}") < i)
+		throw std::runtime_error(E_INVALIDENDTOKEN + inputStr + '\n');
+	braces = 1;
+	while (inputStr[++i] && braces > 0 && braces < 3)
+	{
+		if (inputStr[i] == '{')
+			braces++;
+		else if (inputStr[i] == '}')
+			braces--;
+	}
+	if (braces != 0)
+		throw std::runtime_error(E_INVALIDBRACE + inputStr + '\n');
+	instruction = inputStr.substr(0, i);
+	inputStr.erase(0, i);
+	instruction.replace(instruction.find("{"), 1, " ");
+	instruction.replace(instruction.find_last_of("}"), 1, " ");
+	trim(instruction);
+	return instruction;
 }
