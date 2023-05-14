@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   Server.hpp                                         :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: wmardin <wmardin@student.42.fr>            +#+  +:+       +#+        */
+/*   By: pandalaf <pandalaf@student.42wolfsburg.    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/04/07 19:17:18 by pandalaf          #+#    #+#             */
-/*   Updated: 2023/05/13 00:02:14 by wmardin          ###   ########.fr       */
+/*   Updated: 2023/05/14 17:39:25 by pandalaf         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -71,8 +71,9 @@ class	Server
 
 		std::string	getStatusPage(int) const;
 		std::string	getRoot() const;
+		size_t		getServerParam(std::string) const;
 		
-		void	errorHandler(int, int);
+		// void	errorHandler(int, int);
 
 	private:
 		std::vector<std::string>		_names;

@@ -6,7 +6,7 @@
 /*   By: pandalaf <pandalaf@student.42wolfsburg.    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/04/07 17:49:49 by pandalaf          #+#    #+#             */
-/*   Updated: 2023/05/13 12:11:26 by pandalaf         ###   ########.fr       */
+/*   Updated: 2023/05/14 18:20:25 by pandalaf         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -23,6 +23,7 @@ Server::Server():
 	setPort("50000");
 	_filePaths.insert(std::make_pair(ROOT, "default/site"));_filePaths.insert(std::make_pair(PATH_DEFAULTERRPAGE, "default/error/default.html"));
 	_serverParams.insert(std::make_pair(CLIMAXBODY, 1024));
+	_serverParams.insert(std::make_pair("dir_listing", 0));
 
 	/* setRoot(config.root);
 	setDir(config.dir);
@@ -31,8 +32,8 @@ Server::Server():
 	setDefaultErrorPage(config.defaultErrorPage);
 	setErrorPages(config.errorPages);
 	
-	setBacklog(config.backlog);
-	setMaxConnections(config.maxConnections); */
+	setBacklog(config.backlog); */
+	setMaxConnections("50");
 
 	_pollStructs = new pollfd[_maxConns];
 	startListening();
@@ -114,7 +115,11 @@ void	Server::handleConnections()
 		if (_clients.size() <= (size_t) _maxConns)
 			_clients.push_back(newClient);
 		else
+		{
+			// DEBUG
+			std::cerr << "Max. connections: " << _maxConns << std::endl;
 			throw connectionLimitExceededException();
+		}
 		std::cout << "Clients size: " << _clients.size() << std::endl;
 		_pollStructs[_clients.size()].fd = newClient.getSocketfd();
 		_pollStructs[_clients.size()].events = POLLIN;
@@ -136,6 +141,7 @@ void	Server::handleConnections()
 					_clients.erase(clientIt);
 					if (_clients.size() == 0)
 						break;
+					--i;
 					continue;
 				}
 				clientIt->_recvBuffer.append(buffer);
@@ -175,8 +181,8 @@ void	Server::handleConnections()
 					// }
 					Response	standard(request, *this);
 					// standard.setStatusCode(200);
-					std::cout << "Raw path: " << request.getPath() << std::endl;
-					std::cout << "Pathity path path: " << _filePaths.find(ROOT)->second << request.getPath() << "index.html" << std::endl;
+					// std::cout << "Raw path: " << request.getPath() << std::endl;
+					// std::cout << "Pathity path path: " << _filePaths.find(ROOT)->second << request.getPath() << "index.html" << std::endl;
 					// if (*(request._path.end() - 1) == '/')
 					// {
 					// 	// serve index (try html, htm, shtml, php), if not present, check directory listing setting to create it (or not)
@@ -229,7 +235,7 @@ void Server::setNames(std::string input)
 
 	while (!trim(input).empty())
 	{
-		name = splitEraseChars(input, WHITESPACE);
+		name = splitEraseTrimChars(input, WHITESPACE);
 		trim(name);
 		for (std::string::const_iterator it = name.begin(); it != name.end(); it++)
 			if (!isalnum(*it) && *it != '.' && *it != '_')
@@ -359,6 +365,13 @@ std::string	Server::getRoot() const
 	return(_filePaths.find(ROOT)->second);
 }
 
+size_t	Server::getServerParam(std::string serverParam) const
+{
+	if (_serverParams.find(serverParam) != _serverParams.end())
+		return (_serverParams.find(serverParam)->second);
+	return (-1);
+}
+
 // void Server::errorHandler(int code, int clientfd)
 // {
 // 	Response	response(code, *this);
@@ -366,6 +379,10 @@ std::string	Server::getRoot() const
 // }
 
 // PRIVATE MEMBER FUNCTIONS
+
+// SUGGESTION 
+// checkMethodAccess(std::string location, std::string method)
+// Return true or false according to method requested and location settings
 
 void Server::checkMethodAccess(std::string path)
 {

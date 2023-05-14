@@ -6,7 +6,7 @@
 /*   By: pandalaf <pandalaf@student.42wolfsburg.    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/04/01 17:05:35 by pandalaf          #+#    #+#             */
-/*   Updated: 2023/05/14 15:00:16 by pandalaf         ###   ########.fr       */
+/*   Updated: 2023/05/14 18:38:40 by pandalaf         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -16,14 +16,12 @@ Response::Response(){}
 
 Response::Response(const Request & request, const Server & server)
 {
-	//DEBUG
+	// DEBUG
 	std::cout << "Response getting made" << std::endl;
-	// getPath depends on directory listing, and server root, etc. getFile?
+	// Check method permissions at location and throw 403 if forbidden.
+	// checkMethodAccess?
 	setFile(request.getPath(), server);
-
-	// _statusCode = setFile(server.getRoot() + request.getPath(), server);
-	// setStatusCode(_statusCode);
-	// check for file access success etc.
+	// DEBUG
 	std::cout << "Response got made with full path: " << _filePath << std::endl;
 }
 
@@ -45,15 +43,14 @@ void	Response::setStatusCode(int code)
 		case 200:
 			_statusMessage = "OK";
 			break;
+		case 403:
+			_statusMessage = "Forbidden";
+			break;
 		case 404:
 			_statusMessage = "Not Found";
 			break;
-		case 500:
-			_statusMessage = "Internal Server Error";
-			break;
 		default:
 			_statusMessage = "Internal Server Error";
-			break;
 	}
 }
 
@@ -62,7 +59,21 @@ void	Response::setFile(std::string locationPath, const Server & currentServer)
 	// Map location / URL to folder structure
 	std::string	realPath = currentServer.getRoot() + locationPath;
 	if (realPath.find_last_of('/') == realPath.size() - 1)
+	{
 		realPath.erase(realPath.find_last_of('/'));
+		// Check for index files
+		if (access((realPath + "/index.html").c_str(), R_OK) == 0)
+			realPath += "/index.html";
+		else if (access((realPath + "/index.htm").c_str(), R_OK) == 0)
+			realPath += "/index.html";
+		else
+			realPath = currentServer.getRoot() + currentServer.getStatusPage(404);
+		// Check for listing and create it to be served (or serve alternate landing page).
+		// if listing true, create listing
+		// if listing false, display page
+		if (currentServer.getServerParam("dir_listing") == 1)
+			std::cout << "Happy birthday" << std::endl;
+	}
 	// Consider dir listing in case of dir and serve corresponding (created) dir listing
 	// If SCHMANG happens, set to corresponding error code
 	// DEBUG
@@ -182,7 +193,7 @@ int	Response::send(int socketfd, const Server & sendingServer)
 			return (-1);
 		}
 		// DEBUG
-		std::cout << "the buffer:\n" << buffer << std::endl;
+		// std::cout << "the buffer:\n" << buffer << std::endl;
 	}
 	// if (!file.eof())
 	// {
