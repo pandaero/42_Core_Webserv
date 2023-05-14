@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   Server.cpp                                         :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: wmardin <wmardin@student.42.fr>            +#+  +:+       +#+        */
+/*   By: pandalaf <pandalaf@student.42wolfsburg.    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/04/07 17:49:49 by pandalaf          #+#    #+#             */
-/*   Updated: 2023/05/13 00:01:39 by wmardin          ###   ########.fr       */
+/*   Updated: 2023/05/13 12:11:26 by pandalaf         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -148,7 +148,7 @@ void	Server::handleConnections()
 					clientIt->_recvBuffer.erase(0, clientIt->_recvBuffer.find("\r\n\r\n") + 4);
 					if (clientIt->_activeRequest.getContentLength() > (int) _clientMaxBody)
 					{
-						errorHandler(413, clientIt->getSocketfd());
+						// errorHandler(413, clientIt->getSocketfd());
 						return;
 					}
 						//build size too big (twss) 413 error response and dont keep reading
@@ -185,7 +185,7 @@ void	Server::handleConnections()
 					// if (request.getFile() != "")
 					// 	standard.setFile(_filePaths.find(ROOT)->second + request._path);
 					std::cout << "Sending response." << std::endl;
-					standard.send(_pollStructs[i + 1].fd);
+					standard.send(_pollStructs[i + 1].fd, *this);
 					clientIt->_gotRequest = false;
 				}
 			}
@@ -359,11 +359,11 @@ std::string	Server::getRoot() const
 	return(_filePaths.find(ROOT)->second);
 }
 
-void Server::errorHandler(int code, int clientfd)
-{
-	Response	response(code, *this);
-	response.send(clientfd);
-}
+// void Server::errorHandler(int code, int clientfd)
+// {
+// 	Response	response(code, *this);
+// 	response.send(clientfd, *this);
+// }
 
 // PRIVATE MEMBER FUNCTIONS
 

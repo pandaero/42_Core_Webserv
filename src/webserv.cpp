@@ -104,6 +104,15 @@ contentType	extensionType(const std::string & filePath)
 	return (OCTETSTREAM);
 }
 
+off_t			fileSize(std::string filePath)
+{
+	struct	stat st;
+
+	if (stat(filePath.c_str(), &st) == 0)
+		return (st.st_size);
+	return (-1);
+}
+
 std::vector<std::string>	splitString(std::string str, const std::string & del)
 {
 	std::vector<std::string>	out;
