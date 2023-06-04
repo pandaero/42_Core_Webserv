@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   Server.cpp                                         :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: pandalaf <pandalaf@student.42wolfsburg.    +#+  +:+       +#+        */
+/*   By: wmardin <wmardin@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/04/07 17:49:49 by pandalaf          #+#    #+#             */
-/*   Updated: 2023/05/13 12:11:26 by pandalaf         ###   ########.fr       */
+/*   Updated: 2023/06/02 16:01:28 by wmardin          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -229,7 +229,7 @@ void Server::setNames(std::string input)
 
 	while (!trim(input).empty())
 	{
-		name = splitEraseChars(input, WHITESPACE);
+		name = splitEraseTrimChars(input, WHITESPACE);
 		trim(name);
 		for (std::string::const_iterator it = name.begin(); it != name.end(); it++)
 			if (!isalnum(*it) && *it != '.' && *it != '_')
