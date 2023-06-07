@@ -6,13 +6,13 @@
 /*   By: wmardin <wmardin@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/04/07 17:49:49 by pandalaf          #+#    #+#             */
-/*   Updated: 2023/06/07 09:05:20 by wmardin          ###   ########.fr       */
+/*   Updated: 2023/06/07 12:05:23 by wmardin          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #include "../include/Server.hpp"
 
-Server::Server():
+/* Server::Server():
 	_pollStructs(NULL),
 	_numConns(1)
 {
@@ -24,7 +24,7 @@ Server::Server():
 	_filePaths.insert(std::make_pair(ROOT, "default/site"));_filePaths.insert(std::make_pair(PATH_DEFAULTERRPAGE, "default/error/default.html"));
 	_serverParams.insert(std::make_pair(CLIMAXBODY, 1024));
 
-	/* setRoot(config.root);
+	/ setRoot(config.root);
 	setDir(config.dir);
 	setUploadDir(config.uploadDir);
 	setCgiDir(config.cgiDir);
@@ -33,41 +33,33 @@ Server::Server():
 	
 	setBacklog(config.backlog);
 	setMaxConnections(config.maxConnections); 
-	*/
+	
 	_pollStructs = new pollfd[_maxConns];
 	startListening();
-}
+} */
 
 Server::Server(const ServerConfig & config):
 	_pollStructs(NULL),
 	_numConns(1)
 {
 	(void)_numConns;
+	
+	// Set main values stored in configPairs
 	strMap		configPairs = config.getConfigPairs();
-	intStrMap	errorPaths = config.getErrorPaths();
-	strLocMap	locations = config.getLocations();
-
 	setNames(configPairs.find(SERVERNAME)->second);
 	setHost(configPairs.find(HOST)->second);
 	setPort(configPairs.find(PORT)->second);
 	setRoot(configPairs.find(ROOT)->second);
+	setClientMaxBody(configPairs.find(CLIMAXBODY)->second);
+	setMaxConnections(configPairs.find(MAXCONNS)->second);
+	setGlobalDirListing(configPairs.find(DIRLISTING)->second);
 	
-	filePaths.insert(std::make_pair(ROOT, configPairs.find(ROOT)->second));
-	
-
-
-	
-	filePaths.insert(std::make_pair(DEFAULTERRORPAGE, activeConfig.find(DEFAULTERRORPAGE)->second));
-
-	setDir(config.dir);
-	setUploadDir(config.uploadDir);
-	setCgiDir(config.cgiDir);
-	setDefaultErrorPage(config.defaultErrorPage);
-	setErrorPages(config.errorPages);
-	
-	setClientMaxBody(config.clientMaxBody);
-	setBacklog(config.backlog);
-	setMaxConnections(config.maxConnections); */
+	// Copy remaining values directly to server variables 
+	_errorPagesPaths = config.getErrorPaths();
+	_locations = config.getLocations();
+	_cgiPaths = config.getCgiPaths();
+		
+	//setBacklog(config.backlog);
 
 	_pollStructs = new pollfd[_maxConns];
 	startListening();
@@ -206,30 +198,26 @@ void Server::whoIsI()
 						std::cout << "\t\t" << *it << '\n';
 	std::cout	<< "Host:\t\t" << inet_ntoa(_serverAddress.sin_addr) << '\n'
 				<< "Port:\t\t" << ntohs(_serverAddress.sin_port) << '\n'
-				
-				<< "GET:\t\t" << (_GET ? "yes" : "no") << '\n'
-				<< "POST:\t\t" << (_POST ? "yes" : "no") << '\n'
-				<< "DELETE:\t\t" << (_DELETE ? "yes" : "no") << '\n'
-				<< "Dir Listing:\t" << (_dirListing ? "yes" : "no") << '\n'
-				
 				<< "Root:\t\t" << _root << '\n'
-				<< "Dir:\t\t" << _dir << '\n'
-				<< "Upload Dir:\t" << _uploadDir << '\n'
-				<< "CGI Dir:\t" << _cgiDir << '\n'
-				<< "Default ErrPage:" << _defaultErrorPagePath << '\n'
+				<< "Dflt. dir_list:\t" << (_defaultDirListing ? "yes" : "no") << '\n'
+				<< "Cl. max body:\t" << _clientMaxBody << '\n'
+				<< "Max Conns:\t" << _maxConns << '\n'
 				<< "Error Pages:\n";
 					for (intStrMap_it it = _errorPagesPaths.begin(); it != _errorPagesPaths.end(); it++)
-						std::cout << "\t\t" << it->first << '\t' << it->second << '\n';
-	std::cout	<< "Cl. max body:\t" << _clientMaxBody << '\n'
-				<< "Backlog:\t" << _backlog << '\n'
-				<< "Max Conns:\t" << _maxConns << std::endl;
+						std::cout << "\t\t" << it->first << '\t' << it->second << std::endl;
+	std::cout	<< "Known locations:\n";
+					for (strLocMap_it it = _locations.begin(); it != _locations.end(); it++)
+						std::cout << "\t\t" << it->first << std::endl;
+	std::cout	<< "CGI Paths:\n";
+					for (strMap_it it = _cgiPaths.begin(); it != _cgiPaths.end(); it++)
+						std::cout << "\t\t" << it->first << '\t' << it->second << std::endl;		
 }
 
 void Server::setNames(std::string input)
 {
 	std::string name;
 
-	while (!trim(input).empty())
+	while (!input.empty())
 	{
 		name = splitEraseTrimChars(input, WHITESPACE);
 		for (std::string::const_iterator it = name.begin(); it != name.end(); it++)
@@ -262,54 +250,28 @@ void Server::setPort(std::string input)
 	_serverAddress.sin_port = htons(temp);
 }
 
-void Server::setGet(bool input)
-{
-	_GET = input;
-}
-
-void Server::setPost(bool input)
-{
-	_POST = input;
-}
-
-void Server::setDelete(bool input)
-{
-	_DELETE = input;
-}
-
-void Server::setDirListing(bool input)
-{
-	_dirListing = input;
-}
-
 void Server:: setRoot(std::string input)
 {
-	checkMethodAccess(input);
+	// checkMethodAccess(input);
 	_root = input;
 }
 
 void Server::setDir(std::string input)
 {
-	checkMethodAccess(input);
+	// checkMethodAccess(input);
 	_dir = input;
 }
 
 void Server::setUploadDir(std::string input)
 {
-	checkWriteAccess(input);
+	// checkWriteAccess(input);
 	_uploadDir = input;
 }
 
 void Server::setCgiDir(std::string input)
 {
-	checkExecAccess(input);
+	// checkExecAccess(input);
 	_cgiDir = input;
-}
-
-void Server::setDefaultErrorPage(std::string input)
-{
-	checkReadAccess(input);
-	_defaultErrorPagePath = input;
 }
 
 /* void Server::setErrorPages(std::map<size_t, std::string> input)
@@ -347,12 +309,20 @@ void Server::setBacklog(std::string input)
 		throw std::runtime_error(E_BACKLOGVAL + input + '\n');
 }
 
+void Server::setGlobalDirListing(std::string input)
+{
+	if (input == "yes")
+		_defaultDirListing = true;
+	else
+		_defaultDirListing = false;
+}
+
 std::string Server::getStatusPage(int code) const
 {
 	if (_errorPagesPaths.find(code) != _errorPagesPaths.end())
 		return _errorPagesPaths.find(code)->second;
 	else
-		return _defaultErrorPagePath;
+		return _errorPagesPaths.find(-1)->second;
 }
 
 std::string	Server::getRoot() const
@@ -368,7 +338,7 @@ std::string	Server::getRoot() const
 
 // PRIVATE MEMBER FUNCTIONS
 
-void Server::checkMethodAccess(std::string path)
+/* void Server::checkMethodAccess(std::string path)
 {
 	if (_GET && access(path.c_str(), R_OK) != 0)
 		throw std::runtime_error(E_ACC_READ + path + '\n');
@@ -392,7 +362,7 @@ void Server::checkExecAccess(std::string path)
 {
 	if (access(path.c_str(), X_OK) != 0)
 		throw std::runtime_error(E_ACC_EXEC + path + '\n');
-}
+} */
 
 const char *	Server::invalidAddressException::what() const throw()
 {
