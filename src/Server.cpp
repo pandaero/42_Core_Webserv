@@ -6,7 +6,7 @@
 /*   By: wmardin <wmardin@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/04/07 17:49:49 by pandalaf          #+#    #+#             */
-/*   Updated: 2023/06/02 16:01:28 by wmardin          ###   ########.fr       */
+/*   Updated: 2023/06/07 09:05:20 by wmardin          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -32,8 +32,8 @@ Server::Server():
 	setErrorPages(config.errorPages);
 	
 	setBacklog(config.backlog);
-	setMaxConnections(config.maxConnections); */
-
+	setMaxConnections(config.maxConnections); 
+	*/
 	_pollStructs = new pollfd[_maxConns];
 	startListening();
 }
@@ -43,20 +43,22 @@ Server::Server(const ServerConfig & config):
 	_numConns(1)
 {
 	(void)_numConns;
-	(void)config;
-	// TO BE RETAKEN
-	// strMap	activeConfig = config.getConfigPairs();
-	// strMap	activeConfigErrors = config.getConfigErrorPaths();
+	strMap		configPairs = config.getConfigPairs();
+	intStrMap	errorPaths = config.getErrorPaths();
+	strLocMap	locations = config.getLocations();
 
-	// setNames(activeConfig.find(SERVERNAME)->second);
-	// setHost(activeConfig.find(HOST)->second);
-	// setPort(activeConfig.find(PORT)->second);
-	//_filePaths.insert(std::make_pair(ROOT, activeConfig.find(ROOT)->second));
+	setNames(configPairs.find(SERVERNAME)->second);
+	setHost(configPairs.find(HOST)->second);
+	setPort(configPairs.find(PORT)->second);
+	setRoot(configPairs.find(ROOT)->second);
 	
-	//_filePaths.insert(std::make_pair(DEFAULTERRORPAGE, activeConfig.find(DEFAULTERRORPAGE)->second));
-	// TO HERE
+	filePaths.insert(std::make_pair(ROOT, configPairs.find(ROOT)->second));
+	
 
-	/* setRoot(config.root);
+
+	
+	filePaths.insert(std::make_pair(DEFAULTERRORPAGE, activeConfig.find(DEFAULTERRORPAGE)->second));
+
 	setDir(config.dir);
 	setUploadDir(config.uploadDir);
 	setCgiDir(config.cgiDir);
@@ -230,7 +232,6 @@ void Server::setNames(std::string input)
 	while (!trim(input).empty())
 	{
 		name = splitEraseTrimChars(input, WHITESPACE);
-		trim(name);
 		for (std::string::const_iterator it = name.begin(); it != name.end(); it++)
 			if (!isalnum(*it) && *it != '.' && *it != '_')
 				throw std::runtime_error(E_SERVERNAME + name + '\n');

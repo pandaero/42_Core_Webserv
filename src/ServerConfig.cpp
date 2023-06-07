@@ -75,7 +75,6 @@ void ServerConfig::whoIsI()
 	for (strMap_it it = _configPairs.begin(); it != _configPairs.end(); it++)
 		std::cout << it->first << "\t\t" << it->second << std::endl;
 	
-	
 	std::cout << "*****_errorPages*****\n";
 	for (intStrMap_it it = _errorPages.begin(); it != _errorPages.end(); it++)
 		std::cout << it->first << "\t\t" << it->second << std::endl;
