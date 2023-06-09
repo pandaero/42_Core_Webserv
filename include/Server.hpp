@@ -6,7 +6,7 @@
 /*   By: wmardin <wmardin@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/04/07 19:17:18 by pandalaf          #+#    #+#             */
-/*   Updated: 2023/06/07 12:05:23 by wmardin          ###   ########.fr       */
+/*   Updated: 2023/06/09 19:04:38 by wmardin          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -16,7 +16,7 @@
 # include "webserv.hpp"
 # include "Client.hpp"
 # include "Response.hpp"
-# include "Request.hpp"
+# include "RequestHead.hpp"
 # include "ServerConfig.hpp"
 
 # include <string>
@@ -50,6 +50,11 @@ class	Server
 		void	startListening();
 		void	poll();
 		void	handleConnections();
+		void	checkNewClients();
+		bool	checkEvent(size_t);
+		bool	closeClient(size_t, clientVec_it);
+		void	handleRequestBegin(clientVec_it);
+		bool	requestTopCompleteNow(clientVec_it);
 		void	whoIsI();
 
 		void	setNames(std::string);
@@ -77,12 +82,12 @@ class	Server
 		size_t							_maxConns;
 		bool							_defaultDirListing;
 		strMap							_cgiPaths;
-		//std::map<std::string, size_t>	_serverParams;
-		// CGI stuffs
 
 		pollfd *						_pollStructs;
 		sockaddr_in						_serverAddress;
 		std::vector<Client>				_clients;
+		char							_recvBuffer[RECV_CHUNK_SIZE];
+		size_t							_bytesReceived;
 		
 		// TO BE DEMOLISHED:
 		strMap							_filePaths;

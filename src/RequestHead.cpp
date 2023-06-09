@@ -10,14 +10,14 @@
 /*                                                                            */
 /* ************************************************************************** */
 
-#include "../include/Request.hpp"
+#include "../include/RequestHead.hpp"
 
-Request::Request()
+RequestHead::RequestHead()
 {
 	_contentLength = -1;
 }
 
-Request::Request(std::string requestData)
+RequestHead::RequestHead(std::string requestData)
 {
 	//DEBUG
 	std::cout << "Request getting made" << std::endl;
@@ -31,7 +31,7 @@ Request::Request(std::string requestData)
 	std::cout << "Request constructed" << std::endl;
 }
 
-std::string	Request::headerValue(std::string header)
+std::string	RequestHead::headerValue(std::string header)
 {
 	std::string	query = strToLower(header);
 	if (_headers.find(header) != _headers.end())
@@ -39,22 +39,32 @@ std::string	Request::headerValue(std::string header)
 	return ("NOT FOUND");
 }
 
-std::string	Request::getFilename() const
+std::string	RequestHead::getFilename() const
 {
 	return (_path.substr(_path.find_last_of('/'), _path.find(*(_path.end() - 1))));
 }
 
-std::string	Request::getPath() const
+std::string RequestHead::getMethod() const
+{
+	return _method;
+}
+
+std::string RequestHead::getProtocol() const
+{
+	return _protocol;
+}
+
+std::string	RequestHead::getPath() const
 {
 	return (_path);
 }
 
-int	Request::getContentLength() const
+int	RequestHead::getContentLength() const
 {
 	return (_contentLength);
 }
 
-strMap Request::createHeaderMap(std::string& input, std::string endOfKey, std::string endOfValue, std::string endOfMap)
+strMap RequestHead::createHeaderMap(std::string& input, std::string endOfKey, std::string endOfValue, std::string endOfMap)
 {
 	strMap 		stringMap;
 	std::string key, value;

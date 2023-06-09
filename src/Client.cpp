@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   Client.cpp                                         :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: pandalaf <pandalaf@student.42wolfsburg.    +#+  +:+       +#+        */
+/*   By: wmardin <wmardin@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/03/28 20:51:05 by pandalaf          #+#    #+#             */
-/*   Updated: 2023/05/03 18:51:58 by pandalaf         ###   ########.fr       */
+/*   Updated: 2023/06/09 19:06:30 by wmardin          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -22,7 +22,7 @@ Client::Client(int serverSocketfd)
 		close(_clientSocketfd);
 		throw connectionDeniedException();
 	}
-	_gotRequest = false;
+	_gotRequestHead = false;
 }
 
 int	Client::getSocketfd()
@@ -34,3 +34,9 @@ const char *	Client::connectionDeniedException::what() const throw()
 {
 	return ("Error: connection with the client was denied.");
 }
+
+bool Client::gotCompleteHeader()
+{
+	return _gotRequest;	
+}
+

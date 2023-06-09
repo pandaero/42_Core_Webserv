@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   Response.cpp                                       :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: pandalaf <pandalaf@student.42wolfsburg.    +#+  +:+       +#+        */
+/*   By: wmardin <wmardin@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/04/01 17:05:35 by pandalaf          #+#    #+#             */
-/*   Updated: 2023/05/14 15:00:16 by pandalaf         ###   ########.fr       */
+/*   Updated: 2023/06/09 19:03:24 by wmardin          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -14,10 +14,14 @@
 
 Response::Response(){}
 
-Response::Response(const Request & request, const Server & server)
+Response::Response(const RequestHead & request, const Server & server)
 {
 	//DEBUG
 	std::cout << "Response getting made" << std::endl;
+	if (request.getProtocol() != HTTPVERSION)
+		setStatusCode(400);
+		
+	
 	// getPath depends on directory listing, and server root, etc. getFile?
 	setFile(request.getPath(), server);
 
@@ -45,6 +49,9 @@ void	Response::setStatusCode(int code)
 		case 200:
 			_statusMessage = "OK";
 			break;
+		case 400:
+			_statusMessage = "Bad request";
+			break;
 		case 404:
 			_statusMessage = "Not Found";
 			break;
@@ -63,6 +70,7 @@ void	Response::setFile(std::string locationPath, const Server & currentServer)
 	std::string	realPath = currentServer.getRoot() + locationPath;
 	if (realPath.find_last_of('/') == realPath.size() - 1)
 		realPath.erase(realPath.find_last_of('/'));
+	// If path is a directory, search for index.html. If not found, check for dir listing 
 	// Consider dir listing in case of dir and serve corresponding (created) dir listing
 	// If SCHMANG happens, set to corresponding error code
 	// DEBUG

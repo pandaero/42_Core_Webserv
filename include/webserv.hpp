@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   webserv.hpp                                        :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: pandalaf <pandalaf@student.42wolfsburg.    +#+  +:+       +#+        */
+/*   By: wmardin <wmardin@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/03/26 01:51:20 by pandalaf          #+#    #+#             */
-/*   Updated: 2023/05/14 10:25:10 by wmardin          ###   ########.fr       */
+/*   Updated: 2023/06/08 11:34:40 by wmardin          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -20,9 +20,12 @@
 # include <string>
 # include <sys/stat.h>
 
-// PSEUDOVARIABLES
+# include "Client.hpp"
+
+// MAKROS
 # define WHITESPACE		" \t\v\r\n"
 # define TERMINATION	"\r\n\r\n"
+# define HTTPVERSION	"HTTP/1.1"
 
 // ===== ===== ===== ===== SIZE Descriptions ===== ===== ===== =====
 # define RECV_CHUNK_SIZE		4096
@@ -113,6 +116,8 @@ typedef std::map<std::string, s_locInfo>				strLocMap;
 typedef std::map<std::string, s_locInfo>::iterator		strLocMap_it;
 typedef	std::map<int, std::string>						intStrMap;
 typedef	std::map<int, std::string>::iterator			intStrMap_it;
+typedef std::vector<Client>								clientVec;
+typedef std::vector<Client>::iterator					clientVec_it;
 
 typedef enum contentTypes
 {

@@ -6,7 +6,7 @@
 /*   By: wmardin <wmardin@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/04/07 17:49:49 by pandalaf          #+#    #+#             */
-/*   Updated: 2023/06/07 12:05:23 by wmardin          ###   ########.fr       */
+/*   Updated: 2023/06/09 19:11:06 by wmardin          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -52,7 +52,7 @@ Server::Server(const ServerConfig & config):
 	setRoot(configPairs.find(ROOT)->second);
 	setClientMaxBody(configPairs.find(CLIMAXBODY)->second);
 	setMaxConnections(configPairs.find(MAXCONNS)->second);
-	setGlobalDirListing(configPairs.find(DIRLISTING)->second);
+	setDefaultDirListing(configPairs.find(DIRLISTING)->second);
 	
 	// Copy remaining values directly to server variables 
 	_errorPagesPaths = config.getErrorPaths();
@@ -102,6 +102,92 @@ void	Server::poll()
 void	Server::handleConnections()
 {
 	std::cout << "Handling connection" << std::endl;
+	checkNewClients();
+	size_t i = 0;
+	for (clientVec_it clientIt = _clients.begin(); clientIt != _clients.end(); ++clientIt, ++i)
+	{
+		std::cout << "Client handling, i: " << i << ", Client size: " << _clients.size() << std::endl;
+		if (!checkEvent(i))
+			return;
+		_bytesReceived = recv(_pollStructs[i + 1].fd, _recvBuffer, RECV_CHUNK_SIZE, 0);
+		if (closeClient(i, clientIt))
+			continue;
+		clientIt->_buffer.append(_recvBuffer, _bytesReceived);
+		if (clientIt->_gotRequestHead)
+		{
+			// handle the body
+			// read up to content length size
+		}
+		else
+		{
+			if (clientIt->_buffer.find("\r\n\r\n") != std::string::npos)
+			{
+				
+			}
+		}
+		
+		handleRequestBegin(clientIt);
+		if (!clientIt->_gotRequestHead && clientIt->_buffer.find("\r\n\r\n") != std::string::npos)
+		{
+			clientIt->_requestHead = RequestHead(clientIt->_buffer);
+			clientIt->_gotRequestHead = true;
+			clientIt->_buffer.erase(0, clientIt->_buffer.find("\r\n\r\n") + 4);
+			if (clientIt->_requestHead.getContentLength() > (int) _clientMaxBody)
+			{
+				// errorHandler(413, clientIt->getSocketfd());
+				return;
+			}
+				//build size too big (twss) 413 error response and dont keep reading
+			// std::cout << clientIt->_activeRequest._method << std::endl;
+		}
+		std::cout << clientIt->_buffer << std::endl;
+		// handle the body
+		//	is the body complete?
+		// 	is the body too long (maxclientsize)
+		if (clientIt->_gotRequest == true)
+		{
+			std::cout << "Received " << bytesReceived << " bytes from client:\n\n" << buffer << std::endl;
+			RequestHead		request(buffer);
+			// CGI handling (for php and potentially python scripts)
+			// if (request.path() == ".php")
+			// {
+			// 	pid = fork ()
+			// 	if (pid == 0)
+			// 	{
+			// 		// run cgi with input file as argument or piped in
+			// 		// save file to temp directory
+			// 	}
+			// 	// attempt to serve file (html from cgi)
+			// }
+			Response	standard(request, *this);
+			// standard.setStatusCode(200);
+			std::cout << "Raw path: " << request.getPath() << std::endl;
+			std::cout << "Pathity path path: " << _filePaths.find(ROOT)->second << request.getPath() << "index.html" << std::endl;
+			// if (*(request._path.end() - 1) == '/')
+			// {
+			// 	// serve index (try html, htm, shtml, php), if not present, check directory listing setting to create it (or not)
+			// 	standard.setFile(_filePaths.find(ROOT)->second + request._path + "index.html");
+			// }
+			// if (request.getFile() != "")
+			// 	standard.setFile(_filePaths.find(ROOT)->second + request._path);
+			std::cout << "Sending response." << std::endl;
+			standard.send(_pollStructs[i + 1].fd, *this);
+			clientIt->_gotRequest = false;
+		}
+		
+		// if (_pollStructs[i + 1].revents & POLLOUT)
+		// if (_pollStructs[i + 1].revents & POLLERR)
+		// if (_pollStructs[i + 1].revents & POLLHUP)
+	}
+}
+
+bool Server::checkEvent(size_t clientNumber)
+{
+	return (_pollStructs[clientNumber + 1].revents & POLLIN);
+}
+
+void Server::checkNewClients()
+{
 	if (_pollStructs[0].revents & POLLIN)
 	{
 		Client newClient(_pollStructs[0].fd);
@@ -113,81 +199,43 @@ void	Server::handleConnections()
 		_pollStructs[_clients.size()].fd = newClient.getSocketfd();
 		_pollStructs[_clients.size()].events = POLLIN;
 	}
-	std::cout << "Post-if connection handling" << std::endl;
-	if (_clients.size() > 0)
+}
+
+bool Server::closeClient(size_t clientNumber, clientVec_it client)
+{
+	if (_bytesReceived <= 0)
 	{
-		int i = 0;
-		for (std::vector<Client>::iterator clientIt = _clients.begin(); clientIt != _clients.end(); ++clientIt, ++i)
-		{
-			std::cout << "Client handling, i: " << i << ", Client size: " << _clients.size() << std::endl;
-			if (_pollStructs[i + 1].revents & POLLIN)
-			{
-				char buffer[RECV_CHUNK_SIZE];
-				size_t	bytesReceived = recv(_pollStructs[i + 1].fd, buffer, RECV_CHUNK_SIZE, 0);
-				if (bytesReceived <= 0)
-				{
-					close(_pollStructs[i + 1].fd);
-					_clients.erase(clientIt);
-					if (_clients.size() == 0)
-						break;
-					continue;
-				}
-				clientIt->_recvBuffer.append(buffer);
-				// check for \r\n\r\n
-				std::cout << clientIt->_recvBuffer << std::endl;
-				if (!clientIt->_gotRequest && clientIt->_recvBuffer.find("\r\n\r\n") != std::string::npos)
-				{
-					clientIt->_activeRequest = Request(clientIt->_recvBuffer);
-					clientIt->_gotRequest = true;
-					clientIt->_recvBuffer.erase(0, clientIt->_recvBuffer.find("\r\n\r\n") + 4);
-					if (clientIt->_activeRequest.getContentLength() > (int) _clientMaxBody)
-					{
-						// errorHandler(413, clientIt->getSocketfd());
-						return;
-					}
-						//build size too big (twss) 413 error response and dont keep reading
-					// std::cout << clientIt->_activeRequest._method << std::endl;
-					std::cout << clientIt->_recvBuffer << std::endl;				
-				}
-				// handle the body
-				//	is the body complete?
-				// 	is the body too long (maxclientsize)
-				if (clientIt->_gotRequest == true)
-				{
-					std::cout << "Received " << bytesReceived << " bytes from client:\n\n" << buffer << std::endl;
-					Request		request(buffer);
-					// CGI handling (for php and potentially python scripts)
-					// if (request.path() == ".php")
-					// {
-					// 	pid = fork ()
-					// 	if (pid == 0)
-					// 	{
-					// 		// run cgi with input file as argument or piped in
-					// 		// save file to temp directory
-					// 	}
-					// 	// attempt to serve file (html from cgi)
-					// }
-					Response	standard(request, *this);
-					// standard.setStatusCode(200);
-					std::cout << "Raw path: " << request.getPath() << std::endl;
-					std::cout << "Pathity path path: " << _filePaths.find(ROOT)->second << request.getPath() << "index.html" << std::endl;
-					// if (*(request._path.end() - 1) == '/')
-					// {
-					// 	// serve index (try html, htm, shtml, php), if not present, check directory listing setting to create it (or not)
-					// 	standard.setFile(_filePaths.find(ROOT)->second + request._path + "index.html");
-					// }
-					// if (request.getFile() != "")
-					// 	standard.setFile(_filePaths.find(ROOT)->second + request._path);
-					std::cout << "Sending response." << std::endl;
-					standard.send(_pollStructs[i + 1].fd, *this);
-					clientIt->_gotRequest = false;
-				}
-			}
-			// if (_pollStructs[i + 1].revents & POLLOUT)
-			// if (_pollStructs[i + 1].revents & POLLERR)
-			// if (_pollStructs[i + 1].revents & POLLHUP)
-		}
+		close(_pollStructs[clientNumber + 1].fd);
+		_clients.erase(client);
+		return true;
 	}
+	return false;
+}
+
+void Server::handleRequestBegin(clientVec_it client)
+{
+	if (!client->_gotRequestHead && client->_buffer.find("\r\n\r\n") != std::string::npos)
+		{
+			client->_activeRequest = RequestHead(client->_buffer);
+			client->_gotRequest = true;
+			client->_buffer.erase(0, clientIt->_buffer.find("\r\n\r\n") + 4);
+			if (client->_activeRequest.getContentLength() > (int) _clientMaxBody)
+			{
+				// errorHandler(413, clientIt->getSocketfd());
+				return;
+			}
+				//build size too big (twss) 413 error response and dont keep reading
+			// std::cout << clientIt->_activeRequest._method << std::endl;
+		}
+}
+
+bool Server::requestTopCompleteNow(clientVec_it client)
+{
+	if (client->_gotRequestHead) // Client already has a completed requestTop ready
+		return false;
+	if (client->_buffer.find("\r\n\r\n") != std::string::npos) // We found the end sequence for the header
+		return client->_gotRequestHead = true;
+	return false;
 }
 
 void Server::whoIsI()
@@ -309,7 +357,7 @@ void Server::setBacklog(std::string input)
 		throw std::runtime_error(E_BACKLOGVAL + input + '\n');
 }
 
-void Server::setGlobalDirListing(std::string input)
+void Server::setDefaultDirListing(std::string input)
 {
 	if (input == "yes")
 		_defaultDirListing = true;

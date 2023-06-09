@@ -6,12 +6,12 @@
 /*   By: wmardin <wmardin@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/05/01 22:04:57 by pandalaf          #+#    #+#             */
-/*   Updated: 2023/05/14 10:05:33 by wmardin          ###   ########.fr       */
+/*   Updated: 2023/06/09 19:04:30 by wmardin          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
-#ifndef REQUEST_HPP
-# define REQUEST_HPP
+#ifndef REQUESTHEAD_HPP
+# define REQUESTHEAD_HPP
 
 # include "webserv.hpp"
 
@@ -20,17 +20,21 @@
 # include <map>
 # include <cstdlib>
 
-class	Request
+// Forward declaration necessary here, even though included in webserv.hpp
+typedef std::map<std::string, std::string> 				strMap;
+
+class	RequestHead
 {
 	public:
-		Request();
-		Request(std::string);
+		RequestHead();
+		RequestHead(std::string);
 		std::string	headerValue(std::string);
 
 		std::string	getFilename() const;
+		std::string	getMethod() const;
 		std::string getPath() const;
-
-		int	getContentLength() const;
+		std::string	getProtocol() const;
+		int			getContentLength() const;
 
 	private:
 		strMap		createHeaderMap(std::string &, std::string, std::string, std::string);
