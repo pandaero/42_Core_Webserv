@@ -6,13 +6,18 @@
 /*   By: wmardin <wmardin@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/04/01 17:05:35 by pandalaf          #+#    #+#             */
-/*   Updated: 2023/06/09 19:03:24 by wmardin          ###   ########.fr       */
+/*   Updated: 2023/06/10 15:23:46 by wmardin          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #include "../include/Response.hpp"
 
 Response::Response(){}
+
+Response::Response(int code)
+{
+	setStatusCode(code);
+}
 
 Response::Response(const RequestHead & request, const Server & server)
 {

@@ -6,7 +6,7 @@
 /*   By: wmardin <wmardin@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/04/07 19:17:18 by pandalaf          #+#    #+#             */
-/*   Updated: 2023/06/09 19:04:38 by wmardin          ###   ########.fr       */
+/*   Updated: 2023/06/12 10:36:06 by wmardin          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -53,8 +53,10 @@ class	Server
 		void	checkNewClients();
 		bool	checkEvent(size_t);
 		bool	closeClient(size_t, clientVec_it);
-		void	handleRequestBegin(clientVec_it);
-		bool	requestTopCompleteNow(clientVec_it);
+		void	buildRequestHead(clientVec_it);
+		bool	clientBodyError(clientVec_it);
+		
+		
 		void	whoIsI();
 
 		void	setNames(std::string);

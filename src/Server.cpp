@@ -6,7 +6,7 @@
 /*   By: wmardin <wmardin@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/04/07 17:49:49 by pandalaf          #+#    #+#             */
-/*   Updated: 2023/06/09 19:11:06 by wmardin          ###   ########.fr       */
+/*   Updated: 2023/06/12 10:47:03 by wmardin          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -83,7 +83,6 @@ void	Server::startListening()
 	if (bind(_pollStructs[0].fd, (struct sockaddr *) &_serverAddress, sizeof(_serverAddress)) == -1)
 	{
 		close(_pollStructs[0].fd);
-		// std::cerr << "Error binding: " << strerror(errno) << std::endl;
 		throw bindFailureException();
 	}
 	if (listen(_pollStructs[0].fd, SOMAXCONN) == -1)
@@ -108,38 +107,34 @@ void	Server::handleConnections()
 	{
 		std::cout << "Client handling, i: " << i << ", Client size: " << _clients.size() << std::endl;
 		if (!checkEvent(i))
-			return;
+			continue;
 		_bytesReceived = recv(_pollStructs[i + 1].fd, _recvBuffer, RECV_CHUNK_SIZE, 0);
 		if (closeClient(i, clientIt))
 			continue;
 		clientIt->_buffer.append(_recvBuffer, _bytesReceived);
-		if (clientIt->_gotRequestHead)
-		{
-			// handle the body
-			// read up to content length size
-		}
-		else
+		if (!clientIt->_gotRequestHead)
 		{
 			if (clientIt->_buffer.find("\r\n\r\n") != std::string::npos)
 			{
-				
+				buildRequestHead(clientIt);
+				if (clientBodyError(clientIt))
+					continue;
 			}
+		}
+		else //request head is complete, handle the potential request body
+		{
+			/*
+			while size of body is smaller than content length
+				append to body and keep repeating the read append cycle
+			when body = content length
+				stop the read append cycle and handle the now completed request
+			*/
+			
+			// handle the body
+			// read up to content length size
+			// increment total read var
 		}
 		
-		handleRequestBegin(clientIt);
-		if (!clientIt->_gotRequestHead && clientIt->_buffer.find("\r\n\r\n") != std::string::npos)
-		{
-			clientIt->_requestHead = RequestHead(clientIt->_buffer);
-			clientIt->_gotRequestHead = true;
-			clientIt->_buffer.erase(0, clientIt->_buffer.find("\r\n\r\n") + 4);
-			if (clientIt->_requestHead.getContentLength() > (int) _clientMaxBody)
-			{
-				// errorHandler(413, clientIt->getSocketfd());
-				return;
-			}
-				//build size too big (twss) 413 error response and dont keep reading
-			// std::cout << clientIt->_activeRequest._method << std::endl;
-		}
 		std::cout << clientIt->_buffer << std::endl;
 		// handle the body
 		//	is the body complete?
@@ -212,29 +207,22 @@ bool Server::closeClient(size_t clientNumber, clientVec_it client)
 	return false;
 }
 
-void Server::handleRequestBegin(clientVec_it client)
+void Server::buildRequestHead(clientVec_it client)
 {
-	if (!client->_gotRequestHead && client->_buffer.find("\r\n\r\n") != std::string::npos)
-		{
-			client->_activeRequest = RequestHead(client->_buffer);
-			client->_gotRequest = true;
-			client->_buffer.erase(0, clientIt->_buffer.find("\r\n\r\n") + 4);
-			if (client->_activeRequest.getContentLength() > (int) _clientMaxBody)
-			{
-				// errorHandler(413, clientIt->getSocketfd());
-				return;
-			}
-				//build size too big (twss) 413 error response and dont keep reading
-			// std::cout << clientIt->_activeRequest._method << std::endl;
-		}
+	client->_requestHead = RequestHead(client->_buffer);
+	client->_gotRequestHead = true;
+	client->_buffer.erase(0, client->_buffer.find("\r\n\r\n") + 4);	
 }
 
-bool Server::requestTopCompleteNow(clientVec_it client)
+bool Server::clientBodyError(clientVec_it client)
 {
-	if (client->_gotRequestHead) // Client already has a completed requestTop ready
-		return false;
-	if (client->_buffer.find("\r\n\r\n") != std::string::npos) // We found the end sequence for the header
-		return client->_gotRequestHead = true;
+	if (client->_requestHead.getContentLength() > _clientMaxBody)
+	{
+		Response errorResponse(413);
+		errorResponse.send(client->getSocketfd(), *this);
+		client->resetData();
+		return true;
+	}
 	return false;
 }
 

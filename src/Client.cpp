@@ -6,7 +6,7 @@
 /*   By: wmardin <wmardin@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/03/28 20:51:05 by pandalaf          #+#    #+#             */
-/*   Updated: 2023/06/09 19:06:30 by wmardin          ###   ########.fr       */
+/*   Updated: 2023/06/10 15:40:00 by wmardin          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -23,11 +23,19 @@ Client::Client(int serverSocketfd)
 		throw connectionDeniedException();
 	}
 	_gotRequestHead = false;
+	_bodyBytesRead = -1;
 }
 
 int	Client::getSocketfd()
 {
 	return (_clientSocketfd);
+}
+
+void Client::resetData()
+{
+	_buffer = "";
+	_gotRequestHead = false;
+	_bodyBytesRead = -1;
 }
 
 const char *	Client::connectionDeniedException::what() const throw()

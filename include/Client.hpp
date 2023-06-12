@@ -6,7 +6,7 @@
 /*   By: wmardin <wmardin@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/03/28 20:29:39 by pandalaf          #+#    #+#             */
-/*   Updated: 2023/06/09 19:06:30 by wmardin          ###   ########.fr       */
+/*   Updated: 2023/06/12 10:45:14 by wmardin          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -26,11 +26,12 @@ class	Client
 		Client(int);
 
 		int				getSocketfd();
-		bool			gotCompleteHeader();
+		void			resetData();
 		
 		bool			_gotRequestHead;
 		std::string		_buffer;
 		RequestHead		_requestHead;
+		int				_bodyBytesRead;
 
 	private:
 		int				_clientSocketfd;
