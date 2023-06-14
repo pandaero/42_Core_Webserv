@@ -6,7 +6,7 @@
 /*   By: wmardin <wmardin@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/04/07 19:17:18 by pandalaf          #+#    #+#             */
-/*   Updated: 2023/06/12 10:36:06 by wmardin          ###   ########.fr       */
+/*   Updated: 2023/06/13 22:23:31 by wmardin          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -51,10 +51,10 @@ class	Server
 		void	poll();
 		void	handleConnections();
 		void	checkNewClients();
-		bool	checkEvent(size_t);
-		bool	closeClient(size_t, clientVec_it);
+		bool	checkPollEvent(size_t, clientVec_it);
+		void	closeClient(size_t, clientVec_it);
 		void	buildRequestHead(clientVec_it);
-		bool	clientBodyError(clientVec_it);
+		bool	clientBodySizeError(clientVec_it);
 		
 		
 		void	whoIsI();
@@ -69,7 +69,7 @@ class	Server
 		void	setClientMaxBody(std::string);
 		void	setMaxConnections(std::string);
 		void	setBacklog(std::string);
-		void	setGlobalDirListing(std::string input);
+		void	setDefaultDirListing(std::string input);
 
 		std::string	getStatusPage(int) const;
 		std::string	getRoot() const;

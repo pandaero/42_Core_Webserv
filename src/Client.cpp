@@ -6,7 +6,7 @@
 /*   By: wmardin <wmardin@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/03/28 20:51:05 by pandalaf          #+#    #+#             */
-/*   Updated: 2023/06/10 15:40:00 by wmardin          ###   ########.fr       */
+/*   Updated: 2023/06/13 22:01:36 by wmardin          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -26,6 +26,12 @@ Client::Client(int serverSocketfd)
 	_bodyBytesRead = -1;
 }
 
+Client::~Client()
+{
+	close(_clientSocketfd);
+	std::cout << "Info: Client: Destructor: Closed Client Socket FD " << _clientSocketfd << "." << std::endl;
+}
+
 int	Client::getSocketfd()
 {
 	return (_clientSocketfd);
@@ -42,9 +48,3 @@ const char *	Client::connectionDeniedException::what() const throw()
 {
 	return ("Error: connection with the client was denied.");
 }
-
-bool Client::gotCompleteHeader()
-{
-	return _gotRequest;	
-}
-

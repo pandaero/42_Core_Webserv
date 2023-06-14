@@ -6,7 +6,7 @@
 /*   By: wmardin <wmardin@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/03/26 01:51:20 by pandalaf          #+#    #+#             */
-/*   Updated: 2023/06/08 11:34:40 by wmardin          ###   ########.fr       */
+/*   Updated: 2023/06/13 17:18:20 by wmardin          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -19,8 +19,6 @@
 # include <map>
 # include <string>
 # include <sys/stat.h>
-
-# include "Client.hpp"
 
 // MAKROS
 # define WHITESPACE		" \t\v\r\n"
@@ -100,6 +98,10 @@
 # define E_ACC_EXEC				"Error: Server: Cannot execute from path: "
 
 // ===== ===== ===== ===== TYPEDEFS ===== ===== ===== =====
+// forward declarations
+class	RequestHead;
+class	Client;
+
 typedef struct
 {
 	bool			get;

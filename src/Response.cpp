@@ -6,7 +6,7 @@
 /*   By: wmardin <wmardin@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/04/01 17:05:35 by pandalaf          #+#    #+#             */
-/*   Updated: 2023/06/10 15:23:46 by wmardin          ###   ########.fr       */
+/*   Updated: 2023/06/14 08:18:08 by wmardin          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -73,8 +73,11 @@ void	Response::setFile(std::string locationPath, const Server & currentServer)
 {
 	// Map location / URL to folder structure
 	std::string	realPath = currentServer.getRoot() + locationPath;
-	if (realPath.find_last_of('/') == realPath.size() - 1)
-		realPath.erase(realPath.find_last_of('/'));
+	size_t	indexLastChar = realPath.length() - 1;
+	if (realPath[indexLastChar] == '/')
+		realPath.erase(indexLastChar); // are there edge cases? like just pointing to root? "/"
+	/* if (realPath.find_last_of('/') == realPath.size() - 1)
+		realPath.erase(realPath.find_last_of('/')); */
 	// If path is a directory, search for index.html. If not found, check for dir listing 
 	// Consider dir listing in case of dir and serve corresponding (created) dir listing
 	// If SCHMANG happens, set to corresponding error code

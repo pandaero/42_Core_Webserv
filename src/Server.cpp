@@ -6,7 +6,7 @@
 /*   By: wmardin <wmardin@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/04/07 17:49:49 by pandalaf          #+#    #+#             */
-/*   Updated: 2023/06/12 10:47:03 by wmardin          ###   ########.fr       */
+/*   Updated: 2023/06/14 11:36:53 by wmardin          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -73,6 +73,7 @@ Server::~Server()
 
 void	Server::startListening()
 {
+	std::cout << __FUNCTION__ << std::endl;
 	_pollStructs[0].fd = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP);
 	if (_pollStructs[0].fd == -1)
 		throw	socketCreationFailureException();
@@ -94,66 +95,70 @@ void	Server::startListening()
 
 void	Server::poll()
 {
+	std::cout << __FUNCTION__ << std::endl;
 	if (::poll(_pollStructs, _clients.size() + 1, -1) == -1)
 		throw pollFailureException();
 }
 
 void	Server::handleConnections()
 {
-	std::cout << "Handling connection" << std::endl;
+	std::cout << __FUNCTION__ << std::endl;
 	checkNewClients();
+	std::cout << "return to " << __FUNCTION__ << std::endl;
 	size_t i = 0;
 	for (clientVec_it clientIt = _clients.begin(); clientIt != _clients.end(); ++clientIt, ++i)
 	{
 		std::cout << "Client handling, i: " << i << ", Client size: " << _clients.size() << std::endl;
-		if (!checkEvent(i))
+		if (!checkPollEvent(i, clientIt))
 			continue;
 		_bytesReceived = recv(_pollStructs[i + 1].fd, _recvBuffer, RECV_CHUNK_SIZE, 0);
-		if (closeClient(i, clientIt))
+		if (_bytesReceived <= 0)
+		{
+			closeClient(i, clientIt);
 			continue;
+		}
 		clientIt->_buffer.append(_recvBuffer, _bytesReceived);
 		if (!clientIt->_gotRequestHead)
 		{
 			if (clientIt->_buffer.find("\r\n\r\n") != std::string::npos)
 			{
 				buildRequestHead(clientIt);
-				if (clientBodyError(clientIt))
+				std::cout << "Received " << _bytesReceived << " bytes from client:\n\n" << clientIt->_buffer << std::endl;
+				std::cout << "Raw path: " << clientIt->_requestHead.getPath() << std::endl;
+				std::cout << "Root+raw+index.html: " << _root << clientIt->_requestHead.getPath() << "index.html" << std::endl;
+				
+				if (clientBodySizeError(clientIt))
 					continue;
+				// maybe not needed because next action will be continue anyway
 			}
 		}
 		else //request head is complete, handle the potential request body
 		{
-			/*
-			while size of body is smaller than content length
-				append to body and keep repeating the read append cycle
-			when body = content length
-				stop the read append cycle and handle the now completed request
-			*/
-			
-			// handle the body
-			// read up to content length size
-			// increment total read var
+			int	contentLength = clientIt->_requestHead.getContentLength();
+			if (contentLength <= 0) //there was no request body
+			{
+				Response	response(clientIt->_requestHead, *this);
+				response.send(clientIt->getSocketfd(), *this);
+				clientIt->resetData();
+			}
+			else
+			{
+				if (clientIt->_buffer.size() < (size_t)contentLength)
+					clientIt->_buffer.append(_recvBuffer, _bytesReceived); //body not complete
+				else
+				{
+					Response	response(clientIt->_requestHead, *this);
+					// handle CGI
+					response.send(clientIt->getSocketfd(), *this);
+					clientIt->resetData();
+				}
+				
+			}
 		}
-		
-		std::cout << clientIt->_buffer << std::endl;
-		// handle the body
-		//	is the body complete?
-		// 	is the body too long (maxclientsize)
-		if (clientIt->_gotRequest == true)
+		/* if (clientIt->_gotRequest == true)
 		{
-			std::cout << "Received " << bytesReceived << " bytes from client:\n\n" << buffer << std::endl;
 			RequestHead		request(buffer);
-			// CGI handling (for php and potentially python scripts)
-			// if (request.path() == ".php")
-			// {
-			// 	pid = fork ()
-			// 	if (pid == 0)
-			// 	{
-			// 		// run cgi with input file as argument or piped in
-			// 		// save file to temp directory
-			// 	}
-			// 	// attempt to serve file (html from cgi)
-			// }
+			
 			Response	standard(request, *this);
 			// standard.setStatusCode(200);
 			std::cout << "Raw path: " << request.getPath() << std::endl;
@@ -168,21 +173,38 @@ void	Server::handleConnections()
 			std::cout << "Sending response." << std::endl;
 			standard.send(_pollStructs[i + 1].fd, *this);
 			clientIt->_gotRequest = false;
-		}
-		
-		// if (_pollStructs[i + 1].revents & POLLOUT)
-		// if (_pollStructs[i + 1].revents & POLLERR)
-		// if (_pollStructs[i + 1].revents & POLLHUP)
+		} */
 	}
 }
 
-bool Server::checkEvent(size_t clientNumber)
+// CGI handling (for php and potentially python scripts)
+			// if (request.path() == ".php")
+			// {
+			// 	pid = fork ()
+			// 	if (pid == 0)
+			// 	{
+			// 		// run cgi with input file as argument or piped in
+			// 		// save file to temp directory
+			// 	}
+			// 	// attempt to serve file (html from cgi)
+			// }
+
+bool Server::checkPollEvent(size_t clientNumber, clientVec_it client)
 {
-	return (_pollStructs[clientNumber + 1].revents & POLLIN);
+	std::cout << __FUNCTION__ << std::endl;
+	if (_pollStructs[clientNumber + 1].revents & POLLIN)
+		return true;
+	if (_pollStructs[clientNumber + 1].revents & POLLHUP)
+	{
+		closeClient(clientNumber, client);
+		return false;
+	}
+	return false;
 }
 
 void Server::checkNewClients()
 {
+	std::cout << __FUNCTION__ << std::endl;
 	if (_pollStructs[0].revents & POLLIN)
 	{
 		Client newClient(_pollStructs[0].fd);
@@ -196,27 +218,25 @@ void Server::checkNewClients()
 	}
 }
 
-bool Server::closeClient(size_t clientNumber, clientVec_it client)
+void Server::closeClient(size_t clientNumber, clientVec_it client)
 {
-	if (_bytesReceived <= 0)
-	{
-		close(_pollStructs[clientNumber + 1].fd);
-		_clients.erase(client);
-		return true;
-	}
-	return false;
+	std::cout << __FUNCTION__ << std::endl;
+	close(_pollStructs[clientNumber + 1].fd);
+	_clients.erase(client);
 }
 
 void Server::buildRequestHead(clientVec_it client)
 {
+	std::cout << __FUNCTION__ << std::endl;
 	client->_requestHead = RequestHead(client->_buffer);
 	client->_gotRequestHead = true;
 	client->_buffer.erase(0, client->_buffer.find("\r\n\r\n") + 4);	
 }
 
-bool Server::clientBodyError(clientVec_it client)
+bool Server::clientBodySizeError(clientVec_it client)
 {
-	if (client->_requestHead.getContentLength() > _clientMaxBody)
+	std::cout << __FUNCTION__ << std::endl;
+	if (client->_requestHead.getContentLength() > (int)_clientMaxBody)
 	{
 		Response errorResponse(413);
 		errorResponse.send(client->getSocketfd(), *this);

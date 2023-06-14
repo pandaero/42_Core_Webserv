@@ -19,19 +19,18 @@ RequestHead::RequestHead()
 
 RequestHead::RequestHead(std::string requestData)
 {
-	//DEBUG
-	std::cout << "Request getting made" << std::endl;
-	_contentLength = -1;
+	std::cout << __FUNCTION__ << std::endl;
 	_method = splitEraseStr(requestData, " ");
 	_path = splitEraseStr(requestData, " ");
 	_protocol = splitEraseStr(requestData, "\r\n");
 	_headers = createHeaderMap(requestData, ":", "\r\n", "\r\n");
-	if (headerValue("content-length") != "NOT FOUND")
-		_contentLength = std::atoi(headerValue("content-length").c_str());
-	std::cout << "Request constructed" << std::endl;
+	if (_headers.find("content-length") != _headers.end())
+		_contentLength = std::atoi(getHeaderValue("content-length").c_str());
+	else
+		_contentLength = -1;
 }
 
-std::string	RequestHead::headerValue(std::string header)
+std::string	RequestHead::getHeaderValue(std::string header) const
 {
 	std::string	query = strToLower(header);
 	if (_headers.find(header) != _headers.end())
@@ -62,6 +61,11 @@ std::string	RequestHead::getPath() const
 int	RequestHead::getContentLength() const
 {
 	return (_contentLength);
+}
+
+std::string RequestHead::getContentType() const
+{
+	return _contentType;
 }
 
 strMap RequestHead::createHeaderMap(std::string& input, std::string endOfKey, std::string endOfValue, std::string endOfMap)

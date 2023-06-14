@@ -151,7 +151,7 @@ std::string getInstruction(std::string& inputStr)
 	std::string	instruction;
 	size_t		len_semicolon;
 
-	// check for semicolon delimiting the instruction;
+	// Check whether semicolon delimits the instruction
 	len_semicolon = inputStr.find(";");
 	if (len_semicolon < inputStr.find("{"))
 	{
@@ -163,20 +163,20 @@ std::string getInstruction(std::string& inputStr)
 
 	// Curly braces must now delimit the instruction
 	size_t	i;
-	int		braces;
+	int		bracesDepth;
 
 	i = inputStr.find("{");
 	if (i == std::string::npos || inputStr.find("}") < i)
 		throw std::runtime_error(E_INVALIDENDTOKEN + inputStr + '\n');
-	braces = 1;
-	while (inputStr[++i] && braces > 0 && braces < 3)
+	bracesDepth = 1;
+	while (inputStr[++i] && bracesDepth > 0 && bracesDepth < 3)
 	{
 		if (inputStr[i] == '{')
-			braces++;
+			bracesDepth++;
 		else if (inputStr[i] == '}')
-			braces--;
+			bracesDepth--;
 	}
-	if (braces != 0)
+	if (bracesDepth != 0)
 		throw std::runtime_error(E_INVALIDBRACE + inputStr + '\n');
 	instruction = inputStr.substr(0, i);
 	inputStr.erase(0, i);
