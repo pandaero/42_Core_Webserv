@@ -6,7 +6,7 @@
 /*   By: wmardin <wmardin@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/03/28 20:51:05 by pandalaf          #+#    #+#             */
-/*   Updated: 2023/06/13 22:01:36 by wmardin          ###   ########.fr       */
+/*   Updated: 2023/06/16 10:07:59 by wmardin          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -14,7 +14,7 @@
 
 #include <unistd.h>
 
-Client::Client(int serverSocketfd)
+Client::Client(int serverSocketfd, int pollStructIndex)
 {
 	_clientSocketfd = accept(serverSocketfd, (struct sockaddr *) &_clientAddress, &_clientSockLen);
 	if (_clientSocketfd == -1)
@@ -22,6 +22,7 @@ Client::Client(int serverSocketfd)
 		close(_clientSocketfd);
 		throw connectionDeniedException();
 	}
+	_pollStructIndex = pollStructIndex;
 	_gotRequestHead = false;
 	_bodyBytesRead = -1;
 }
@@ -35,6 +36,11 @@ Client::~Client()
 int	Client::getSocketfd()
 {
 	return (_clientSocketfd);
+}
+
+int Client::getPollStructIndex()
+{
+	return _pollStructIndex;
 }
 
 void Client::resetData()

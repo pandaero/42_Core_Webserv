@@ -6,7 +6,7 @@
 /*   By: wmardin <wmardin@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/04/07 17:49:49 by pandalaf          #+#    #+#             */
-/*   Updated: 2023/06/14 11:36:53 by wmardin          ###   ########.fr       */
+/*   Updated: 2023/06/16 15:53:47 by wmardin          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -62,6 +62,8 @@ Server::Server(const ServerConfig & config):
 	//setBacklog(config.backlog);
 
 	_pollStructs = new pollfd[_maxConns];
+	for (size_t i = 0; i < _maxConns; i++)
+		_pollStructs[i].fd = -1;
 	startListening();
 }
 
@@ -105,16 +107,15 @@ void	Server::handleConnections()
 	std::cout << __FUNCTION__ << std::endl;
 	checkNewClients();
 	std::cout << "return to " << __FUNCTION__ << std::endl;
-	size_t i = 0;
-	for (clientVec_it clientIt = _clients.begin(); clientIt != _clients.end(); ++clientIt, ++i)
+	for (clientVec_it clientIt = _clients.begin(); clientIt != _clients.end(); ++clientIt)
 	{
-		std::cout << "Client handling, i: " << i << ", Client size: " << _clients.size() << std::endl;
-		if (!checkPollEvent(i, clientIt))
+		std::cout << "Client handling." << ", Clients size: " << _clients.size() << std::endl;
+		if (!checkPollEvent(clientIt))
 			continue;
-		_bytesReceived = recv(_pollStructs[i + 1].fd, _recvBuffer, RECV_CHUNK_SIZE, 0);
+		_bytesReceived = recv(_pollStructs[clientIt->getPollStructIndex()].fd, _recvBuffer, RECV_CHUNK_SIZE, 0);
 		if (_bytesReceived <= 0)
 		{
-			closeClient(i, clientIt);
+			closeClient(clientIt);
 			continue;
 		}
 		clientIt->_buffer.append(_recvBuffer, _bytesReceived);
@@ -127,7 +128,7 @@ void	Server::handleConnections()
 				std::cout << "Raw path: " << clientIt->_requestHead.getPath() << std::endl;
 				std::cout << "Root+raw+index.html: " << _root << clientIt->_requestHead.getPath() << "index.html" << std::endl;
 				
-				if (clientBodySizeError(clientIt))
+				if (clientBodySizeError(clientIt)) // change to general error checker and include protocol check
 					continue;
 				// maybe not needed because next action will be continue anyway
 			}
@@ -189,14 +190,14 @@ void	Server::handleConnections()
 			// 	// attempt to serve file (html from cgi)
 			// }
 
-bool Server::checkPollEvent(size_t clientNumber, clientVec_it client)
+bool Server::checkPollEvent(clientVec_it client)
 {
 	std::cout << __FUNCTION__ << std::endl;
-	if (_pollStructs[clientNumber + 1].revents & POLLIN)
+	if (_pollStructs[client->getPollStructIndex()].revents & POLLIN)
 		return true;
-	if (_pollStructs[clientNumber + 1].revents & POLLHUP)
+	if (_pollStructs[client->getPollStructIndex()].revents & POLLHUP)
 	{
-		closeClient(clientNumber, client);
+		closeClient(client);
 		return false;
 	}
 	return false;
@@ -207,21 +208,35 @@ void Server::checkNewClients()
 	std::cout << __FUNCTION__ << std::endl;
 	if (_pollStructs[0].revents & POLLIN)
 	{
-		Client newClient(_pollStructs[0].fd);
-		if (_clients.size() <= (size_t) _maxConns)
-			_clients.push_back(newClient);
-		else
-			throw connectionLimitExceededException();
+		int	index = findFreePollStructIndex();
+		// try catch block or smth to catch too many clients error inf findFreeIndex
+		_clients.push_back(Client(_pollStructs[0].fd, index));
 		std::cout << "Clients size: " << _clients.size() << std::endl;
-		_pollStructs[_clients.size()].fd = newClient.getSocketfd();
-		_pollStructs[_clients.size()].events = POLLIN;
+		_pollStructs[index].fd = _clients[_clients.size() - 1].getSocketfd(); // back() is CPP11
+		_pollStructs[index].events = POLLIN | POLLHUP;
 	}
 }
 
-void Server::closeClient(size_t clientNumber, clientVec_it client)
+int Server::findFreePollStructIndex()
+{
+	int i = 0;
+	
+	while (i < _maxConns && _pollStructs[i].fd != -1)
+		i++;
+	if (i == _maxConns)
+	{
+		std::cerr << __FUNCTION__ << " i = maxConns" << std::endl;
+		throw connectionLimitExceededException(); // gotta catch this! this is not a kill point
+		// prolly better to just retunr -1 here and check for that in calling function
+	}
+}
+
+// prolly change iterator to client reference
+void Server::closeClient(clientVec_it client)
 {
 	std::cout << __FUNCTION__ << std::endl;
-	close(_pollStructs[clientNumber + 1].fd);
+	close(_pollStructs[client->getPollStructIndex()].fd);
+	_pollStructs[client->getPollStructIndex()].fd = -1;
 	_clients.erase(client);
 }
 
@@ -245,6 +260,57 @@ bool Server::clientBodySizeError(clientVec_it client)
 	}
 	return false;
 }
+
+void Server::sendResponse(Response response, int socketfd)
+{
+	int	fileBytesSent = 0;
+	int	closingBytesSent = 0;
+
+	std::cout << "Header:\n" << response._responseHeader << std::endl;
+	// Send header
+	if (::send(socketfd, response._responseHeader.data(), response._responseHeader.size(), 0) == -1)
+		std::cerr << "Error: Server::sendResponse: send: failure to send header data.";
+	std::ifstream	file;
+	// Send file or corresponding status page.
+	if (_statusCode == 200)
+		file.open(_filePath.c_str(), std::ios::binary);
+	else
+		file.open(sendingServer.getStatusPage(_statusCode).c_str(), std::ios::binary);
+	if (file.fail())
+		std::cerr << "Error: Response: send: could not open file." << std::endl;
+	char	buffer[1];
+	// DEBUG
+	std::cout << "sending file: " << _filePath << std::endl;
+	while (file.read(buffer, sizeof(buffer)))
+	{
+		if ((fileBytesSent += ::send(socketfd, buffer, file.gcount(), 0)) == -1)
+		{
+			std::cerr << "Error: Response: send: could not send file data.";
+			return (-1);
+		}
+		// DEBUG
+		std::cout << "the buffer:\n" << buffer << std::endl;
+	}
+	// if (!file.eof())
+	// {
+	// 	std::cerr << "Error: Response: send: could not read entire file.";
+	// 	return (-1);
+	// }
+	// DEBUG
+	std::cout << "Reached EOF" << std::endl;
+	file.close();
+	// Send termination CRLFs
+	std::string	terminationSequence(TERMINATION);
+	if ((closingBytesSent += ::send(socketfd, terminationSequence.data(), terminationSequence.size(), 0)) == -1)
+	{
+		std::cerr << "Error: Response: send: failure to send termination data.";
+		return (-1);
+	}
+	// DEBUG
+	std::cout << "Response sent, " << fileBytesSent << " bytes from file." << std::endl;
+	return (fileBytesSent);
+}
+
 
 void Server::whoIsI()
 {

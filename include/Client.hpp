@@ -6,7 +6,7 @@
 /*   By: wmardin <wmardin@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/03/28 20:29:39 by pandalaf          #+#    #+#             */
-/*   Updated: 2023/06/13 22:07:20 by wmardin          ###   ########.fr       */
+/*   Updated: 2023/06/16 10:07:35 by wmardin          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -24,10 +24,11 @@
 class	Client
 {
 	public:
-		Client(int);
+		Client(int, int);
 		~Client();
 
 		int				getSocketfd();
+		int				getPollStructIndex();
 		void			resetData();
 		
 		bool			_gotRequestHead;
@@ -37,6 +38,7 @@ class	Client
 
 	private:
 		int				_clientSocketfd;
+		int				_pollStructIndex;
 		socklen_t		_clientSockLen;
 		sockaddr_in		_clientAddress;
 

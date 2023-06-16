@@ -6,7 +6,7 @@
 /*   By: wmardin <wmardin@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/04/07 19:17:18 by pandalaf          #+#    #+#             */
-/*   Updated: 2023/06/13 22:23:31 by wmardin          ###   ########.fr       */
+/*   Updated: 2023/06/16 14:30:02 by wmardin          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -39,11 +39,7 @@ class ServerConfig;
 class	Server
 {
 	public:
-		friend class	Response;
-		
-		// DEBUG
-		Server();
-
+	//most /all of these can be private, sort it out later
 		Server(const ServerConfig &);
 		~Server();
 		
@@ -51,10 +47,12 @@ class	Server
 		void	poll();
 		void	handleConnections();
 		void	checkNewClients();
-		bool	checkPollEvent(size_t, clientVec_it);
-		void	closeClient(size_t, clientVec_it);
+		int		findFreePollStructIndex();
+		bool	checkPollEvent(clientVec_it);
+		void	closeClient(clientVec_it);
 		void	buildRequestHead(clientVec_it);
 		bool	clientBodySizeError(clientVec_it);
+		void	sendResponse(Response, int);
 		
 		
 		void	whoIsI();
