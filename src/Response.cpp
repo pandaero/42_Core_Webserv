@@ -6,7 +6,7 @@
 /*   By: wmardin <wmardin@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/04/01 17:05:35 by pandalaf          #+#    #+#             */
-/*   Updated: 2023/06/14 08:18:08 by wmardin          ###   ########.fr       */
+/*   Updated: 2023/07/26 18:06:13 by wmardin          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -218,4 +218,9 @@ int	Response::send(int socketfd, const Server & sendingServer)
 	// DEBUG
 	std::cout << "Response sent, " << fileBytesSent << " bytes from file." << std::endl;
 	return (fileBytesSent);
+}
+
+std::string Response::getFilePath()
+{
+	return _filePath;
 }

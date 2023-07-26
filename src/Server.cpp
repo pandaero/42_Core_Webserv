@@ -6,7 +6,7 @@
 /*   By: wmardin <wmardin@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/04/07 17:49:49 by pandalaf          #+#    #+#             */
-/*   Updated: 2023/06/16 15:53:47 by wmardin          ###   ########.fr       */
+/*   Updated: 2023/07/26 18:10:31 by wmardin          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -219,7 +219,7 @@ void Server::checkNewClients()
 
 int Server::findFreePollStructIndex()
 {
-	int i = 0;
+	size_t i = 0;
 	
 	while (i < _maxConns && _pollStructs[i].fd != -1)
 		i++;
@@ -228,7 +228,9 @@ int Server::findFreePollStructIndex()
 		std::cerr << __FUNCTION__ << " i = maxConns" << std::endl;
 		throw connectionLimitExceededException(); // gotta catch this! this is not a kill point
 		// prolly better to just retunr -1 here and check for that in calling function
+		return -1;
 	}
+	return i;
 }
 
 // prolly change iterator to client reference
@@ -272,21 +274,21 @@ void Server::sendResponse(Response response, int socketfd)
 		std::cerr << "Error: Server::sendResponse: send: failure to send header data.";
 	std::ifstream	file;
 	// Send file or corresponding status page.
-	if (_statusCode == 200)
-		file.open(_filePath.c_str(), std::ios::binary);
+	if (response._statusCode == 200)
+		file.open(response.getFilePath().c_str(), std::ios::binary);
 	else
-		file.open(sendingServer.getStatusPage(_statusCode).c_str(), std::ios::binary);
+		file.open(getStatusPage(response._statusCode).c_str(), std::ios::binary);
 	if (file.fail())
 		std::cerr << "Error: Response: send: could not open file." << std::endl;
 	char	buffer[1];
 	// DEBUG
-	std::cout << "sending file: " << _filePath << std::endl;
+	std::cout << "sending file: " << response.getFilePath() << std::endl;
 	while (file.read(buffer, sizeof(buffer)))
 	{
 		if ((fileBytesSent += ::send(socketfd, buffer, file.gcount(), 0)) == -1)
 		{
 			std::cerr << "Error: Response: send: could not send file data.";
-			return (-1);
+			
 		}
 		// DEBUG
 		std::cout << "the buffer:\n" << buffer << std::endl;
@@ -304,11 +306,10 @@ void Server::sendResponse(Response response, int socketfd)
 	if ((closingBytesSent += ::send(socketfd, terminationSequence.data(), terminationSequence.size(), 0)) == -1)
 	{
 		std::cerr << "Error: Response: send: failure to send termination data.";
-		return (-1);
 	}
 	// DEBUG
 	std::cout << "Response sent, " << fileBytesSent << " bytes from file." << std::endl;
-	return (fileBytesSent);
+	//return (fileBytesSent);
 }
 
 

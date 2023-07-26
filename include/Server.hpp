@@ -6,7 +6,7 @@
 /*   By: wmardin <wmardin@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/04/07 19:17:18 by pandalaf          #+#    #+#             */
-/*   Updated: 2023/06/16 14:30:02 by wmardin          ###   ########.fr       */
+/*   Updated: 2023/07/26 18:12:26 by wmardin          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -35,6 +35,9 @@
 # include <netinet/in.h>
 
 class ServerConfig;
+
+//forward retarded declaration
+class Response;
 
 class	Server
 {
