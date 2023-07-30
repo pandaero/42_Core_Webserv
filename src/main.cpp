@@ -8,8 +8,8 @@ int main()
 	std::vector<ServerConfig>	configVec;
 	size_t						serverCount;
 
-	ConfigFile	config("default/config/ideal.conf");
-	configVec = config.getConfigs();
+	ConfigFile	configfile("default/config/ideal.conf");
+	configVec = configfile.getConfigs();
 	serverCount = configVec.size();
 
 	Server *	serverArr[serverCount];

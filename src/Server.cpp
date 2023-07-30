@@ -6,7 +6,7 @@
 /*   By: wmardin <wmardin@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/04/07 17:49:49 by pandalaf          #+#    #+#             */
-/*   Updated: 2023/07/26 18:10:31 by wmardin          ###   ########.fr       */
+/*   Updated: 2023/07/26 20:11:14 by wmardin          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -209,7 +209,7 @@ void Server::checkNewClients()
 	if (_pollStructs[0].revents & POLLIN)
 	{
 		int	index = findFreePollStructIndex();
-		// try catch block or smth to catch too many clients error inf findFreeIndex
+		// try catch block or smth to catch too many clients error in findFreeIndex
 		_clients.push_back(Client(_pollStructs[0].fd, index));
 		std::cout << "Clients size: " << _clients.size() << std::endl;
 		_pollStructs[index].fd = _clients[_clients.size() - 1].getSocketfd(); // back() is CPP11
