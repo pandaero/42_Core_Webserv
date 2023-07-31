@@ -19,7 +19,7 @@ int main()
 		serverArr[i]->whoIsI();
 	}
 
-	while (true)
+	//while (true)
 	{
 		for (size_t i = 0; i < serverCount; ++i)
 		{
@@ -27,12 +27,12 @@ int main()
 			try
 			{
 				serverArr[i]->poll();
-				std::cout << "Try poll success.\n";
+				// std::cout << "Try poll success.\n";
 			}
 			catch (std::exception & exc)
 			{
 				// std::cerr << "Error: could not poll on a socket." << std::endl;
-				perror("poll");
+				perror("pollerror");
 				continue;
 			}
 			serverArr[i]->handleConnections();

@@ -6,7 +6,7 @@
 /*   By: wmardin <wmardin@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/03/28 20:29:39 by pandalaf          #+#    #+#             */
-/*   Updated: 2023/06/16 10:07:35 by wmardin          ###   ########.fr       */
+/*   Updated: 2023/07/31 17:57:07 by wmardin          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -30,6 +30,7 @@ class	Client
 		int				getSocketfd();
 		int				getPollStructIndex();
 		void			resetData();
+		void			connect();
 		
 		bool			_gotRequestHead;
 		std::string		_buffer;
@@ -37,6 +38,7 @@ class	Client
 		int				_bodyBytesRead;
 
 	private:
+		int				_serverSocketfd;
 		int				_clientSocketfd;
 		int				_pollStructIndex;
 		socklen_t		_clientSockLen;

@@ -6,7 +6,7 @@
 /*   By: wmardin <wmardin@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/03/26 01:51:20 by pandalaf          #+#    #+#             */
-/*   Updated: 2023/06/13 17:18:20 by wmardin          ###   ########.fr       */
+/*   Updated: 2023/07/30 21:34:49 by wmardin          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -24,6 +24,7 @@
 # define WHITESPACE		" \t\v\r\n"
 # define TERMINATION	"\r\n\r\n"
 # define HTTPVERSION	"HTTP/1.1"
+# define ANNOUNCEME		std::cout << "Announcer: " << __FUNCTION__ << std::endl;
 
 // ===== ===== ===== ===== SIZE Descriptions ===== ===== ===== =====
 # define RECV_CHUNK_SIZE		4096

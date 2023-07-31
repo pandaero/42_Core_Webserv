@@ -6,7 +6,7 @@
 /*   By: wmardin <wmardin@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/04/07 17:49:49 by pandalaf          #+#    #+#             */
-/*   Updated: 2023/07/26 20:11:14 by wmardin          ###   ########.fr       */
+/*   Updated: 2023/07/31 17:56:46 by wmardin          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -75,7 +75,7 @@ Server::~Server()
 
 void	Server::startListening()
 {
-	std::cout << __FUNCTION__ << std::endl;
+	ANNOUNCEME
 	_pollStructs[0].fd = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP);
 	if (_pollStructs[0].fd == -1)
 		throw	socketCreationFailureException();
@@ -97,6 +97,7 @@ void	Server::startListening()
 
 void	Server::poll()
 {
+	ANNOUNCEME
 	std::cout << __FUNCTION__ << std::endl;
 	if (::poll(_pollStructs, _clients.size() + 1, -1) == -1)
 		throw pollFailureException();
@@ -104,8 +105,10 @@ void	Server::poll()
 
 void	Server::handleConnections()
 {
-	std::cout << __FUNCTION__ << std::endl;
+	ANNOUNCEME
 	checkNewClients();
+		std::cout << "DEBUG 0" << std::endl;
+
 	std::cout << "return to " << __FUNCTION__ << std::endl;
 	for (clientVec_it clientIt = _clients.begin(); clientIt != _clients.end(); ++clientIt)
 	{
@@ -115,6 +118,7 @@ void	Server::handleConnections()
 		_bytesReceived = recv(_pollStructs[clientIt->getPollStructIndex()].fd, _recvBuffer, RECV_CHUNK_SIZE, 0);
 		if (_bytesReceived <= 0)
 		{
+			std::cout << "closeClient in if bytesreceived <=0 in handleConnections" << std::endl;
 			closeClient(clientIt);
 			continue;
 		}
@@ -192,11 +196,12 @@ void	Server::handleConnections()
 
 bool Server::checkPollEvent(clientVec_it client)
 {
-	std::cout << __FUNCTION__ << std::endl;
+	ANNOUNCEME
 	if (_pollStructs[client->getPollStructIndex()].revents & POLLIN)
 		return true;
 	if (_pollStructs[client->getPollStructIndex()].revents & POLLHUP)
 	{
+		std::cout << "closeClient in checkPollEvent" << std::endl;
 		closeClient(client);
 		return false;
 	}
@@ -205,12 +210,14 @@ bool Server::checkPollEvent(clientVec_it client)
 
 void Server::checkNewClients()
 {
-	std::cout << __FUNCTION__ << std::endl;
+	ANNOUNCEME
 	if (_pollStructs[0].revents & POLLIN)
 	{
 		int	index = findFreePollStructIndex();
 		// try catch block or smth to catch too many clients error in findFreeIndex
-		_clients.push_back(Client(_pollStructs[0].fd, index));
+		Client	newClient(_pollStructs[0].fd, index);
+		_clients.push_back(newClient);
+		_clients[_clients.size() - 1].connect();
 		std::cout << "Clients size: " << _clients.size() << std::endl;
 		_pollStructs[index].fd = _clients[_clients.size() - 1].getSocketfd(); // back() is CPP11
 		_pollStructs[index].events = POLLIN | POLLHUP;
@@ -219,6 +226,7 @@ void Server::checkNewClients()
 
 int Server::findFreePollStructIndex()
 {
+	ANNOUNCEME
 	size_t i = 0;
 	
 	while (i < _maxConns && _pollStructs[i].fd != -1)
@@ -230,13 +238,14 @@ int Server::findFreePollStructIndex()
 		// prolly better to just retunr -1 here and check for that in calling function
 		return -1;
 	}
+	std::cout << "pollstruct index returned: " << i <<std::endl;
 	return i;
 }
 
 // prolly change iterator to client reference
 void Server::closeClient(clientVec_it client)
 {
-	std::cout << __FUNCTION__ << std::endl;
+	ANNOUNCEME
 	close(_pollStructs[client->getPollStructIndex()].fd);
 	_pollStructs[client->getPollStructIndex()].fd = -1;
 	_clients.erase(client);
@@ -244,15 +253,15 @@ void Server::closeClient(clientVec_it client)
 
 void Server::buildRequestHead(clientVec_it client)
 {
-	std::cout << __FUNCTION__ << std::endl;
+	ANNOUNCEME
 	client->_requestHead = RequestHead(client->_buffer);
 	client->_gotRequestHead = true;
-	client->_buffer.erase(0, client->_buffer.find("\r\n\r\n") + 4);	
+	client->_buffer.erase(0, client->_buffer.find("\r\n\r\n") + 4);
 }
 
 bool Server::clientBodySizeError(clientVec_it client)
 {
-	std::cout << __FUNCTION__ << std::endl;
+	ANNOUNCEME
 	if (client->_requestHead.getContentLength() > (int)_clientMaxBody)
 	{
 		Response errorResponse(413);
@@ -268,6 +277,7 @@ void Server::sendResponse(Response response, int socketfd)
 	int	fileBytesSent = 0;
 	int	closingBytesSent = 0;
 
+	ANNOUNCEME
 	std::cout << "Header:\n" << response._responseHeader << std::endl;
 	// Send header
 	if (::send(socketfd, response._responseHeader.data(), response._responseHeader.size(), 0) == -1)

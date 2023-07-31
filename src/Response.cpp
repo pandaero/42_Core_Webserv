@@ -6,7 +6,7 @@
 /*   By: wmardin <wmardin@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/04/01 17:05:35 by pandalaf          #+#    #+#             */
-/*   Updated: 2023/07/26 18:06:13 by wmardin          ###   ########.fr       */
+/*   Updated: 2023/07/31 17:25:51 by wmardin          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -22,6 +22,7 @@ Response::Response(int code)
 Response::Response(const RequestHead & request, const Server & server)
 {
 	//DEBUG
+	ANNOUNCEME
 	std::cout << "Response getting made" << std::endl;
 	if (request.getProtocol() != HTTPVERSION)
 		setStatusCode(400);
