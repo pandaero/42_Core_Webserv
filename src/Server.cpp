@@ -6,7 +6,7 @@
 /*   By: wmardin <wmardin@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/04/07 17:49:49 by pandalaf          #+#    #+#             */
-/*   Updated: 2023/08/04 09:33:09 by wmardin          ###   ########.fr       */
+/*   Updated: 2023/08/04 10:29:54 by wmardin          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -68,10 +68,16 @@ Server::Server(const ServerConfig & config):
 		_pollStructs[i].events = 0;
 		_pollStructs[i].revents = 0;
 	}
-	startListening();
+	//startListening();
 }
 
 Server::~Server()
+{
+	/* if (_pollStructs)
+		delete [] _pollStructs; */
+}
+
+void	Server::cleanup()
 {
 	if (_pollStructs)
 		delete [] _pollStructs;
@@ -136,6 +142,7 @@ void Server::acceptConnections()
 void	Server::poll()
 {
 	ANNOUNCEME
+	// just poll for the max possible number of conns! Fuck actual client size.
 	if (::poll(_pollStructs, _clients.size() + 1, -1) == -1)
 		throw pollFailureException();
 }

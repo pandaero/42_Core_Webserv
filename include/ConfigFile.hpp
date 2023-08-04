@@ -6,7 +6,7 @@
 /*   By: wmardin <wmardin@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/05/09 16:01:24 by wmardin           #+#    #+#             */
-/*   Updated: 2023/05/13 22:24:55 by wmardin          ###   ########.fr       */
+/*   Updated: 2023/08/04 10:16:44 by wmardin          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -25,7 +25,8 @@ class ConfigFile
 	public:
 		ConfigFile(const char*);
 
-		std::vector<ServerConfig> getConfigs() const;
+		std::vector<ServerConfig>	getConfigs() const;
+		std::vector<Server>			getServers() const;
 
 	private:
 		std::string		loadFile(const char*);
@@ -33,6 +34,7 @@ class ConfigFile
 		
 		ServerConfig				_defaultServerConfig;
 		std::vector<ServerConfig>	_serverConfigs;
+		std::vector<Server>			_servers;
 };
 
 #endif

@@ -5,29 +5,25 @@
 
 int main()
 {
-	std::vector<ServerConfig>	configVec;
-	size_t						serverCount;
-
-	ConfigFile	configfile("default/config/ideal.conf");
-	configVec = configfile.getConfigs();
-	serverCount = configVec.size();
-
-	Server *	serverArr[serverCount];
-	for (size_t i = 0; i < serverCount; ++i)
+	ConfigFile			configfile("default/config/ideal.conf");
+	std::vector<Server>	servers;
+	
+	servers = configfile.getServers();
+	
+	for (size_t i = 0; i < servers.size(); ++i)
 	{
-		serverArr[i] = new Server(configVec[i]);
-		serverArr[i]->whoIsI();
-		// put start listening here, move it out of server constructor and then server can be a vector
+		servers[i].whoIsI();
+		servers[i].startListening();
 	}
-
+	
 	while (true)
 	{
-		for (size_t i = 0; i < serverCount; ++i)
+		for (size_t i = 0; i < servers.size(); ++i)
 		{
 			std::cout << "Polling Server i: " << i << std::endl;
 			try
 			{
-				serverArr[i]->poll();
+				servers[i].poll();
 				// std::cout << "Try poll success.\n";
 			}
 			catch (std::exception & exc)
@@ -36,55 +32,13 @@ int main()
 				perror("pollerror");
 				continue;
 			}
-			serverArr[i]->handleConnections();
+			servers[i].handleConnections();
 			std::cout << "Server i: " << i << std::endl;
 		}
 	}
+
+	// I mean... How smart is it to put stuff behind a while true loop and no break?
+	// still, this reminds us of stuff that should be freed on shutdown!
+	for (size_t i = 0; i < servers.size(); ++i)
+		servers[i].cleanup();
 }
-
-/* int main()
-{
-	//std::vector<ServerConfig>	configVec;
-	size_t						serverCount = 1;
-
-	// configFile	config("");
-	// configVec = config.getConfigs();
-
-	// configVec = getConfigs("default/config/site.conf");
-	// serverCount = configVec.size();
-
-	Server *	serverArr[serverCount];
-	// for (size_t i = 0; i < serverCount; i++)
-	// {
-	// 	serverArr[i] = new Server(configVec[i]);
-	// 	serverArr[i]->whoIsI();
-	// }
-
-	ConfigFile	configFile("default/config/site.conf");
-
-	serverArr[0] = new Server();
-
-	serverArr[0]->whoIsI();
-
-	while (true)
-	{
-	//	for (size_t i = 0; i < serverCount; ++i)
-		size_t i = 0;
-		{
-			std::cout << "Polling Server i: " << i << std::endl;
-			try
-			{
-				serverArr[i]->poll();
-				std::cout << "Try poll success.\n";
-			}
-			catch (std::exception & exc)
-			{
-				// std::cerr << "Error: could not poll on a socket." << std::endl;
-				perror("poll");
-				continue;
-			}
-			serverArr[i]->handleConnections();
-			std::cout << "Server i: " << i << std::endl;
-		}
-	}
-} */

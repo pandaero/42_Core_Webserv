@@ -6,7 +6,7 @@
 /*   By: wmardin <wmardin@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/05/09 16:03:29 by wmardin           #+#    #+#             */
-/*   Updated: 2023/05/14 10:18:56 by wmardin          ###   ########.fr       */
+/*   Updated: 2023/08/04 10:20:48 by wmardin          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -32,6 +32,8 @@ ConfigFile::ConfigFile(const char* userConfigPath)
 	}
 	if (_serverConfigs.empty())
 		throw std::runtime_error(E_NOSERVER);
+	for (size_t i = 0; i < _serverConfigs.size(); ++i)
+		_servers.push_back(Server(_serverConfigs[i]));
 	std::cout << I_CONFIGIMPORT << std::endl;
 }
 
@@ -39,6 +41,12 @@ std::vector<ServerConfig> ConfigFile::getConfigs() const
 {
 	return _serverConfigs;
 }
+
+std::vector<Server>	ConfigFile::getServers() const
+{
+	return _servers;
+}
+
 
 std::string ConfigFile::loadFile(const char* path)
 {

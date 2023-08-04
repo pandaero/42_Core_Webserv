@@ -6,7 +6,7 @@
 /*   By: wmardin <wmardin@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/04/07 19:17:18 by pandalaf          #+#    #+#             */
-/*   Updated: 2023/08/03 10:57:54 by wmardin          ###   ########.fr       */
+/*   Updated: 2023/08/04 10:30:11 by wmardin          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -46,6 +46,7 @@ class	Server
 		Server(const ServerConfig &);
 		~Server();
 		
+		void	cleanup();
 		void	startListening();
 		void	acceptConnections();
 		void	poll();
