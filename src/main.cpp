@@ -20,7 +20,7 @@ int main()
 		// put start listening here, move it out of server constructor and then server can be a vector
 	}
 
-	//while (true)
+	while (true)
 	{
 		for (size_t i = 0; i < serverCount; ++i)
 		{

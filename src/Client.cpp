@@ -6,7 +6,7 @@
 /*   By: wmardin <wmardin@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/03/28 20:51:05 by pandalaf          #+#    #+#             */
-/*   Updated: 2023/08/04 09:41:39 by wmardin          ###   ########.fr       */
+/*   Updated: 2023/08/04 09:57:01 by wmardin          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -34,8 +34,8 @@ void Client::connect()
 
 Client::~Client()
 {
-	close(_clientSocketfd);
-	std::cout << "Info: Client: Destructor: Closed Client Socket FD " << _clientSocketfd << "." << std::endl;
+	//close(_clientSocketfd);
+	std::cout << "Info: Client: Destructor called. " << std::endl;
 }
 
 int	Client::getSocketfd()
