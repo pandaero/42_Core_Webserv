@@ -13,10 +13,11 @@ int main()
 	serverCount = configVec.size();
 
 	Server *	serverArr[serverCount];
-	for (size_t i = 0; i < serverCount; i++)
+	for (size_t i = 0; i < serverCount; ++i)
 	{
 		serverArr[i] = new Server(configVec[i]);
 		serverArr[i]->whoIsI();
+		// put start listening here, move it out of server constructor and then server can be a vector
 	}
 
 	//while (true)

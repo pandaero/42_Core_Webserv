@@ -6,7 +6,7 @@
 /*   By: wmardin <wmardin@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/04/07 19:17:18 by pandalaf          #+#    #+#             */
-/*   Updated: 2023/07/26 18:12:26 by wmardin          ###   ########.fr       */
+/*   Updated: 2023/08/03 10:57:54 by wmardin          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -47,6 +47,7 @@ class	Server
 		~Server();
 		
 		void	startListening();
+		void	acceptConnections();
 		void	poll();
 		void	handleConnections();
 		void	checkNewClients();
@@ -78,6 +79,8 @@ class	Server
 		void	errorHandler(int, int);
 
 	private:
+		int								_server_fd;
+		int								_listen_fd;
 		std::vector<std::string>		_names;
 		strLocMap						_locations;
 		intStrMap						_errorPagesPaths;
@@ -89,6 +92,7 @@ class	Server
 		pollfd *						_pollStructs;
 		sockaddr_in						_serverAddress;
 		std::vector<Client>				_clients;
+		std::vector<int>				_clientFDs;
 		char							_recvBuffer[RECV_CHUNK_SIZE];
 		size_t							_bytesReceived;
 		

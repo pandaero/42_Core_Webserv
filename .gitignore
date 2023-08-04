@@ -9,3 +9,5 @@ test/url
 
 # Stray executables
 *.out
+
+.vscode/

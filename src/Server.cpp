@@ -6,7 +6,7 @@
 /*   By: wmardin <wmardin@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/04/07 17:49:49 by pandalaf          #+#    #+#             */
-/*   Updated: 2023/07/31 17:56:46 by wmardin          ###   ########.fr       */
+/*   Updated: 2023/08/04 09:33:09 by wmardin          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -63,7 +63,11 @@ Server::Server(const ServerConfig & config):
 
 	_pollStructs = new pollfd[_maxConns];
 	for (size_t i = 0; i < _maxConns; i++)
+	{
 		_pollStructs[i].fd = -1;
+		_pollStructs[i].events = 0;
+		_pollStructs[i].revents = 0;
+	}
 	startListening();
 }
 
@@ -76,29 +80,62 @@ Server::~Server()
 void	Server::startListening()
 {
 	ANNOUNCEME
-	_pollStructs[0].fd = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP);
-	if (_pollStructs[0].fd == -1)
+	int	options = 1;
+	
+	_server_fd = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP);
+	if (_server_fd == -1)
 		throw	socketCreationFailureException();
-	_pollStructs[0].events = POLLIN;
-	_pollStructs[0].revents = 0;
-	if (fcntl(_pollStructs[0].fd, F_SETFL, O_NONBLOCK) == -1)
-		throw fileDescriptorControlFailureException();
-	if (bind(_pollStructs[0].fd, (struct sockaddr *) &_serverAddress, sizeof(_serverAddress)) == -1)
+	
+	if (setsockopt(_server_fd, SOL_SOCKET, SO_REUSEADDR, (char*)&options, sizeof(options)) == -1)
+		throw std::runtime_error(E_SOCKOPT);
+	
+	if (fcntl(_server_fd, F_SETFL, O_NONBLOCK) == -1)
+		throw std::runtime_error(E_FCNTL);
+
+	if (bind(_server_fd, (struct sockaddr *) &_serverAddress, sizeof(_serverAddress)) == -1)
 	{
-		close(_pollStructs[0].fd);
+		close(_server_fd);
 		throw bindFailureException();
 	}
-	if (listen(_pollStructs[0].fd, SOMAXCONN) == -1)
+	
+	if (listen(_server_fd, SOMAXCONN) == -1)
 	{
-		close(_pollStructs[0].fd);
+		close(_server_fd);
 		throw listenFailureException();
+	}
+
+	_pollStructs[0].fd = _server_fd;
+	_pollStructs[0].events = POLLIN;
+	_pollStructs[0].revents = 0;
+
+	// init tables?
+}
+
+// Gotta catch the throw here! accept failure should not make server end
+void Server::acceptConnections()
+{
+	int	new_sock = 0;
+	int addrlen = sizeof(_serverAddress);
+	
+	while (new_sock != -1)
+	{
+		new_sock = accept(_server_fd, (sockaddr*)&_serverAddress, (socklen_t*)&addrlen);
+		if (new_sock == -1)
+		{
+			if (errno != EWOULDBLOCK) // if errno is EWOULDBLOCK that just means no more incoming connections. So not an error. But we dont wanna output a new client.
+				throw std::runtime_error(E_ACCEPT);
+		}
+		else
+		{
+			std::cout << "New client accepted on fd " << new_sock << "." << std::endl;
+			_clientFDs.push_back(new_sock);
+		}
 	}
 }
 
 void	Server::poll()
 {
 	ANNOUNCEME
-	std::cout << __FUNCTION__ << std::endl;
 	if (::poll(_pollStructs, _clients.size() + 1, -1) == -1)
 		throw pollFailureException();
 }
@@ -215,7 +252,7 @@ void Server::checkNewClients()
 	{
 		int	index = findFreePollStructIndex();
 		// try catch block or smth to catch too many clients error in findFreeIndex
-		Client	newClient(_pollStructs[0].fd, index);
+		Client	newClient(_server_fd, index);
 		_clients.push_back(newClient);
 		_clients[_clients.size() - 1].connect();
 		std::cout << "Clients size: " << _clients.size() << std::endl;

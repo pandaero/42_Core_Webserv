@@ -6,7 +6,7 @@
 /*   By: wmardin <wmardin@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/03/28 20:51:05 by pandalaf          #+#    #+#             */
-/*   Updated: 2023/07/31 18:31:47 by wmardin          ###   ########.fr       */
+/*   Updated: 2023/08/04 09:41:39 by wmardin          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -16,13 +16,7 @@
 
 Client::Client(int serverSocketfd, int pollStructIndex)
 {
-	/* _clientSocketfd = accept(serverSocketfd, (struct sockaddr *) &_clientAddress, &_clientSockLen);
-	if (_clientSocketfd == -1)
-	{
-		close(_clientSocketfd);
-		throw connectionDeniedException();
-	} */
-	_clientSocketfd = -69;
+	_clientSockLen = sizeof(_clientAddress); //not needed again, maybe not member var, just declare herE?
 	_serverSocketfd = serverSocketfd;
 	_pollStructIndex = pollStructIndex;
 	_gotRequestHead = false;
@@ -34,11 +28,8 @@ void Client::connect()
 	ANNOUNCEME
 	_clientSocketfd = accept(_serverSocketfd, (struct sockaddr *) &_clientAddress, &_clientSockLen);
 	if (_clientSocketfd == -1)
-	{
-		std::cout << "client fd: " << _clientSocketfd << std::endl;
-		close(_clientSocketfd);
 		throw connectionDeniedException();
-	}
+	std::cout << "New client accepted on fd " << _clientSocketfd << "." << std::endl;
 }
 
 Client::~Client()

@@ -6,7 +6,7 @@
 /*   By: wmardin <wmardin@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/03/26 01:51:20 by pandalaf          #+#    #+#             */
-/*   Updated: 2023/07/30 21:34:49 by wmardin          ###   ########.fr       */
+/*   Updated: 2023/08/04 09:14:36 by wmardin          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -97,6 +97,9 @@
 # define E_ACC_READ				"Error: Server: Cannot read from path: "
 # define E_ACC_WRITE			"Error: Server: Cannot write in path: "
 # define E_ACC_EXEC				"Error: Server: Cannot execute from path: "
+# define E_SOCKOPT				"Error: Server: setsockopt()"
+# define E_FCNTL				"Error: Server: fcntl()"
+# define E_ACCEPT				"Error: Server: accept()"
 
 // ===== ===== ===== ===== TYPEDEFS ===== ===== ===== =====
 // forward declarations
