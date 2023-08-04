@@ -1,6 +1,7 @@
 #include "../include/ServerConfig.hpp"
 
-ServerConfig::ServerConfig() {}
+ServerConfig::ServerConfig()
+{}
 
 /*
 This constructor is only called when reading the default config.
@@ -116,16 +117,25 @@ void ServerConfig::parseDefaultErrorPages(std::string& defaultErrorPages)
 	while (!defaultErrorPages.empty())
 	{
 		lineStrings = splitEraseStrVec(defaultErrorPages, WHITESPACE, ";");
+		for (size_t i = 0; i < lineStrings.size(); ++i)
+		{
+			std::cout << lineStrings[i] << std::endl;
+		}
+		if (lineStrings.size() < 2)
+		{
+			std::cerr << I_INVALERRPAGE << std::endl;
+			continue;
+		}
 		value = lineStrings.back();
 		lineStrings.pop_back();
 		while (!lineStrings.empty())
 		{
 			key = lineStrings.back();
+			lineStrings.pop_back();
 			if (key == "default")
 				_errorPages.insert(std::make_pair(-1, value));
 			else
-				_errorPages.insert(std::make_pair(atoi(key.c_str()), value));
-			lineStrings.pop_back();
+				_errorPages.insert(std::make_pair(atoi(key.c_str()), value));	
 		}
 	}	
 }

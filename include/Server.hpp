@@ -6,7 +6,7 @@
 /*   By: wmardin <wmardin@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/04/07 19:17:18 by pandalaf          #+#    #+#             */
-/*   Updated: 2023/08/04 10:30:11 by wmardin          ###   ########.fr       */
+/*   Updated: 2023/08/04 14:48:02 by wmardin          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -51,8 +51,7 @@ class	Server
 		void	acceptConnections();
 		void	poll();
 		void	handleConnections();
-		void	checkNewClients();
-		int		findFreePollStructIndex();
+		int		getPollStructIndex();
 		bool	checkPollEvent(clientVec_it);
 		void	closeClient(clientVec_it);
 		void	buildRequestHead(clientVec_it);

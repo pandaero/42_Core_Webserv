@@ -6,7 +6,7 @@
 /*   By: wmardin <wmardin@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/03/26 01:51:20 by pandalaf          #+#    #+#             */
-/*   Updated: 2023/08/04 09:14:36 by wmardin          ###   ########.fr       */
+/*   Updated: 2023/08/04 11:25:18 by wmardin          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -77,10 +77,12 @@
 // ServerConfig
 # define E_FILEOPEN		"Error: ServerConfig: Could not open config file: "
 # define E_NOSERVER		"Error: ServerConfig: No valid server configs found."
+# define E_MANYSERVER	"Error: ServerConfig: Too many server configs found. Maximum of 10 allowed."
 # define E_SUBELEMNT	"Error: ServerConfig: Second level subelements not allowed: "
 # define E_INVALERRNUM	"Error: ServerConfig: Invalid HTML response code (range is from 100 to 599): "
 
 # define I_INVALIDKEY		"Info: ServerConfig: Unrecognized identifier in config file: "
+# define I_INVALERRPAGE		"Info: ServerConfig: Skipping invalid error page key-value pair."
 # define I_INVALIDHEADER	"Info: ServerConfig: Elements between valid subelement headers and beginning of subelement (opening curly brace) will be ignored: "
 // Server
 # define E_SERVERNAME			"Error: Server: Invalid characters in server name input. Only alphanumerical, <<.>> and <<_>> allowed: "

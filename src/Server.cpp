@@ -6,7 +6,7 @@
 /*   By: wmardin <wmardin@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/04/07 17:49:49 by pandalaf          #+#    #+#             */
-/*   Updated: 2023/08/04 10:29:54 by wmardin          ###   ########.fr       */
+/*   Updated: 2023/08/04 14:53:52 by wmardin          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -53,14 +53,14 @@ Server::Server(const ServerConfig & config):
 	setClientMaxBody(configPairs.find(CLIMAXBODY)->second);
 	setMaxConnections(configPairs.find(MAXCONNS)->second);
 	setDefaultDirListing(configPairs.find(DIRLISTING)->second);
+	//setBacklog(config.backlog); need this?!
 	
 	// Copy remaining values directly to server variables 
 	_errorPagesPaths = config.getErrorPaths();
 	_locations = config.getLocations();
 	_cgiPaths = config.getCgiPaths();
-		
-	//setBacklog(config.backlog);
 
+	// Init polling structs
 	_pollStructs = new pollfd[_maxConns];
 	for (size_t i = 0; i < _maxConns; i++)
 	{
@@ -68,17 +68,15 @@ Server::Server(const ServerConfig & config):
 		_pollStructs[i].events = 0;
 		_pollStructs[i].revents = 0;
 	}
-	//startListening();
 }
 
 Server::~Server()
-{
-	/* if (_pollStructs)
-		delete [] _pollStructs; */
-}
+{}
 
 void	Server::cleanup()
 {
+	if (_server_fd != -1)
+		close(_server_fd);
 	if (_pollStructs)
 		delete [] _pollStructs;
 }
@@ -117,8 +115,8 @@ void	Server::startListening()
 	// init tables?
 }
 
-// Gotta catch the throw here! accept failure should not make server end
-void Server::acceptConnections()
+/* // Gotta catch the throw here! accept failure should not make server end
+void Server::acceptConnections_safe()
 {
 	int	new_sock = 0;
 	int addrlen = sizeof(_serverAddress);
@@ -137,6 +135,43 @@ void Server::acceptConnections()
 			_clientFDs.push_back(new_sock);
 		}
 	}
+} */
+
+void Server::acceptConnections()
+{
+	ANNOUNCEME
+	if (_pollStructs[0].revents & POLLIN)
+	{
+		int	index = getPollStructIndex();
+		// try catch block or smth to catch too many clients error in findFreeIndex
+		_clients.push_back(Client(_server_fd, index)); //maybe can get rid of pollstructindex here
+		Client&	newClient = _clients.back(); //CPP98?
+		
+		int	new_sock = 0;
+		int addrlen = sizeof(_serverAddress);
+	
+		new_sock = accept(_server_fd, (sockaddr*)newClient.getSockaddr(), (socklen_t*)&addrlen);
+		if (new_sock == -1)
+		{
+			if (errno != EWOULDBLOCK) // if errno is EWOULDBLOCK that just means no more incoming connections. So not an error. But we dont wanna output a new client.
+				throw std::runtime_error(E_ACCEPT);
+		}
+		else
+		{
+			std::cout << "New client accepted on fd " << new_sock << "." << std::endl;
+			_clientFDs.push_back(new_sock);
+		}
+	
+
+
+
+
+
+		
+		std::cout << "Clients size: " << _clients.size() << std::endl;
+		_pollStructs[index].fd = new_sock;
+		_pollStructs[index].events = POLLIN | POLLHUP;
+	}
 }
 
 void	Server::poll()
@@ -150,7 +185,7 @@ void	Server::poll()
 void	Server::handleConnections()
 {
 	ANNOUNCEME
-	checkNewClients();
+	acceptConnections();
 		std::cout << "DEBUG 0" << std::endl;
 
 	std::cout << "return to " << __FUNCTION__ << std::endl;
@@ -252,23 +287,7 @@ bool Server::checkPollEvent(clientVec_it client)
 	return false;
 }
 
-void Server::checkNewClients()
-{
-	ANNOUNCEME
-	if (_pollStructs[0].revents & POLLIN)
-	{
-		int	index = findFreePollStructIndex();
-		// try catch block or smth to catch too many clients error in findFreeIndex
-		Client	newClient(_server_fd, index);
-		_clients.push_back(newClient);
-		_clients[_clients.size() - 1].connect();
-		std::cout << "Clients size: " << _clients.size() << std::endl;
-		_pollStructs[index].fd = _clients[_clients.size() - 1].getSocketfd(); // back() is CPP11
-		_pollStructs[index].events = POLLIN | POLLHUP;
-	}
-}
-
-int Server::findFreePollStructIndex()
+int Server::getPollStructIndex()
 {
 	ANNOUNCEME
 	size_t i = 0;
@@ -370,8 +389,8 @@ void Server::sendResponse(Response response, int socketfd)
 void Server::whoIsI()
 {
 	std::cout	<< '\n'
-				<< "Name(s):\n";
-					for (strVec_it it = _names.begin(); it != _names.end(); it++)
+				<< "Name(s):\t" << *_names.begin() << '\n';
+					for (strVec_it it = ++_names.begin(); it != _names.end(); ++it)
 						std::cout << "\t\t" << *it << '\n';
 	std::cout	<< "Host:\t\t" << inet_ntoa(_serverAddress.sin_addr) << '\n'
 				<< "Port:\t\t" << ntohs(_serverAddress.sin_port) << '\n'
@@ -379,14 +398,14 @@ void Server::whoIsI()
 				<< "Dflt. dir_list:\t" << (_defaultDirListing ? "yes" : "no") << '\n'
 				<< "Cl. max body:\t" << _clientMaxBody << '\n'
 				<< "Max Conns:\t" << _maxConns << '\n'
-				<< "Error Pages:\n";
-					for (intStrMap_it it = _errorPagesPaths.begin(); it != _errorPagesPaths.end(); it++)
+				<< "Error Pages:\t" << _errorPagesPaths.begin()->first << '\t' << _errorPagesPaths.begin()->second << '\n';
+					for (intStrMap_it it = ++_errorPagesPaths.begin(); it != _errorPagesPaths.end(); it++)
 						std::cout << "\t\t" << it->first << '\t' << it->second << std::endl;
-	std::cout	<< "Known locations:\n";
-					for (strLocMap_it it = _locations.begin(); it != _locations.end(); it++)
-						std::cout << "\t\t" << it->first << std::endl;
-	std::cout	<< "CGI Paths:\n";
-					for (strMap_it it = _cgiPaths.begin(); it != _cgiPaths.end(); it++)
+	std::cout	<< "Known loctns:\t" << _locations.begin()->first << '\n';
+					for (strLocMap_it it = ++_locations.begin(); it != _locations.end(); it++)
+						std::cout << "\t\t" << it->first << '\n';
+	std::cout	<< "CGI Paths:\t" << _cgiPaths.begin()->first << '\n';
+					for (strMap_it it = ++_cgiPaths.begin(); it != _cgiPaths.end(); it++)
 						std::cout << "\t\t" << it->first << '\t' << it->second << std::endl;		
 }
 
