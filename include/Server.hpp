@@ -6,7 +6,7 @@
 /*   By: wmardin <wmardin@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/04/07 19:17:18 by pandalaf          #+#    #+#             */
-/*   Updated: 2023/08/04 14:48:02 by wmardin          ###   ########.fr       */
+/*   Updated: 2023/08/04 23:07:59 by wmardin          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -51,8 +51,8 @@ class	Server
 		void	acceptConnections();
 		void	poll();
 		void	handleConnections();
+		void	receive(clientVec_it);
 		int		getPollStructIndex();
-		bool	checkPollEvent(clientVec_it);
 		void	closeClient(clientVec_it);
 		void	buildRequestHead(clientVec_it);
 		bool	clientBodySizeError(clientVec_it);
@@ -94,7 +94,7 @@ class	Server
 		std::vector<Client>				_clients;
 		std::vector<int>				_clientFDs;
 		char							_recvBuffer[RECV_CHUNK_SIZE];
-		size_t							_bytesReceived;
+		ssize_t							_bytesReceived;
 		
 		// TO BE DEMOLISHED:
 		strMap							_filePaths;

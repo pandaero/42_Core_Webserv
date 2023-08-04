@@ -6,7 +6,7 @@
 /*   By: wmardin <wmardin@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/04/07 17:49:49 by pandalaf          #+#    #+#             */
-/*   Updated: 2023/08/04 14:53:52 by wmardin          ###   ########.fr       */
+/*   Updated: 2023/08/04 23:06:38 by wmardin          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -115,28 +115,6 @@ void	Server::startListening()
 	// init tables?
 }
 
-/* // Gotta catch the throw here! accept failure should not make server end
-void Server::acceptConnections_safe()
-{
-	int	new_sock = 0;
-	int addrlen = sizeof(_serverAddress);
-	
-	while (new_sock != -1)
-	{
-		new_sock = accept(_server_fd, (sockaddr*)&_serverAddress, (socklen_t*)&addrlen);
-		if (new_sock == -1)
-		{
-			if (errno != EWOULDBLOCK) // if errno is EWOULDBLOCK that just means no more incoming connections. So not an error. But we dont wanna output a new client.
-				throw std::runtime_error(E_ACCEPT);
-		}
-		else
-		{
-			std::cout << "New client accepted on fd " << new_sock << "." << std::endl;
-			_clientFDs.push_back(new_sock);
-		}
-	}
-} */
-
 void Server::acceptConnections()
 {
 	ANNOUNCEME
@@ -147,7 +125,7 @@ void Server::acceptConnections()
 		_clients.push_back(Client(_server_fd, index)); //maybe can get rid of pollstructindex here
 		Client&	newClient = _clients.back(); //CPP98?
 		
-		int	new_sock = 0;
+		int	new_sock;
 		int addrlen = sizeof(_serverAddress);
 	
 		new_sock = accept(_server_fd, (sockaddr*)newClient.getSockaddr(), (socklen_t*)&addrlen);
@@ -158,26 +136,19 @@ void Server::acceptConnections()
 		}
 		else
 		{
+			_clientFDs.push_back(new_sock); //maybe not necessary but prolly yes. prolly not supposed to poll for every server.
+			newClient.setClientSocketfd(new_sock);
+			_pollStructs[index].fd = new_sock;
+			_pollStructs[index].events = POLLIN | POLLHUP;
 			std::cout << "New client accepted on fd " << new_sock << "." << std::endl;
-			_clientFDs.push_back(new_sock);
+			std::cout << "Clients size: " << _clients.size() << std::endl;
 		}
-	
-
-
-
-
-
-		
-		std::cout << "Clients size: " << _clients.size() << std::endl;
-		_pollStructs[index].fd = new_sock;
-		_pollStructs[index].events = POLLIN | POLLHUP;
 	}
 }
 
 void	Server::poll()
 {
 	ANNOUNCEME
-	// just poll for the max possible number of conns! Fuck actual client size.
 	if (::poll(_pollStructs, _clients.size() + 1, -1) == -1)
 		throw pollFailureException();
 }
@@ -185,60 +156,13 @@ void	Server::poll()
 void	Server::handleConnections()
 {
 	ANNOUNCEME
-	acceptConnections();
-		std::cout << "DEBUG 0" << std::endl;
-
-	std::cout << "return to " << __FUNCTION__ << std::endl;
 	for (clientVec_it clientIt = _clients.begin(); clientIt != _clients.end(); ++clientIt)
 	{
-		std::cout << "Client handling." << ", Clients size: " << _clients.size() << std::endl;
-		if (!checkPollEvent(clientIt))
-			continue;
-		_bytesReceived = recv(_pollStructs[clientIt->getPollStructIndex()].fd, _recvBuffer, RECV_CHUNK_SIZE, 0);
-		if (_bytesReceived <= 0)
-		{
-			std::cout << "closeClient in if bytesreceived <=0 in handleConnections" << std::endl;
-			closeClient(clientIt);
-			continue;
-		}
-		clientIt->_buffer.append(_recvBuffer, _bytesReceived);
-		if (!clientIt->_gotRequestHead)
-		{
-			if (clientIt->_buffer.find("\r\n\r\n") != std::string::npos)
-			{
-				buildRequestHead(clientIt);
-				std::cout << "Received " << _bytesReceived << " bytes from client:\n\n" << clientIt->_buffer << std::endl;
-				std::cout << "Raw path: " << clientIt->_requestHead.getPath() << std::endl;
-				std::cout << "Root+raw+index.html: " << _root << clientIt->_requestHead.getPath() << "index.html" << std::endl;
-				
-				if (clientBodySizeError(clientIt)) // change to general error checker and include protocol check
-					continue;
-				// maybe not needed because next action will be continue anyway
-			}
-		}
-		else //request head is complete, handle the potential request body
-		{
-			int	contentLength = clientIt->_requestHead.getContentLength();
-			if (contentLength <= 0) //there was no request body
-			{
-				Response	response(clientIt->_requestHead, *this);
-				response.send(clientIt->getSocketfd(), *this);
-				clientIt->resetData();
-			}
-			else
-			{
-				if (clientIt->_buffer.size() < (size_t)contentLength)
-					clientIt->_buffer.append(_recvBuffer, _bytesReceived); //body not complete
-				else
-				{
-					Response	response(clientIt->_requestHead, *this);
-					// handle CGI
-					response.send(clientIt->getSocketfd(), *this);
-					clientIt->resetData();
-				}
-				
-			}
-		}
+		int		currentIndex = clientIt->getPollStructIndex();
+		
+		if (_pollStructs[currentIndex].revents & POLLIN)
+			receive(clientIt);
+		
 		/* if (clientIt->_gotRequest == true)
 		{
 			RequestHead		request(buffer);
@@ -261,6 +185,59 @@ void	Server::handleConnections()
 	}
 }
 
+void Server::receive(clientVec_it clientIt)
+{
+	ANNOUNCEME
+	int	currentfd = clientIt->getSocketfd();
+	
+	_bytesReceived = recv(currentfd, _recvBuffer, RECV_CHUNK_SIZE, 0);
+	if (_bytesReceived <= 0)
+	{
+		std::cout << "closeClient in if bytesreceived <=0 in receive" << std::endl;
+		closeClient(clientIt);
+		return;
+	}
+	clientIt->_buffer.append(_recvBuffer, _bytesReceived);
+	if (!clientIt->_gotRequestHead)
+	{
+		if (clientIt->_buffer.find("\r\n\r\n") != std::string::npos)
+		{
+			buildRequestHead(clientIt);
+			std::cout << "Received " << _bytesReceived << " bytes from client:\n\n" << clientIt->_buffer << std::endl;
+			std::cout << "Raw path: " << clientIt->_requestHead.getPath() << std::endl;
+			std::cout << "Root+raw+index.html: " << _root << clientIt->_requestHead.getPath() << "index.html" << std::endl;
+			
+			if (clientBodySizeError(clientIt)) // change to general error checker and include protocol check
+				return;
+			// maybe not needed because next action will be continue anyway
+			// no, has to build error response here instead of returning
+		}
+	}
+	else //request head is complete, handle the potential request body
+	{
+		int	contentLength = clientIt->_requestHead.getContentLength();
+		if (contentLength <= 0) //there was no request body
+		{
+			Response	response(clientIt->_requestHead, *this);
+			response.send(clientIt->getSocketfd(), *this);
+			clientIt->resetData();
+		}
+		else
+		{
+			if (clientIt->_buffer.size() < (size_t)contentLength)
+				clientIt->_buffer.append(_recvBuffer, _bytesReceived); //body not complete
+			else
+			{
+				Response	response(clientIt->_requestHead, *this);
+				// handle CGI
+				response.send(clientIt->getSocketfd(), *this);
+				clientIt->resetData();
+			}
+			
+		}
+	}
+}
+
 // CGI handling (for php and potentially python scripts)
 			// if (request.path() == ".php")
 			// {
@@ -273,19 +250,19 @@ void	Server::handleConnections()
 			// 	// attempt to serve file (html from cgi)
 			// }
 
-bool Server::checkPollEvent(clientVec_it client)
+/* bool Server::checkPollEvent(Client& client)
 {
 	ANNOUNCEME
-	if (_pollStructs[client->getPollStructIndex()].revents & POLLIN)
+	if (_pollStructs[client.getPollStructIndex()].revents & POLLIN)
 		return true;
-	if (_pollStructs[client->getPollStructIndex()].revents & POLLHUP)
+	if (_pollStructs[client.getPollStructIndex()].revents & POLLHUP)
 	{
 		std::cout << "closeClient in checkPollEvent" << std::endl;
 		closeClient(client);
 		return false;
 	}
 	return false;
-}
+} */
 
 int Server::getPollStructIndex()
 {
@@ -305,13 +282,19 @@ int Server::getPollStructIndex()
 	return i;
 }
 
-// prolly change iterator to client reference
-void Server::closeClient(clientVec_it client)
+void Server::closeClient(clientVec_it clientIt)
 {
 	ANNOUNCEME
-	close(_pollStructs[client->getPollStructIndex()].fd);
-	_pollStructs[client->getPollStructIndex()].fd = -1;
-	_clients.erase(client);
+	int	currentfd = clientIt->getSocketfd();
+	int	currentIndex = clientIt->getPollStructIndex();
+	
+	close(currentfd);
+	_pollStructs[currentIndex].fd = -1;
+	_pollStructs[currentIndex].events = 0;
+	_pollStructs[currentIndex].revents = 0;
+	_clients.erase(clientIt);
+	//_clientFDs.erase(_clientFDs);
+	// Still have to remove the fd listed in clientFDs, if that list is even needed...
 }
 
 void Server::buildRequestHead(clientVec_it client)

@@ -6,7 +6,7 @@
 /*   By: wmardin <wmardin@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/03/28 20:51:05 by pandalaf          #+#    #+#             */
-/*   Updated: 2023/08/04 14:45:19 by wmardin          ###   ########.fr       */
+/*   Updated: 2023/08/04 23:02:33 by wmardin          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -16,25 +16,18 @@
 
 Client::Client(int serverSocketfd, int pollStructIndex)
 {
-	_clientSockLen = sizeof(_clientAddress); //not needed again, maybe not member var, just declare herE?
 	_serverSocketfd = serverSocketfd;
 	_pollStructIndex = pollStructIndex;
 	_gotRequestHead = false;
 	_bodyBytesRead = -1;
 }
 
-/* void Client::connect()
-{
-	ANNOUNCEME
-	_clientSocketfd = accept(_serverSocketfd, (struct sockaddr *) &_clientAddress, &_clientSockLen);
-	if (_clientSocketfd == -1)
-		throw connectionDeniedException();
-	std::cout << "New client accepted on fd " << _clientSocketfd << "." << std::endl;
-} */
-
 Client::~Client()
+{}
+
+void Client::setClientSocketfd(int clientSocketfd)
 {
-	std::cout << "Info: Client: Destructor called. " << std::endl;
+	_clientSocketfd = clientSocketfd;
 }
 
 sockaddr_in* Client::getSockaddr()
@@ -42,12 +35,12 @@ sockaddr_in* Client::getSockaddr()
 	return &_clientAddress;
 }
 
-int	Client::getSocketfd()
+int	Client::getSocketfd() const
 {
 	return _clientSocketfd;
 }
 
-int Client::getPollStructIndex()
+int Client::getPollStructIndex() const
 {
 	return _pollStructIndex;
 }
@@ -58,9 +51,3 @@ void Client::resetData()
 	_gotRequestHead = false;
 	_bodyBytesRead = -1;
 }
-
-/* const char *	Client::connectionDeniedException::what() const throw()
-{
-	return ("Error: connection with the client was denied.");
-}
- */

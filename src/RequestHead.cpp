@@ -19,7 +19,7 @@ RequestHead::RequestHead()
 
 RequestHead::RequestHead(std::string requestData)
 {
-	std::cout << __FUNCTION__ << std::endl;
+	ANNOUNCEME
 	_method = splitEraseStr(requestData, " ");
 	_path = splitEraseStr(requestData, " ");
 	_protocol = splitEraseStr(requestData, "\r\n");

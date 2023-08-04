@@ -28,7 +28,22 @@ int main()
 				perror("poll");
 				continue;
 			}
-			servers[i].handleConnections();
+			try
+			{
+				servers[i].acceptConnections();
+			}
+			catch (const std::exception& e)
+			{
+				std::cerr << e.what() << std::endl;
+			}
+			try
+			{
+				servers[i].handleConnections();
+			}
+			catch (const std::exception& e)
+			{
+				std::cerr << e.what() << std::endl;
+			}
 		}
 	}
 
