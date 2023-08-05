@@ -6,7 +6,7 @@
 /*   By: wmardin <wmardin@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/05/01 22:04:57 by pandalaf          #+#    #+#             */
-/*   Updated: 2023/06/14 09:04:05 by wmardin          ###   ########.fr       */
+/*   Updated: 2023/08/05 08:17:58 by wmardin          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -39,7 +39,7 @@ class	RequestHead
 		std::string	getContentType() const;
 
 	private:
-		strMap		createHeaderMap(std::string &, std::string, std::string, std::string);
+		strMap		createHeaderMap(std::string&, std::string, std::string, std::string);
 
 		std::string	_method;
 		std::string	_path;

@@ -117,10 +117,6 @@ void ServerConfig::parseDefaultErrorPages(std::string& defaultErrorPages)
 	while (!defaultErrorPages.empty())
 	{
 		lineStrings = splitEraseStrVec(defaultErrorPages, WHITESPACE, ";");
-		for (size_t i = 0; i < lineStrings.size(); ++i)
-		{
-			std::cout << lineStrings[i] << std::endl;
-		}
 		if (lineStrings.size() < 2)
 		{
 			std::cerr << I_INVALERRPAGE << std::endl;

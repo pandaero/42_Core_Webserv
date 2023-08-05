@@ -6,7 +6,7 @@
 /*   By: wmardin <wmardin@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/04/07 17:49:49 by pandalaf          #+#    #+#             */
-/*   Updated: 2023/08/04 23:06:38 by wmardin          ###   ########.fr       */
+/*   Updated: 2023/08/05 10:41:07 by wmardin          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -158,7 +158,7 @@ void	Server::handleConnections()
 	ANNOUNCEME
 	for (clientVec_it clientIt = _clients.begin(); clientIt != _clients.end(); ++clientIt)
 	{
-		int		currentIndex = clientIt->getPollStructIndex();
+		int	currentIndex = clientIt->getPollStructIndex();
 		
 		if (_pollStructs[currentIndex].revents & POLLIN)
 			receive(clientIt);
@@ -193,28 +193,56 @@ void Server::receive(clientVec_it clientIt)
 	_bytesReceived = recv(currentfd, _recvBuffer, RECV_CHUNK_SIZE, 0);
 	if (_bytesReceived <= 0)
 	{
-		std::cout << "closeClient in if bytesreceived <=0 in receive" << std::endl;
 		closeClient(clientIt);
 		return;
 	}
 	clientIt->_buffer.append(_recvBuffer, _bytesReceived);
+	std::cout << "Received " << _bytesReceived << " bytes from client:\n\n" << clientIt->_buffer << std::endl;
 	if (!clientIt->_gotRequestHead)
 	{
 		if (clientIt->_buffer.find("\r\n\r\n") != std::string::npos)
 		{
-			buildRequestHead(clientIt);
-			std::cout << "Received " << _bytesReceived << " bytes from client:\n\n" << clientIt->_buffer << std::endl;
-			std::cout << "Raw path: " << clientIt->_requestHead.getPath() << std::endl;
-			std::cout << "Root+raw+index.html: " << _root << clientIt->_requestHead.getPath() << "index.html" << std::endl;
-			
-			if (clientBodySizeError(clientIt)) // change to general error checker and include protocol check
-				return;
-			// maybe not needed because next action will be continue anyway
-			// no, has to build error response here instead of returning
+			clientIt->_requestHead = RequestHead(clientIt->_buffer);
+			clientIt->_gotRequestHead = true;
+			clientIt->_buffer.erase(0, clientIt->_buffer.find("\r\n\r\n") + 4);
 		}
 	}
-	else //request head is complete, handle the potential request body
+	if (clientIt->_gotRequestHead)
 	{
+		std::cout << "Raw path: " << clientIt->_requestHead.getPath() << std::endl;
+		std::cout << "Root+raw+index.html: " << _root << clientIt->_requestHead.getPath() << "index.html" << std::endl;
+		
+		// make dedicated sendError Function
+		Response	response(413);
+		
+		std::cout << "response 413 built.\n";
+		if (::send(currentfd, response.getStatusPage(), response.getSize(), 0) == -1)
+			std::cerr << "Error: Server::sendResponse: send: failure to send header data.";
+		std::cout << "response 413 sent to fd:" << currentfd << std::endl;
+		
+
+		/*
+		// Analyze header, maybe already send response (no body, error in header)
+		if (clientIt->_requestHead.getContentLength() > (int)_clientMaxBody)
+		{
+			Response errorResponse(413);
+			errorResponse.send(client->getSocketfd(), *this);
+			client->resetData();
+			return true;
+		}
+		return false;
+
+		*/
+	}
+		
+		
+		
+		/* if (clientBodySizeError(clientIt)) // change to general error checker and include protocol check
+			return;
+		// maybe not needed because next action will be continue anyway
+		// no, has to build error response here instead of returning
+		// things to check: body size, http protocol, method rights at requested location. maybe execution errors such as file not found, but prolly not here but later?
+		
 		int	contentLength = clientIt->_requestHead.getContentLength();
 		if (contentLength <= 0) //there was no request body
 		{
@@ -234,8 +262,8 @@ void Server::receive(clientVec_it clientIt)
 				clientIt->resetData();
 			}
 			
-		}
-	}
+		} */
+	
 }
 
 // CGI handling (for php and potentially python scripts)
@@ -250,19 +278,6 @@ void Server::receive(clientVec_it clientIt)
 			// 	// attempt to serve file (html from cgi)
 			// }
 
-/* bool Server::checkPollEvent(Client& client)
-{
-	ANNOUNCEME
-	if (_pollStructs[client.getPollStructIndex()].revents & POLLIN)
-		return true;
-	if (_pollStructs[client.getPollStructIndex()].revents & POLLHUP)
-	{
-		std::cout << "closeClient in checkPollEvent" << std::endl;
-		closeClient(client);
-		return false;
-	}
-	return false;
-} */
 
 int Server::getPollStructIndex()
 {
@@ -387,7 +402,7 @@ void Server::whoIsI()
 	std::cout	<< "Known loctns:\t" << _locations.begin()->first << '\n';
 					for (strLocMap_it it = ++_locations.begin(); it != _locations.end(); it++)
 						std::cout << "\t\t" << it->first << '\n';
-	std::cout	<< "CGI Paths:\t" << _cgiPaths.begin()->first << '\n';
+	std::cout	<< "CGI Paths:\t" << _cgiPaths.begin()->first << '\t' << _cgiPaths.begin()->second << '\n';
 					for (strMap_it it = ++_cgiPaths.begin(); it != _cgiPaths.end(); it++)
 						std::cout << "\t\t" << it->first << '\t' << it->second << std::endl;		
 }

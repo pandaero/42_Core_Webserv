@@ -35,7 +35,7 @@ std::string	RequestHead::getHeaderValue(std::string header) const
 	std::string	query = strToLower(header);
 	if (_headers.find(header) != _headers.end())
 		return (_headers.find(header)->second);
-	return ("NOT FOUND");
+	return (NOTFOUND);
 }
 
 std::string	RequestHead::getFilename() const
@@ -55,12 +55,12 @@ std::string RequestHead::getProtocol() const
 
 std::string	RequestHead::getPath() const
 {
-	return (_path);
+	return _path;
 }
 
 int	RequestHead::getContentLength() const
 {
-	return (_contentLength);
+	return _contentLength;
 }
 
 std::string RequestHead::getContentType() const

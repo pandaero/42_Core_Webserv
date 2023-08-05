@@ -6,7 +6,7 @@
 /*   By: wmardin <wmardin@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/03/26 01:51:20 by pandalaf          #+#    #+#             */
-/*   Updated: 2023/08/04 11:25:18 by wmardin          ###   ########.fr       */
+/*   Updated: 2023/08/05 08:42:31 by wmardin          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -20,10 +20,11 @@
 # include <string>
 # include <sys/stat.h>
 
-// MAKROS
+// MACROS
 # define WHITESPACE		" \t\v\r\n"
 # define TERMINATION	"\r\n\r\n"
 # define HTTPVERSION	"HTTP/1.1"
+# define NOTFOUND		"_____TARGETSTRINGNOTFOUND_____"
 # define ANNOUNCEME		std::cout << "Announcer: " << __FUNCTION__ << std::endl;
 
 // ===== ===== ===== ===== SIZE Descriptions ===== ===== ===== =====
@@ -84,6 +85,7 @@
 # define I_INVALIDKEY		"Info: ServerConfig: Unrecognized identifier in config file: "
 # define I_INVALERRPAGE		"Info: ServerConfig: Skipping invalid error page key-value pair."
 # define I_INVALIDHEADER	"Info: ServerConfig: Elements between valid subelement headers and beginning of subelement (opening curly brace) will be ignored: "
+
 // Server
 # define E_SERVERNAME			"Error: Server: Invalid characters in server name input. Only alphanumerical, <<.>> and <<_>> allowed: "
 # define E_HOSTADDRINPUT		"Error: Server: Invalid characters in host address input. Only numerical and dot allowed: "

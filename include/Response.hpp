@@ -6,7 +6,7 @@
 /*   By: wmardin <wmardin@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/04/01 17:00:19 by pandalaf          #+#    #+#             */
-/*   Updated: 2023/07/26 18:03:52 by wmardin          ###   ########.fr       */
+/*   Updated: 2023/08/05 10:39:11 by wmardin          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -34,28 +34,28 @@ class	Response
 		Response();
 		Response(int);
 		Response(const RequestHead &, const Server &);
-		// Response(int, const Server &);
 		~Response();
 
-		void			setStatusCode(int);
-	
 		void			setFile(std::string, const Server &);
 
 		int				send(int, const Server &);
 		
+		const char*		getStatusPage();
+
 		std::string		getFilePath();
+		off_t			getSize();
 		
-		std::string _responseHeader;
-		int			_statusCode;
-		std::string	_statusMessage;
+		std::string 	_responseHeader;
+		int				_statusCode;
+		std::string		_statusMessage;
 
 	private:
-		void		build();
-
+		void			build();
+		std::string		getHttpMsg(int);
 		
-
-		contentType	_contentType;
-		off_t		_fileSize;
-		std::string	_filePath;
+		std::string		_statusPage;
+		contentType		_contentType;
+		off_t			_fileSize;
+		std::string		_filePath;
 };
 #endif
