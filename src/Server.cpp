@@ -6,7 +6,7 @@
 /*   By: wmardin <wmardin@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/04/07 17:49:49 by pandalaf          #+#    #+#             */
-/*   Updated: 2023/08/05 13:00:17 by wmardin          ###   ########.fr       */
+/*   Updated: 2023/08/05 21:23:04 by wmardin          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -70,17 +70,6 @@ Server::Server(const ServerConfig & config):
 	}
 }
 
-Server::~Server()
-{}
-
-void	Server::cleanup()
-{
-	if (_server_fd != -1)
-		close(_server_fd);
-	if (_pollStructs)
-		delete [] _pollStructs;
-}
-
 void	Server::startListening()
 {
 	ANNOUNCEME
@@ -115,12 +104,28 @@ void	Server::startListening()
 	// init tables?
 }
 
+void	Server::cleanup()
+{
+	if (_server_fd != -1)
+		close(_server_fd);
+	//pollstruct fds (client fds)
+	if (_pollStructs)
+		delete [] _pollStructs;
+}
+
+void	Server::poll()
+{
+	ANNOUNCEME
+	if (::poll(_pollStructs, _clients.size() + 1, -1) == -1)
+		throw pollFailureException();
+}
+
 void Server::acceptConnections()
 {
 	ANNOUNCEME
 	if (_pollStructs[0].revents & POLLIN)
 	{
-		int	index = getPollStructIndex();
+		int	index = getAvailablePollStructIndex();
 		// try catch block or smth to catch too many clients error in findFreeIndex
 		_clients.push_back(Client(_server_fd, index)); //maybe can get rid of pollstructindex here
 		Client&	newClient = _clients.back(); //CPP98?
@@ -146,24 +151,33 @@ void Server::acceptConnections()
 	}
 }
 
-void	Server::poll()
-{
-	ANNOUNCEME
-	if (::poll(_pollStructs, _clients.size() + 1, -1) == -1)
-		throw pollFailureException();
-}
-
 void	Server::handleConnections()
 {
 	ANNOUNCEME
 	for (clientVec_it clientIt = _clients.begin(); clientIt != _clients.end(); ++clientIt)
 	{
+		std::cout << "start of loop in handleconns" << std::endl;
+		if (clientIt == _clients.end())
+		{
+			std::cout << "how in the fuck" << std::endl;
+			exit (1);
+		}
 		int	currentIndex = clientIt->getPollStructIndex();
-		
+		std::cout << "after getpollstructindex. pollstrucindex:" << currentIndex << std::endl;
 		if (_pollStructs[currentIndex].revents & POLLIN)
 			receive(clientIt);
+		std::cout << "returned from receive in handleConnections. Number of clients: " << _clients.size() << std::endl;
 		
-		/* if (clientIt->_gotRequest == true)
+
+	}
+	std::cout << "end of handleConnectionsloop" << std::endl;
+}
+
+
+		/*
+		was inside receive
+		
+		 if (clientIt->_gotRequest == true)
 		{
 			RequestHead		request(buffer);
 			
@@ -182,67 +196,45 @@ void	Server::handleConnections()
 			standard.send(_pollStructs[i + 1].fd, *this);
 			clientIt->_gotRequest = false;
 		} */
-	}
-}
+
+
 
 void Server::receive(clientVec_it clientIt)
 {
 	ANNOUNCEME
-	int	currentfd = clientIt->getSocketfd();
+	_currentClientfd = clientIt->getSocketfd();
 	
-	_bytesReceived = recv(currentfd, _recvBuffer, RECV_CHUNK_SIZE, 0);
+	_bytesReceived = recv(_currentClientfd, _recvBuffer, RECV_CHUNK_SIZE, 0);
+	std::cout << "Received " << _bytesReceived << " bytes from client:\n\n" << _recvBuffer << std::endl;
+	
 	if (_bytesReceived <= 0)
 	{
 		closeClient(clientIt);
+		std::cout << "closing because nothing received" << std::endl;
 		return;
 	}
-	clientIt->_buffer.append(_recvBuffer, _bytesReceived);
-	std::cout << "Received " << _bytesReceived << " bytes from client:\n\n" << clientIt->_buffer << std::endl;
-	if (!clientIt->_gotRequestHead)
+	clientIt->appendToBuffer(_recvBuffer, _bytesReceived);
+	clientIt->handleRequestHeader();
+	if (clientIt->requestHeadComplete())
 	{
-		if (clientIt->_buffer.find("\r\n\r\n") != std::string::npos)
-		{
-			clientIt->_requestHead = RequestHead(clientIt->_buffer);
-			clientIt->_gotRequestHead = true;
-			clientIt->_buffer.erase(0, clientIt->_buffer.find("\r\n\r\n") + 4);
-		}
-	}
-	if (clientIt->_gotRequestHead)
-	{
-		std::cout << "Raw path: " << clientIt->_requestHead.getPath() << std::endl;
-		std::cout << "Root+raw+index.html: " << _root << clientIt->_requestHead.getPath() << "index.html" << std::endl;
-		
-		// make dedicated sendError Function
-		Response	response(413);
-		
-		std::cout << "response 413 built.\n";
-		std::cout << response.getStatusPage() << std::endl;
-		if (::send(currentfd, response.getStatusPage(), response.getSize(), 0) == -1)
-			std::cerr << "Error: Server::sendResponse: send: failure to send header data.";
-		std::cout << "response 413 (size " << response.getSize() << ") to fd:" << currentfd << std::endl;
-		
+		int	errorCode = 0;
 
-		/*
-		// Analyze header, maybe already send response (no body, error in header)
-		if (clientIt->_requestHead.getContentLength() > (int)_clientMaxBody)
+		if (clientIt->_requestHead.getProtocol() != HTTPVERSION)
+			errorCode = 505;
+		else if (clientIt->_requestHead.getContentLength() > (int)_clientMaxBody)
+			errorCode = 413;
+		// check method rights at requested location
+		// check file accessibility at requested location
+		if (errorCode)
 		{
-			Response errorResponse(413);
-			errorResponse.send(client->getSocketfd(), *this);
-			client->resetData();
-			return true;
-		}
-		return false;
-
-		*/
-	}
-		
-		
-		
-		/* if (clientBodySizeError(clientIt)) // change to general error checker and include protocol check
+			sendStatusCodePage(errorCode);
+			closeClient(clientIt);
 			return;
-		// maybe not needed because next action will be continue anyway
-		// no, has to build error response here instead of returning
-		// things to check: body size, http protocol, method rights at requested location. maybe execution errors such as file not found, but prolly not here but later?
+		}
+	}
+		
+		
+		/*
 		
 		int	contentLength = clientIt->_requestHead.getContentLength();
 		if (contentLength <= 0) //there was no request body
@@ -280,7 +272,7 @@ void Server::receive(clientVec_it clientIt)
 			// }
 
 
-int Server::getPollStructIndex()
+int Server::getAvailablePollStructIndex()
 {
 	ANNOUNCEME
 	size_t i = 0;
@@ -298,6 +290,14 @@ int Server::getPollStructIndex()
 	return i;
 }
 
+void Server::sendStatusCodePage(int code)
+{
+	Response	response(code);
+		
+	if (::send(_currentClientfd, response.getStatusPage(), response.getSize(), 0) == -1)
+		std::cerr << "Error: Server::sendStatusCodePage: send.";
+}
+
 void Server::closeClient(clientVec_it clientIt)
 {
 	ANNOUNCEME
@@ -310,29 +310,9 @@ void Server::closeClient(clientVec_it clientIt)
 	_pollStructs[currentIndex].revents = 0;
 	std::cout << "closeClient on fd " << currentfd << std::endl;
 	_clients.erase(clientIt);
+	
 	//_clientFDs.erase(_clientFDs);
 	// Still have to remove the fd listed in clientFDs, if that list is even needed...
-}
-
-void Server::buildRequestHead(clientVec_it client)
-{
-	ANNOUNCEME
-	client->_requestHead = RequestHead(client->_buffer);
-	client->_gotRequestHead = true;
-	client->_buffer.erase(0, client->_buffer.find("\r\n\r\n") + 4);
-}
-
-bool Server::clientBodySizeError(clientVec_it client)
-{
-	ANNOUNCEME
-	if (client->_requestHead.getContentLength() > (int)_clientMaxBody)
-	{
-		Response errorResponse(413);
-		errorResponse.send(client->getSocketfd(), *this);
-		client->resetData();
-		return true;
-	}
-	return false;
 }
 
 void Server::sendResponse(Response response, int socketfd)

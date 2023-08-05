@@ -6,7 +6,7 @@
 /*   By: wmardin <wmardin@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/04/07 19:17:18 by pandalaf          #+#    #+#             */
-/*   Updated: 2023/08/04 23:07:59 by wmardin          ###   ########.fr       */
+/*   Updated: 2023/08/05 21:22:07 by wmardin          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -42,24 +42,29 @@ class Response;
 class	Server
 {
 	public:
-	//most /all of these can be private, sort it out later
 		Server(const ServerConfig &);
-		~Server();
-		
-		void	cleanup();
-		void	startListening();
-		void	acceptConnections();
-		void	poll();
-		void	handleConnections();
-		void	receive(clientVec_it);
-		int		getPollStructIndex();
-		void	closeClient(clientVec_it);
-		void	buildRequestHead(clientVec_it);
-		bool	clientBodySizeError(clientVec_it);
-		void	sendResponse(Response, int);
-		
 		
 		void	whoIsI();
+		void	startListening();
+		void	poll();
+		void	acceptConnections();
+		void	handleConnections();
+		void	cleanup();
+	
+		
+		
+	//questionable
+		std::string	getRoot() const;
+
+
+		
+	private:
+		void	receive(clientVec_it);
+		int		getAvailablePollStructIndex();
+		void	closeClient(clientVec_it);
+		
+		void	sendResponse(Response, int);
+		void	sendStatusCodePage(int);
 
 		void	setNames(std::string);
 		void	setHost(std::string);
@@ -74,11 +79,9 @@ class	Server
 		void	setDefaultDirListing(std::string input);
 
 		std::string	getStatusPage(int) const;
-		std::string	getRoot() const;
 		
 		void	errorHandler(int, int);
 
-	private:
 		int								_server_fd;
 		int								_listen_fd;
 		std::vector<std::string>		_names;
@@ -91,6 +94,7 @@ class	Server
 
 		pollfd *						_pollStructs;
 		sockaddr_in						_serverAddress;
+		int								_currentClientfd;
 		std::vector<Client>				_clients;
 		std::vector<int>				_clientFDs;
 		char							_recvBuffer[RECV_CHUNK_SIZE];

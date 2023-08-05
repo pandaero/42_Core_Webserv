@@ -6,7 +6,7 @@
 /*   By: wmardin <wmardin@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/04/01 17:05:35 by pandalaf          #+#    #+#             */
-/*   Updated: 2023/08/05 13:02:17 by wmardin          ###   ########.fr       */
+/*   Updated: 2023/08/05 14:03:38 by wmardin          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -20,10 +20,20 @@ Response::Response(int code)
 	std::stringstream	ss_body, ss_header;
 
 	ss_body << "<!DOCTYPE html>";
-	ss_body << "<html>\n<head>\n<title>" << code << ": " << httpMsg << "</title>\n</head>\r\n";
-	ss_body << "<body style = \"text-align: left;\">\r\n<h1>" << code << " " << httpMsg << "</h1>\r\n";
-	ss_body << "<img style=\"margin-left: auto;\" src=\"https://http.cat/" << code << "\">";
-	ss_body << "\r\n</body>\r\n</html>\r\n";
+	ss_body << "<html>\n";
+	ss_body << "<head>\n";
+	ss_body << "<title>webserv - " << code << ": " << httpMsg << "</title>\n";
+	ss_body << "<style>\n";
+	ss_body << "body {background-color: black; color: white; font-family: Arial, sans-serif; margin: 0; padding: 200px 0px 0px 0px; text-align: center;}\n";
+	ss_body << "h1 {font-size: 42px;}\n";
+	ss_body << "p {font-size: 16px; line-height: 1.5;}\n";
+	ss_body << "</style>\n";
+	ss_body << "</head>\n";
+	ss_body << "<body>\n";
+	ss_body << "<h1>" << code << ": " << httpMsg << "</h1>\n";
+	ss_body << "<img style=\"margin-left: auto;\" src=\"https://http.cat/" << code << "\" alt=\"" << httpMsg << "\">\n";
+	ss_body << "</body>\n";
+	ss_body << "</html>\n";
 	
 	ss_header << HTTPVERSION << ' ' << code << ' ' << httpMsg << "\r\n";
 	ss_header << "Server: shmangserv/0.69 (knudel)" << "\r\n";
@@ -86,7 +96,7 @@ void	Response::setFile(std::string locationPath, const Server & currentServer)
 	int acc = access(realPath.c_str(), F_OK);
 	if (acc)
 	{
-		_filePath = currentServer.getStatusPage(404);
+		//_filePath = currentServer.getStatusPage(404);
 		_contentType = extensionType(_filePath);
 		_fileSize = fileSize(_filePath);
 		std::cerr << "Error page path: " << _filePath << std::endl;
@@ -98,7 +108,7 @@ void	Response::setFile(std::string locationPath, const Server & currentServer)
 	if (!file)
 	{
 		std::cerr << "Error: Response: set: could not open file.";
-		_filePath = currentServer.getStatusPage(500);
+		//_filePath = currentServer.getStatusPage(500);
 		_contentType = extensionType(_filePath);
 		_fileSize = fileSize(_filePath);
 		//setStatusCode(500);
@@ -166,7 +176,9 @@ int	Response::send(int socketfd, const Server & sendingServer)
 	int headerBytesSent = 0;
 	int	fileBytesSent = 0;
 	int	closingBytesSent = 0;
-
+	
+	(void)sendingServer;
+	
 	build();
 	// DEBUG
 	std::cout << "Header:\n" << _responseHeader << std::endl;
@@ -181,7 +193,7 @@ int	Response::send(int socketfd, const Server & sendingServer)
 	if (_statusCode == 200)
 		file.open(_filePath.c_str(), std::ios::binary);
 	else
-		file.open(sendingServer.getStatusPage(_statusCode).c_str(), std::ios::binary);
+		//file.open(sendingServer.getStatusPage(_statusCode).c_str(), std::ios::binary);
 	if (file.fail())
 	{
 		std::cerr << "Error: Response: send: could not open file." << std::endl;
