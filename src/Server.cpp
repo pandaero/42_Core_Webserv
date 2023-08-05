@@ -6,7 +6,7 @@
 /*   By: wmardin <wmardin@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/04/07 17:49:49 by pandalaf          #+#    #+#             */
-/*   Updated: 2023/08/05 10:41:07 by wmardin          ###   ########.fr       */
+/*   Updated: 2023/08/05 13:00:17 by wmardin          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -216,9 +216,10 @@ void Server::receive(clientVec_it clientIt)
 		Response	response(413);
 		
 		std::cout << "response 413 built.\n";
+		std::cout << response.getStatusPage() << std::endl;
 		if (::send(currentfd, response.getStatusPage(), response.getSize(), 0) == -1)
 			std::cerr << "Error: Server::sendResponse: send: failure to send header data.";
-		std::cout << "response 413 sent to fd:" << currentfd << std::endl;
+		std::cout << "response 413 (size " << response.getSize() << ") to fd:" << currentfd << std::endl;
 		
 
 		/*
@@ -307,6 +308,7 @@ void Server::closeClient(clientVec_it clientIt)
 	_pollStructs[currentIndex].fd = -1;
 	_pollStructs[currentIndex].events = 0;
 	_pollStructs[currentIndex].revents = 0;
+	std::cout << "closeClient on fd " << currentfd << std::endl;
 	_clients.erase(clientIt);
 	//_clientFDs.erase(_clientFDs);
 	// Still have to remove the fd listed in clientFDs, if that list is even needed...
