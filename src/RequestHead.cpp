@@ -48,7 +48,7 @@ std::string RequestHead::getMethod() const
 	return _method;
 }
 
-std::string RequestHead::getProtocol() const
+std::string RequestHead::httpProtocol() const
 {
 	return _protocol;
 }
@@ -58,7 +58,7 @@ std::string	RequestHead::getPath() const
 	return _path;
 }
 
-int	RequestHead::getContentLength() const
+int	RequestHead::contentLength() const
 {
 	return _contentLength;
 }

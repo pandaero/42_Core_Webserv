@@ -6,7 +6,7 @@
 /*   By: wmardin <wmardin@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/03/28 20:51:05 by pandalaf          #+#    #+#             */
-/*   Updated: 2023/08/05 21:30:44 by wmardin          ###   ########.fr       */
+/*   Updated: 2023/08/05 22:37:28 by wmardin          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -20,7 +20,7 @@ Client::Client(int serverSocketfd, int pollStructIndex)
 	_pollStructIndex = pollStructIndex;
 	_requestHeadComplete = false;
 	_requestBodyComplete = false;
-	_bodyBytesRead = -1;
+	_bodyBytesRead = 0;
 }
 
 void Client::setClientSocketfd(int clientSocketfd)
@@ -28,8 +28,9 @@ void Client::setClientSocketfd(int clientSocketfd)
 	_clientSocketfd = clientSocketfd;
 }
 
-void Client::handleRequestHeader()
+void Client::handleRequestHead()
 {
+	ANNOUNCEME
 	if (_requestHeadComplete)
 		return;
 	if (_buffer.find("\r\n\r\n") != std::string::npos)
@@ -37,12 +38,18 @@ void Client::handleRequestHeader()
 		_requestHead = RequestHead(_buffer);
 		_buffer.erase(0, _buffer.find("\r\n\r\n") + 4);
 		_requestHeadComplete = true;
+		_bodyBytesRead += _buffer.size();
 	}
 }
 
 void Client::appendToBuffer(std::string newData, int bytesReceived)
 {
-	_buffer.append(newData, bytesReceived);
+	_buffer.append(newData, 0, bytesReceived);
+	if (_requestHeadComplete)
+	{
+		_bodyBytesRead += bytesReceived;
+		_requestHeadComplete = _bodyBytesRead >= _requestHead.contentLength();
+	}
 }
 
 bool Client::requestHeadComplete()

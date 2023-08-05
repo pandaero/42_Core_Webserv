@@ -6,7 +6,7 @@
 /*   By: wmardin <wmardin@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/04/07 17:49:49 by pandalaf          #+#    #+#             */
-/*   Updated: 2023/08/05 21:23:04 by wmardin          ###   ########.fr       */
+/*   Updated: 2023/08/05 22:44:02 by wmardin          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -151,26 +151,17 @@ void Server::acceptConnections()
 	}
 }
 
-void	Server::handleConnections()
+void	Server::checkConnections()
 {
 	ANNOUNCEME
 	for (clientVec_it clientIt = _clients.begin(); clientIt != _clients.end(); ++clientIt)
 	{
-		std::cout << "start of loop in handleconns" << std::endl;
-		if (clientIt == _clients.end())
-		{
-			std::cout << "how in the fuck" << std::endl;
-			exit (1);
-		}
 		int	currentIndex = clientIt->getPollStructIndex();
+		
 		std::cout << "after getpollstructindex. pollstrucindex:" << currentIndex << std::endl;
 		if (_pollStructs[currentIndex].revents & POLLIN)
-			receive(clientIt);
-		std::cout << "returned from receive in handleConnections. Number of clients: " << _clients.size() << std::endl;
-		
-
+			handleConnection(clientIt);
 	}
-	std::cout << "end of handleConnectionsloop" << std::endl;
 }
 
 
@@ -199,7 +190,7 @@ void	Server::handleConnections()
 
 
 
-void Server::receive(clientVec_it clientIt)
+void Server::handleConnection(clientVec_it clientIt)
 {
 	ANNOUNCEME
 	_currentClientfd = clientIt->getSocketfd();
@@ -214,24 +205,24 @@ void Server::receive(clientVec_it clientIt)
 		return;
 	}
 	clientIt->appendToBuffer(_recvBuffer, _bytesReceived);
-	clientIt->handleRequestHeader();
-	if (clientIt->requestHeadComplete())
+	clientIt->handleRequestHead();
+	if (!clientIt->requestHeadComplete())
+		return;
+	if (requestHeadError(clientIt))
 	{
-		int	errorCode = 0;
-
-		if (clientIt->_requestHead.getProtocol() != HTTPVERSION)
-			errorCode = 505;
-		else if (clientIt->_requestHead.getContentLength() > (int)_clientMaxBody)
-			errorCode = 413;
-		// check method rights at requested location
-		// check file accessibility at requested location
-		if (errorCode)
-		{
-			sendStatusCodePage(errorCode);
-			closeClient(clientIt);
-			return;
-		}
+		sendStatusCodePage(_statuscode);
+		closeClient(clientIt);
+		return;
 	}
+	if (clientIt->requestBodyComplete())
+	// wrong? probably requestbody should always be complete on first read, because chunking
+	// but then this has to be replaced by the chunkhandler(TM).
+	
+	// check if body is complete / handle chunking
+	// make response
+	// send response
+	// close client
+	
 		
 		
 		/*
@@ -257,6 +248,18 @@ void Server::receive(clientVec_it clientIt)
 			
 		} */
 	
+}
+
+bool Server::requestHeadError(clientVec_it clientIt)
+{
+	if (clientIt->_requestHead.httpProtocol() != HTTPVERSION)
+		return _statuscode = 505;
+	else if (clientIt->_requestHead.contentLength() > (int)_clientMaxBody)
+		return _statuscode = 413;
+	else
+		return false;
+	// check method rights at requested location
+	// check file accessibility at requested location
 }
 
 // CGI handling (for php and potentially python scripts)

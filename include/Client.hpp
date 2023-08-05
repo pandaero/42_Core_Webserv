@@ -6,7 +6,7 @@
 /*   By: wmardin <wmardin@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/03/28 20:29:39 by pandalaf          #+#    #+#             */
-/*   Updated: 2023/08/05 21:27:30 by wmardin          ###   ########.fr       */
+/*   Updated: 2023/08/05 21:39:17 by wmardin          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -33,7 +33,7 @@ class	Client
 		void			setClientSocketfd(int);
 
 		void			appendToBuffer(std::string, int);
-		void			handleRequestHeader();
+		void			handleRequestHead();
 
 		void			resetData();
 		

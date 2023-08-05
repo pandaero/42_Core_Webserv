@@ -6,7 +6,7 @@
 /*   By: wmardin <wmardin@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/04/07 19:17:18 by pandalaf          #+#    #+#             */
-/*   Updated: 2023/08/05 21:22:07 by wmardin          ###   ########.fr       */
+/*   Updated: 2023/08/05 22:21:05 by wmardin          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -48,7 +48,7 @@ class	Server
 		void	startListening();
 		void	poll();
 		void	acceptConnections();
-		void	handleConnections();
+		void	checkConnections();
 		void	cleanup();
 	
 		
@@ -59,10 +59,12 @@ class	Server
 
 		
 	private:
-		void	receive(clientVec_it);
+		void	handleConnection(clientVec_it);
 		int		getAvailablePollStructIndex();
 		void	closeClient(clientVec_it);
 		
+		bool	requestHeadError(clientVec_it);
+
 		void	sendResponse(Response, int);
 		void	sendStatusCodePage(int);
 
@@ -94,6 +96,7 @@ class	Server
 
 		pollfd *						_pollStructs;
 		sockaddr_in						_serverAddress;
+		int								_statuscode;
 		int								_currentClientfd;
 		std::vector<Client>				_clients;
 		std::vector<int>				_clientFDs;

@@ -38,7 +38,7 @@ int main()
 			}
 			try
 			{
-				servers[i].handleConnections();
+				servers[i].checkConnections();
 			}
 			catch (const std::exception& e)
 			{
