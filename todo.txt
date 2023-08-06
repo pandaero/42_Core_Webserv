@@ -1,0 +1,5 @@
+- dir listing
+- cgi
+- ackchual file sending back
+- chunking
+- alt location

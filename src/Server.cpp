@@ -6,7 +6,7 @@
 /*   By: wmardin <wmardin@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/04/07 17:49:49 by pandalaf          #+#    #+#             */
-/*   Updated: 2023/08/06 15:14:21 by wmardin          ###   ########.fr       */
+/*   Updated: 2023/08/06 18:12:30 by wmardin          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -208,7 +208,7 @@ void Server::handleConnection(clientVec_it clientIt)
 	clientIt->handleRequestHead();
 	if (!clientIt->requestHeadComplete())
 		return;
-	if (requestHeadError(clientIt))
+	if (requestHeadError(clientIt)) //decline header if not completed in first chunk
 	{
 		sendStatusCodePage(_statuscode);
 		closeClient(clientIt);
@@ -297,9 +297,10 @@ bool Server::requestHeadError(clientVec_it clientIt)
 		else
 			return (_statuscode = 403);
 	}
-	else return resource (but not here)
+	//else return resource (but not here)
  
 	std::ifstream	file;
+	//should be completepath?
 	file.open(clientIt->_requestHead.path().c_str(), std::ios::binary);
 	// file not accessible - we treat it as file not found. Maybe more specific behavior? Wr already checked folder permissions tho!
 	if (file.fail())
@@ -307,6 +308,7 @@ bool Server::requestHeadError(clientVec_it clientIt)
 		file.close();
 		return (_statuscode = 404);
 	}
+	return false;
 }
 
 
@@ -316,10 +318,10 @@ bool Server::requestHeadError(clientVec_it clientIt)
 		 
 	//405 method not allowed for speficic resource
 	
-	return false;
+	//return false;
 	// check method rights at requested location
 	// check file accessibility at requested location
-}
+//}
 
 // CGI handling (for php and potentially python scripts)
 			// if (request.path() == ".php")

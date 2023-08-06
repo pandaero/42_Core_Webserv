@@ -6,7 +6,7 @@
 /*   By: wmardin <wmardin@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/04/07 19:17:18 by pandalaf          #+#    #+#             */
-/*   Updated: 2023/08/06 14:51:56 by wmardin          ###   ########.fr       */
+/*   Updated: 2023/08/06 18:07:01 by wmardin          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -75,7 +75,7 @@ class	Server
 		void	setDefaultDirListing(std::string input);
 
 		int								_server_fd;
-		int								_listen_fd;
+		//int								_listen_fd;
 		std::vector<std::string>		_names;
 		strLocMap						_locations;
 		intStrMap						_errorPagesPaths;

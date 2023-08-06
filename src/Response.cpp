@@ -6,7 +6,7 @@
 /*   By: wmardin <wmardin@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/04/01 17:05:35 by pandalaf          #+#    #+#             */
-/*   Updated: 2023/08/06 11:25:58 by wmardin          ###   ########.fr       */
+/*   Updated: 2023/08/06 18:09:11 by wmardin          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -79,10 +79,12 @@ off_t Response::getSize()
 	return _fileSize;
 }
 
+
 void	Response::setFile(std::string locationPath, const Server & currentServer)
 {
 	// Map location / URL to folder structure
-	std::string	realPath = currentServer.getRoot() + locationPath;
+	(void)currentServer;
+	std::string	realPath = "currentServer" + locationPath;
 	size_t	indexLastChar = realPath.length() - 1;
 	if (realPath[indexLastChar] == '/')
 		realPath.erase(indexLastChar); // are there edge cases? like just pointing to root? "/"
@@ -120,6 +122,7 @@ void	Response::setFile(std::string locationPath, const Server & currentServer)
 	//setStatusCode(200);
 	return;
 }
+
 
 void	Response::build()
 {
