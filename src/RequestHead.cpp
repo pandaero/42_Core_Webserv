@@ -43,7 +43,7 @@ std::string	RequestHead::getFilename() const
 	return (_path.substr(_path.find_last_of('/'), _path.find(*(_path.end() - 1))));
 }
 
-std::string RequestHead::getMethod() const
+std::string RequestHead::method() const
 {
 	return _method;
 }

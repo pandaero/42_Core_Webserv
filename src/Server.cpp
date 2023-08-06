@@ -6,7 +6,7 @@
 /*   By: wmardin <wmardin@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/04/07 17:49:49 by pandalaf          #+#    #+#             */
-/*   Updated: 2023/08/05 22:44:02 by wmardin          ###   ########.fr       */
+/*   Updated: 2023/08/06 09:39:46 by wmardin          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -215,8 +215,18 @@ void Server::handleConnection(clientVec_it clientIt)
 		return;
 	}
 	if (clientIt->requestBodyComplete())
-	// wrong? probably requestbody should always be complete on first read, because chunking
-	// but then this has to be replaced by the chunkhandler(TM).
+	{
+		//bs, just for now to send shit
+		sendStatusCodePage(200);
+		closeClient(clientIt);
+		return;
+		//perform Method of request
+		// send response
+		// close client
+	}
+	// wrong? no, because long headers may stop request body from being read completely
+	// 
+	// but this still has to be augmented by a chunkhandler(TM).
 	
 	// check if body is complete / handle chunking
 	// make response
@@ -253,9 +263,17 @@ void Server::handleConnection(clientVec_it clientIt)
 bool Server::requestHeadError(clientVec_it clientIt)
 {
 	if (clientIt->_requestHead.httpProtocol() != HTTPVERSION)
-		return _statuscode = 505;
-	else if (clientIt->_requestHead.contentLength() > (int)_clientMaxBody)
-		return _statuscode = 413;
+		return (_statuscode = 505);
+	if (clientIt->_requestHead.contentLength() > (int)_clientMaxBody)
+		return (_statuscode = 413);
+	if (clientIt->_requestHead.method() != GET
+		&& clientIt->_requestHead.method() != POST
+		&& clientIt->_requestHead.method() != DELETE)
+		return (_statuscode = 501);
+	//405 method not allowed for speficic resource
+	//404 file not found
+		 
+		
 	else
 		return false;
 	// check method rights at requested location

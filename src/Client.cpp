@@ -6,7 +6,7 @@
 /*   By: wmardin <wmardin@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/03/28 20:51:05 by pandalaf          #+#    #+#             */
-/*   Updated: 2023/08/05 22:37:28 by wmardin          ###   ########.fr       */
+/*   Updated: 2023/08/06 09:42:41 by wmardin          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -46,10 +46,11 @@ void Client::appendToBuffer(std::string newData, int bytesReceived)
 {
 	_buffer.append(newData, 0, bytesReceived);
 	if (_requestHeadComplete)
-	{
 		_bodyBytesRead += bytesReceived;
-		_requestHeadComplete = _bodyBytesRead >= _requestHead.contentLength();
-	}
+	// but not useful for chunking there has to be another var in the headers for chunking.
+	// i think this is necessary because in case of super big headers, the body 
+	// may not be read completely in one go even tho it is not in itself too big 
+	_requestBodyComplete = _bodyBytesRead >= _requestHead.contentLength();
 }
 
 bool Client::requestHeadComplete()

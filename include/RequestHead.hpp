@@ -6,7 +6,7 @@
 /*   By: wmardin <wmardin@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/05/01 22:04:57 by pandalaf          #+#    #+#             */
-/*   Updated: 2023/08/05 22:08:43 by wmardin          ###   ########.fr       */
+/*   Updated: 2023/08/06 09:32:26 by wmardin          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -32,7 +32,7 @@ class	RequestHead
 		
 		std::string	getHeaderValue(std::string) const;
 		std::string	getFilename() const;
-		std::string	getMethod() const;
+		std::string	method() const;
 		std::string getPath() const;
 		std::string	httpProtocol() const;
 		int			contentLength() const;
