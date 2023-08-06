@@ -6,7 +6,7 @@
 /*   By: wmardin <wmardin@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/03/26 01:51:20 by pandalaf          #+#    #+#             */
-/*   Updated: 2023/08/05 08:42:31 by wmardin          ###   ########.fr       */
+/*   Updated: 2023/08/06 14:59:41 by wmardin          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -15,6 +15,7 @@
 
 // Headers required by this header.
 # include <iostream>
+# include <fstream>
 # include <vector>
 # include <map>
 # include <string>
@@ -83,6 +84,7 @@
 # define E_INVALERRNUM	"Error: ServerConfig: Invalid HTML response code (range is from 100 to 599): "
 
 # define I_INVALIDKEY		"Info: ServerConfig: Unrecognized identifier in config file: "
+# define I_INVALIDVALUE		"Info: ServerConfig: Unrecognized value in config file: "
 # define I_INVALERRPAGE		"Info: ServerConfig: Skipping invalid error page key-value pair."
 # define I_INVALIDHEADER	"Info: ServerConfig: Elements between valid subelement headers and beginning of subelement (opening curly brace) will be ignored: "
 
@@ -167,4 +169,8 @@ off_t			fileSize(std::string);
 std::vector<std::string>	splitString(std::string, const std::string &);
 // Splits a string ref and returns the first instruction it contains, defined as all characters from the string ref's start until the next top-level semicolon. Deletes the instruction from the string ref.
 std::string		getInstruction(std::string& inputStr);
+// Checks whether a resource exists, be it file or directory
+bool			resourceExists(const std::string&);
+// Checks whether a path corresponds to a directory
+bool			isDirectory(const std::string&);
 #endif

@@ -187,7 +187,12 @@ void ServerConfig::parseLocation(std::string& locationElement)
 				locInfo.delete_ = false;
 		}
 		else if (key == DIRLISTING)
-			locInfo.dir_listing = instruction;
+		{
+			if (instruction == "yes" || instruction == "no")
+				locInfo.dir_listing = instruction;
+			else
+				std::cerr << I_INVALIDVALUE << instruction << std::endl;
+		}
 		else if (key == ALTLOC)
 			locInfo.alt_location = instruction;
 		else

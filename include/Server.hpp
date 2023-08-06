@@ -6,7 +6,7 @@
 /*   By: wmardin <wmardin@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/04/07 19:17:18 by pandalaf          #+#    #+#             */
-/*   Updated: 2023/08/05 22:21:05 by wmardin          ###   ########.fr       */
+/*   Updated: 2023/08/06 14:51:56 by wmardin          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -51,22 +51,16 @@ class	Server
 		void	checkConnections();
 		void	cleanup();
 	
-		
-		
-	//questionable
-		std::string	getRoot() const;
-
-
-		
 	private:
 		void	handleConnection(clientVec_it);
 		int		getAvailablePollStructIndex();
 		void	closeClient(clientVec_it);
 		
-		bool	requestHeadError(clientVec_it);
-
-		void	sendResponse(Response, int);
-		void	sendStatusCodePage(int);
+		bool		requestHeadError(clientVec_it);
+		void		sendResponse(Response, int);
+		void		sendStatusCodePage(int);
+		std::string	getStatusPage(int) const;
+		bool		dirListing(const std::string&);
 
 		void	setNames(std::string);
 		void	setHost(std::string);
@@ -79,10 +73,6 @@ class	Server
 		void	setMaxConnections(std::string);
 		void	setBacklog(std::string);
 		void	setDefaultDirListing(std::string input);
-
-		std::string	getStatusPage(int) const;
-		
-		void	errorHandler(int, int);
 
 		int								_server_fd;
 		int								_listen_fd;

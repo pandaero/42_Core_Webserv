@@ -6,7 +6,7 @@
 /*   By: wmardin <wmardin@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/04/01 17:05:35 by pandalaf          #+#    #+#             */
-/*   Updated: 2023/08/05 14:03:38 by wmardin          ###   ########.fr       */
+/*   Updated: 2023/08/06 11:25:58 by wmardin          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -52,9 +52,9 @@ Response::Response(const RequestHead & request, const Server & server)
 	std::cout << "Response getting made" << std::endl;
 	
 	// getPath depends on directory listing, and server root, etc. getFile?
-	setFile(request.getPath(), server);
+	setFile(request.path(), server);
 
-	// _statusCode = setFile(server.getRoot() + request.getPath(), server);
+	// _statusCode = setFile(server.getRoot() + request.path(), server);
 	// setStatusCode(_statusCode);
 	// check for file access success etc.
 	std::cout << "Response got made with full path: " << _filePath << std::endl;

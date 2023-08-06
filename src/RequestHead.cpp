@@ -24,23 +24,26 @@ RequestHead::RequestHead(std::string requestData)
 	_path = splitEraseStr(requestData, " ");
 	_protocol = splitEraseStr(requestData, "\r\n");
 	_headers = createHeaderMap(requestData, ":", "\r\n", "\r\n");
-	if (_headers.find("content-length") != _headers.end())
-		_contentLength = std::atoi(getHeaderValue("content-length").c_str());
+	if (headerValue("content-length") != NOTFOUND)
+		_contentLength = atoi(headerValue("content-length").c_str());
 	else
 		_contentLength = -1;
+	if (headerValue("content-type") != NOTFOUND)
+		_contentType = headerValue("content-type");
 }
 
-std::string	RequestHead::getHeaderValue(std::string header) const
+std::string	RequestHead::headerValue(std::string header) const
 {
 	std::string	query = strToLower(header);
-	if (_headers.find(header) != _headers.end())
-		return (_headers.find(header)->second);
+	if (_headers.find(query) != _headers.end())
+		return (_headers.find(query)->second);
 	return (NOTFOUND);
 }
 
+//prolly not needed
 std::string	RequestHead::getFilename() const
 {
-	return (_path.substr(_path.find_last_of('/'), _path.find(*(_path.end() - 1))));
+	return _path.substr(_path.find_last_of('/'), _path.size() - 1);
 }
 
 std::string RequestHead::method() const
@@ -53,7 +56,7 @@ std::string RequestHead::httpProtocol() const
 	return _protocol;
 }
 
-std::string	RequestHead::getPath() const
+std::string	RequestHead::path() const
 {
 	return _path;
 }

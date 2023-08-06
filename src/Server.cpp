@@ -6,7 +6,7 @@
 /*   By: wmardin <wmardin@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/04/07 17:49:49 by pandalaf          #+#    #+#             */
-/*   Updated: 2023/08/06 09:39:46 by wmardin          ###   ########.fr       */
+/*   Updated: 2023/08/06 15:14:21 by wmardin          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -125,13 +125,13 @@ void Server::acceptConnections()
 	ANNOUNCEME
 	if (_pollStructs[0].revents & POLLIN)
 	{
-		int	index = getAvailablePollStructIndex();
+		int		index = getAvailablePollStructIndex();
 		// try catch block or smth to catch too many clients error in findFreeIndex
 		_clients.push_back(Client(_server_fd, index)); //maybe can get rid of pollstructindex here
-		Client&	newClient = _clients.back(); //CPP98?
 		
-		int	new_sock;
-		int addrlen = sizeof(_serverAddress);
+		Client&	newClient = _clients.back();
+		int		new_sock;
+		int 	addrlen = sizeof(_serverAddress);
 	
 		new_sock = accept(_server_fd, (sockaddr*)newClient.getSockaddr(), (socklen_t*)&addrlen);
 		if (new_sock == -1)
@@ -158,7 +158,7 @@ void	Server::checkConnections()
 	{
 		int	currentIndex = clientIt->getPollStructIndex();
 		
-		std::cout << "after getpollstructindex. pollstrucindex:" << currentIndex << std::endl;
+		std::cout << "Pollstructindex returned in checkConnections:" << currentIndex << std::endl;
 		if (_pollStructs[currentIndex].revents & POLLIN)
 			handleConnection(clientIt);
 	}
@@ -174,8 +174,8 @@ void	Server::checkConnections()
 			
 			Response	standard(request, *this);
 			// standard.setStatusCode(200);
-			std::cout << "Raw path: " << request.getPath() << std::endl;
-			std::cout << "Pathity path path: " << _filePaths.find(ROOT)->second << request.getPath() << "index.html" << std::endl;
+			std::cout << "Raw path: " << request.path() << std::endl;
+			std::cout << "Pathity path path: " << _filePaths.find(ROOT)->second << request.path() << "index.html" << std::endl;
 			// if (*(request._path.end() - 1) == '/')
 			// {
 			// 	// serve index (try html, htm, shtml, php), if not present, check directory listing setting to create it (or not)
@@ -216,6 +216,10 @@ void Server::handleConnection(clientVec_it clientIt)
 	}
 	if (clientIt->requestBodyComplete())
 	{
+		
+		
+		
+		
 		//bs, just for now to send shit
 		sendStatusCodePage(200);
 		closeClient(clientIt);
@@ -262,20 +266,57 @@ void Server::handleConnection(clientVec_it clientIt)
 
 bool Server::requestHeadError(clientVec_it clientIt)
 {
+	// wrong protocol
 	if (clientIt->_requestHead.httpProtocol() != HTTPVERSION)
 		return (_statuscode = 505);
+	// body size too large
 	if (clientIt->_requestHead.contentLength() > (int)_clientMaxBody)
 		return (_statuscode = 413);
+	// method not supported by server
 	if (clientIt->_requestHead.method() != GET
 		&& clientIt->_requestHead.method() != POST
 		&& clientIt->_requestHead.method() != DELETE)
 		return (_statuscode = 501);
-	//405 method not allowed for speficic resource
-	//404 file not found
-		 
+	// access forbidden (have to specifically allow access in config file)
+	if (_locations.find(clientIt->_requestHead.path()) == _locations.end())
+		return (_statuscode = 403);
 		
-	else
-		return false;
+	
+	std::string	completePath(_root + clientIt->_requestHead.path());
+	
+	if (completePath[completePath.size() - 1] == '/')
+		completePath += "index.html";
+	std::cout << "completePath:'" << completePath << '\'' << std::endl;
+	
+	if (!resourceExists(completePath))
+		return (_statuscode = 404);
+	if (isDirectory(completePath))
+	{
+		if (dirListing(clientIt->_requestHead.path()))
+			std::cout << "Will be showing dir listing here." << std::endl;
+		else
+			return (_statuscode = 403);
+	}
+	else return resource (but not here)
+ 
+	std::ifstream	file;
+	file.open(clientIt->_requestHead.path().c_str(), std::ios::binary);
+	// file not accessible - we treat it as file not found. Maybe more specific behavior? Wr already checked folder permissions tho!
+	if (file.fail())
+	{
+		file.close();
+		return (_statuscode = 404);
+	}
+}
+
+
+
+		//else: check if exists
+		//if not: check if dir listing 
+		 
+	//405 method not allowed for speficic resource
+	
+	return false;
 	// check method rights at requested location
 	// check file accessibility at requested location
 }
@@ -292,6 +333,21 @@ bool Server::requestHeadError(clientVec_it clientIt)
 			// 	// attempt to serve file (html from cgi)
 			// }
 
+// remember to change other functions also to take const string &
+bool Server::dirListing(const std::string& path)
+{
+	strLocMap_it	locIt =_locations.find(path);
+	
+	if (locIt == _locations.end())
+		return false;
+	if (locIt->second.dir_listing == "yes")
+		return true;
+	if (locIt->second.dir_listing == "no")
+		return false;
+	if (!_defaultDirListing)
+		return false;
+	return true;
+}
 
 int Server::getAvailablePollStructIndex()
 {
@@ -315,6 +371,8 @@ void Server::sendStatusCodePage(int code)
 {
 	Response	response(code);
 		
+	//gotta check for client supplied error page and try to send that. only if not supplied or fail, send this
+	//use getStatusPage in server for this, also rename shit, too ambiguous
 	if (::send(_currentClientfd, response.getStatusPage(), response.getSize(), 0) == -1)
 		std::cerr << "Error: Server::sendStatusCodePage: send.";
 }
@@ -520,11 +578,6 @@ std::string Server::getStatusPage(int code) const
 		return _errorPagesPaths.find(code)->second;
 	else
 		return _errorPagesPaths.find(-1)->second;
-}
-
-std::string	Server::getRoot() const
-{
-	return(_filePaths.find(ROOT)->second);
 }
 
 // void Server::errorHandler(int code, int clientfd)

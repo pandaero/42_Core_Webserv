@@ -185,3 +185,19 @@ std::string getInstruction(std::string& inputStr)
 	trim(instruction);
 	return instruction;
 }
+
+bool	resourceExists(const std::string& path)
+{
+	std::ifstream	resource(path);
+	
+	return resource.good();
+}
+
+bool	isDirectory(const std::string& path)
+{
+	struct stat	fileStat;
+	
+	if (stat(path.c_str(), &fileStat) == 0)
+		return S_ISDIR(fileStat.st_mode);
+	return false;
+}
