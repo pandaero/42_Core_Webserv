@@ -6,7 +6,7 @@
 /*   By: wmardin <wmardin@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/04/01 17:05:35 by pandalaf          #+#    #+#             */
-/*   Updated: 2023/08/06 21:51:07 by wmardin          ###   ########.fr       */
+/*   Updated: 2023/08/07 14:22:43 by wmardin          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -14,8 +14,12 @@
 
 Response::Response(){}
 
-Response::Response(int code)
+Response::~Response(){}
+
+Response::Response(int code, strVec serverNames)
 {
+	
+	(void)serverNames;
 	std::string			httpMsg(getHttpMsg(code));
 	std::stringstream	ss_body, ss_header;
 
@@ -42,7 +46,7 @@ Response::Response(int code)
 	ss_header << "\r\n";
 
 	_statusPage = ss_header.str() + ss_body.str();
-	_fileSize = _statusPage.size();
+	_bodySize = _statusPage.size();
 }
 
 Response::Response(const Request & request, const Server & server)
@@ -67,7 +71,6 @@ Response::Response(const Request & request, const Server & server)
 // 	setFile(server.getStatusPage(code), server);
 // }
 
-Response::~Response(){}
 
 const char* Response::getStatusPage()
 {
@@ -76,7 +79,7 @@ const char* Response::getStatusPage()
 
 off_t Response::getSize()
 {
-	return _fileSize;
+	return _bodySize;
 }
 
 
@@ -100,7 +103,7 @@ void	Response::setFile(std::string locationPath, const Server & currentServer)
 	{
 		//_filePath = currentServer.getStatusPage(404);
 		_contentType = extensionType(_filePath);
-		_fileSize = fileSize(_filePath);
+		_bodySize = fileSize(_filePath);
 		std::cerr << "Error page path: " << _filePath << std::endl;
 		//setStatusCode(404);
 		return;
@@ -112,12 +115,12 @@ void	Response::setFile(std::string locationPath, const Server & currentServer)
 		std::cerr << "Error: Response: set: could not open file.";
 		//_filePath = currentServer.getStatusPage(500);
 		_contentType = extensionType(_filePath);
-		_fileSize = fileSize(_filePath);
+		_bodySize = fileSize(_filePath);
 		//setStatusCode(500);
 		return;
 	}
 	// Determine size (find correct method)
-	_fileSize = fileSize(realPath);
+	_bodySize = fileSize(realPath);
 	_contentType = extensionType(realPath);
 	//setStatusCode(200);
 	return;
@@ -168,7 +171,7 @@ void	Response::build()
 			default:
 				headerStream << "application/octet-stream";
 		}
-		headerStream << "\r\n" << "Content-Length: " << _fileSize << "\r\n\r\n";
+		headerStream << "\r\n" << "Content-Length: " << _bodySize << "\r\n\r\n";
 	}
 	headerStream << "\r\n\r\n";
 	_responseHeader = headerStream.str();

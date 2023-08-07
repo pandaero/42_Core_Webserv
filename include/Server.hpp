@@ -6,7 +6,7 @@
 /*   By: wmardin <wmardin@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/04/07 19:17:18 by pandalaf          #+#    #+#             */
-/*   Updated: 2023/08/06 21:51:07 by wmardin          ###   ########.fr       */
+/*   Updated: 2023/08/07 13:59:18 by wmardin          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -53,7 +53,7 @@ class	Server
 	
 	private:
 		void	handleConnection(clientVec_it);
-		int		getAvailablePollStructIndex();
+		int		freePollStructIndex();
 		void	closeClient(clientVec_it);
 		
 		bool		RequestError(clientVec_it);

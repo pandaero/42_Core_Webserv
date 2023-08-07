@@ -81,6 +81,8 @@ bool Request::headComplete()
 
 bool Request::bodyComplete()
 {
+	if (_bodyBytesWritten >= (size_t)_contentLength)
+		std::cout << "bodyCmoplete" << std::endl;
 	return _bodyBytesWritten >= (size_t)_contentLength;
 }
 

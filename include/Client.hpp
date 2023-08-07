@@ -6,7 +6,7 @@
 /*   By: wmardin <wmardin@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/03/28 20:29:39 by pandalaf          #+#    #+#             */
-/*   Updated: 2023/08/07 11:01:35 by wmardin          ###   ########.fr       */
+/*   Updated: 2023/08/07 13:56:42 by wmardin          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -24,7 +24,7 @@
 class	Client
 {
 	public:
-		Client(int, int);
+		Client(int);
 
 		sockaddr_in*	sockaddr();
 		int				socketfd() const;
@@ -46,7 +46,6 @@ class	Client
 	private:
 		std::string		_buffer;
 		
-		int				_serverSocketfd; //try delete
 		int				_clientSocketfd;
 		int				_pollStructIndex;
 		sockaddr_in		_clientAddress;

@@ -6,7 +6,7 @@
 /*   By: wmardin <wmardin@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/03/28 20:51:05 by pandalaf          #+#    #+#             */
-/*   Updated: 2023/08/07 11:09:36 by wmardin          ###   ########.fr       */
+/*   Updated: 2023/08/07 13:56:20 by wmardin          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -14,9 +14,8 @@
 
 #include <unistd.h>
 
-Client::Client(int serverSocketfd, int pollStructIndex)
+Client::Client(int pollStructIndex)
 {
-	_serverSocketfd = serverSocketfd;
 	_clientSocketfd = -42;
 	_pollStructIndex = pollStructIndex;
 }

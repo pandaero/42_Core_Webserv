@@ -6,7 +6,7 @@
 /*   By: wmardin <wmardin@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/04/07 17:49:49 by pandalaf          #+#    #+#             */
-/*   Updated: 2023/08/07 10:56:44 by wmardin          ###   ########.fr       */
+/*   Updated: 2023/08/07 14:31:10 by wmardin          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -125,9 +125,9 @@ void Server::acceptConnections()
 	ANNOUNCEME
 	if (_pollStructs[0].revents & POLLIN)
 	{
-		int		index = getAvailablePollStructIndex();
+		int		index = freePollStructIndex();
 		// try catch block or smth to catch too many clients error in findFreeIndex
-		_clients.push_back(Client(_server_fd, index)); //maybe can get rid of pollstructindex here
+		_clients.push_back(Client(index));
 		
 		Client&	newClient = _clients.back();
 		int		new_sock;
@@ -198,7 +198,7 @@ void Server::handleConnection(clientVec_it clientIt)
 	_currentClientfd = clientIt->socketfd();
 	
 	_bytesReceived = recv(_currentClientfd, _recvBuffer, RECV_CHUNK_SIZE, 0);
-	std::cout << "Received " << _bytesReceived << " bytes from client:\n\n" << _recvBuffer << std::endl;
+	std::cout << "Received " << _bytesReceived << " bytes from client:\n" << _recvBuffer << std::endl;
 	
 	if (_bytesReceived <= 0)
 	{
@@ -222,11 +222,12 @@ void Server::handleConnection(clientVec_it clientIt)
 
 	// process the body
 	clientIt->handleRequestBody();
+	sendStatusCodePage(200);
 	if (clientIt->requestBodyComplete())
 	{
 		//bs, just for now to send shit
-		sendStatusCodePage(200);
-		closeClient(clientIt);
+		
+		
 		return;
 		//perform Method of request
 		// send response
@@ -355,7 +356,7 @@ bool Server::dirListing(const std::string& path)
 	return true;
 }
 
-int Server::getAvailablePollStructIndex()
+int Server::freePollStructIndex()
 {
 	ANNOUNCEME
 	size_t i = 0;
@@ -375,7 +376,7 @@ int Server::getAvailablePollStructIndex()
 
 void Server::sendStatusCodePage(int code)
 {
-	Response	response(code);
+	Response	response(code, _names);
 		
 	//gotta check for client supplied error page and try to send that. only if not supplied or fail, send this
 	//use getStatusPage in server for this, also rename shit, too ambiguous

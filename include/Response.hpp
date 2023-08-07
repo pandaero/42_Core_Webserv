@@ -6,7 +6,7 @@
 /*   By: wmardin <wmardin@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/04/01 17:00:19 by pandalaf          #+#    #+#             */
-/*   Updated: 2023/08/06 21:51:07 by wmardin          ###   ########.fr       */
+/*   Updated: 2023/08/07 14:22:49 by wmardin          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -32,9 +32,9 @@ class	Response
 {
 	public:
 		Response();
-		Response(int);
-		Response(const Request &, const Server &);
 		~Response();
+		Response(int, strVec serverNames);
+		Response(const Request &, const Server &);
 
 		void			setFile(std::string, const Server &);
 
@@ -55,7 +55,7 @@ class	Response
 		
 		std::string		_statusPage;
 		contentType		_contentType;
-		off_t			_fileSize;
+		off_t			_bodySize;
 		std::string		_filePath;
 };
 #endif
