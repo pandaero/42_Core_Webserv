@@ -6,7 +6,7 @@
 /*   By: wmardin <wmardin@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/04/01 17:05:35 by pandalaf          #+#    #+#             */
-/*   Updated: 2023/08/06 18:09:11 by wmardin          ###   ########.fr       */
+/*   Updated: 2023/08/06 21:51:07 by wmardin          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -45,7 +45,7 @@ Response::Response(int code)
 	_fileSize = _statusPage.size();
 }
 
-Response::Response(const RequestHead & request, const Server & server)
+Response::Response(const Request & request, const Server & server)
 {
 	//DEBUG
 	ANNOUNCEME

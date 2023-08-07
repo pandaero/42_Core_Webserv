@@ -10,14 +10,14 @@
 /*                                                                            */
 /* ************************************************************************** */
 
-#include "../include/RequestHead.hpp"
+#include "../include/Request.hpp"
 
-RequestHead::RequestHead()
+Request::Request()
 {
 	_contentLength = -1;
 }
 
-RequestHead::RequestHead(std::string requestData)
+Request::Request(std::string requestData)
 {
 	ANNOUNCEME
 	_method = splitEraseStr(requestData, " ");
@@ -32,7 +32,7 @@ RequestHead::RequestHead(std::string requestData)
 		_contentType = headerValue("content-type");
 }
 
-std::string	RequestHead::headerValue(std::string header) const
+std::string	Request::headerValue(std::string header) const
 {
 	std::string	query = strToLower(header);
 	if (_headers.find(query) != _headers.end())
@@ -41,37 +41,37 @@ std::string	RequestHead::headerValue(std::string header) const
 }
 
 //prolly not needed
-std::string	RequestHead::getFilename() const
+std::string	Request::getFilename() const
 {
 	return _path.substr(_path.find_last_of('/'), _path.size() - 1);
 }
 
-std::string RequestHead::method() const
+std::string Request::method() const
 {
 	return _method;
 }
 
-std::string RequestHead::httpProtocol() const
+std::string Request::httpProtocol() const
 {
 	return _protocol;
 }
 
-std::string	RequestHead::path() const
+std::string	Request::path() const
 {
 	return _path;
 }
 
-int	RequestHead::contentLength() const
+int	Request::contentLength() const
 {
 	return _contentLength;
 }
 
-std::string RequestHead::getContentType() const
+std::string Request::getContentType() const
 {
 	return _contentType;
 }
 
-strMap RequestHead::createHeaderMap(std::string& input, std::string endOfKey, std::string endOfValue, std::string endOfMap)
+strMap Request::createHeaderMap(std::string& input, std::string endOfKey, std::string endOfValue, std::string endOfMap)
 {
 	strMap 		stringMap;
 	std::string key, value;

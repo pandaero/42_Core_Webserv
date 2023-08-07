@@ -6,7 +6,7 @@
 /*   By: wmardin <wmardin@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/04/01 17:00:19 by pandalaf          #+#    #+#             */
-/*   Updated: 2023/08/05 10:39:11 by wmardin          ###   ########.fr       */
+/*   Updated: 2023/08/06 21:51:07 by wmardin          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -33,7 +33,7 @@ class	Response
 	public:
 		Response();
 		Response(int);
-		Response(const RequestHead &, const Server &);
+		Response(const Request &, const Server &);
 		~Response();
 
 		void			setFile(std::string, const Server &);

@@ -6,7 +6,7 @@
 /*   By: wmardin <wmardin@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/04/07 17:49:49 by pandalaf          #+#    #+#             */
-/*   Updated: 2023/08/06 18:12:30 by wmardin          ###   ########.fr       */
+/*   Updated: 2023/08/06 21:51:07 by wmardin          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -170,7 +170,7 @@ void	Server::checkConnections()
 		
 		 if (clientIt->_gotRequest == true)
 		{
-			RequestHead		request(buffer);
+			Request		request(buffer);
 			
 			Response	standard(request, *this);
 			// standard.setStatusCode(200);
@@ -205,10 +205,10 @@ void Server::handleConnection(clientVec_it clientIt)
 		return;
 	}
 	clientIt->appendToBuffer(_recvBuffer, _bytesReceived);
-	clientIt->handleRequestHead();
-	if (!clientIt->requestHeadComplete())
+	clientIt->handleRequest();
+	if (!clientIt->RequestComplete())
 		return;
-	if (requestHeadError(clientIt)) //decline header if not completed in first chunk
+	if (RequestError(clientIt)) //decline header if not completed in first chunk
 	{
 		sendStatusCodePage(_statuscode);
 		closeClient(clientIt);
@@ -241,10 +241,10 @@ void Server::handleConnection(clientVec_it clientIt)
 		
 		/*
 		
-		int	contentLength = clientIt->_requestHead.getContentLength();
+		int	contentLength = clientIt->_Request.getContentLength();
 		if (contentLength <= 0) //there was no request body
 		{
-			Response	response(clientIt->_requestHead, *this);
+			Response	response(clientIt->_Request, *this);
 			response.send(clientIt->getSocketfd(), *this);
 			clientIt->resetData();
 		}
@@ -254,7 +254,7 @@ void Server::handleConnection(clientVec_it clientIt)
 				clientIt->_buffer.append(_recvBuffer, _bytesReceived); //body not complete
 			else
 			{
-				Response	response(clientIt->_requestHead, *this);
+				Response	response(clientIt->_Request, *this);
 				// handle CGI
 				response.send(clientIt->getSocketfd(), *this);
 				clientIt->resetData();
@@ -264,25 +264,25 @@ void Server::handleConnection(clientVec_it clientIt)
 	
 }
 
-bool Server::requestHeadError(clientVec_it clientIt)
+bool Server::RequestError(clientVec_it clientIt)
 {
 	// wrong protocol
-	if (clientIt->_requestHead.httpProtocol() != HTTPVERSION)
+	if (clientIt->_Request.httpProtocol() != HTTPVERSION)
 		return (_statuscode = 505);
 	// body size too large
-	if (clientIt->_requestHead.contentLength() > (int)_clientMaxBody)
+	if (clientIt->_Request.contentLength() > (int)_clientMaxBody)
 		return (_statuscode = 413);
 	// method not supported by server
-	if (clientIt->_requestHead.method() != GET
-		&& clientIt->_requestHead.method() != POST
-		&& clientIt->_requestHead.method() != DELETE)
+	if (clientIt->_Request.method() != GET
+		&& clientIt->_Request.method() != POST
+		&& clientIt->_Request.method() != DELETE)
 		return (_statuscode = 501);
 	// access forbidden (have to specifically allow access in config file)
-	if (_locations.find(clientIt->_requestHead.path()) == _locations.end())
+	if (_locations.find(clientIt->_Request.path()) == _locations.end())
 		return (_statuscode = 403);
 		
 	
-	std::string	completePath(_root + clientIt->_requestHead.path());
+	std::string	completePath(_root + clientIt->_Request.path());
 	
 	if (completePath[completePath.size() - 1] == '/')
 		completePath += "index.html";
@@ -292,7 +292,7 @@ bool Server::requestHeadError(clientVec_it clientIt)
 		return (_statuscode = 404);
 	if (isDirectory(completePath))
 	{
-		if (dirListing(clientIt->_requestHead.path()))
+		if (dirListing(clientIt->_Request.path()))
 			std::cout << "Will be showing dir listing here." << std::endl;
 		else
 			return (_statuscode = 403);
@@ -301,7 +301,7 @@ bool Server::requestHeadError(clientVec_it clientIt)
  
 	std::ifstream	file;
 	//should be completepath?
-	file.open(clientIt->_requestHead.path().c_str(), std::ios::binary);
+	file.open(clientIt->_Request.path().c_str(), std::ios::binary);
 	// file not accessible - we treat it as file not found. Maybe more specific behavior? Wr already checked folder permissions tho!
 	if (file.fail())
 	{

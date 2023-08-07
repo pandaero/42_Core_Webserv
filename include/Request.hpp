@@ -1,7 +1,7 @@
 /* ************************************************************************** */
 /*                                                                            */
 /*                                                        :::      ::::::::   */
-/*   RequestHead.hpp                                    :+:      :+:    :+:   */
+/*   Request.hpp                                    :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
 /*   By: wmardin <wmardin@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
@@ -10,8 +10,8 @@
 /*                                                                            */
 /* ************************************************************************** */
 
-#ifndef REQUESTHEAD_HPP
-# define REQUESTHEAD_HPP
+#ifndef Request_HPP
+# define Request_HPP
 
 # include "webserv.hpp"
 
@@ -24,11 +24,11 @@
 typedef std::map<std::string, std::string> 				strMap;
 class	Client;
 
-class	RequestHead
+class	Request
 {
 	public:
-		RequestHead();
-		RequestHead(std::string);
+		Request();
+		Request(std::string);
 		
 		std::string	headerValue(std::string) const;
 		std::string	getFilename() const;

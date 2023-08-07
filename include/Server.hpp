@@ -6,7 +6,7 @@
 /*   By: wmardin <wmardin@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/04/07 19:17:18 by pandalaf          #+#    #+#             */
-/*   Updated: 2023/08/06 18:07:01 by wmardin          ###   ########.fr       */
+/*   Updated: 2023/08/06 21:51:07 by wmardin          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -16,7 +16,7 @@
 # include "webserv.hpp"
 # include "Client.hpp"
 # include "Response.hpp"
-# include "RequestHead.hpp"
+# include "Request.hpp"
 # include "ServerConfig.hpp"
 
 # include <string>
@@ -56,7 +56,7 @@ class	Server
 		int		getAvailablePollStructIndex();
 		void	closeClient(clientVec_it);
 		
-		bool		requestHeadError(clientVec_it);
+		bool		RequestError(clientVec_it);
 		void		sendResponse(Response, int);
 		void		sendStatusCodePage(int);
 		std::string	getStatusPage(int) const;

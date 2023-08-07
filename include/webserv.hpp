@@ -6,7 +6,7 @@
 /*   By: wmardin <wmardin@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/03/26 01:51:20 by pandalaf          #+#    #+#             */
-/*   Updated: 2023/08/06 14:59:41 by wmardin          ###   ########.fr       */
+/*   Updated: 2023/08/06 21:51:07 by wmardin          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -109,7 +109,7 @@
 
 // ===== ===== ===== ===== TYPEDEFS ===== ===== ===== =====
 // forward declarations
-class	RequestHead;
+class	Request;
 class	Client;
 
 typedef struct

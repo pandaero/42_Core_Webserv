@@ -6,7 +6,7 @@
 /*   By: wmardin <wmardin@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/03/28 20:29:39 by pandalaf          #+#    #+#             */
-/*   Updated: 2023/08/05 21:39:17 by wmardin          ###   ########.fr       */
+/*   Updated: 2023/08/06 21:51:07 by wmardin          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -14,7 +14,7 @@
 # define CLIENT_HPP
 
 # include "webserv.hpp"
-# include "RequestHead.hpp"
+# include "Request.hpp"
 
 # include <sstream>
 # include <exception>
@@ -33,21 +33,21 @@ class	Client
 		void			setClientSocketfd(int);
 
 		void			appendToBuffer(std::string, int);
-		void			handleRequestHead();
+		void			handleRequest();
 
 		void			resetData();
 		
-		bool			requestHeadComplete();
+		bool			RequestComplete();
 		bool			requestBodyComplete();
 		
-		RequestHead		_requestHead;
+		Request		_Request;
 		std::string		_requestbody;
 
 	private:
 		std::string		_buffer;
 		int				_bodyBytesRead;
 		
-		bool			_requestHeadComplete;
+		bool			_RequestComplete;
 		bool			_requestBodyComplete;
 		
 		int				_serverSocketfd;
