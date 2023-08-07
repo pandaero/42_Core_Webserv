@@ -6,7 +6,7 @@
 /*   By: wmardin <wmardin@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/04/07 19:17:18 by pandalaf          #+#    #+#             */
-/*   Updated: 2023/08/07 13:59:18 by wmardin          ###   ########.fr       */
+/*   Updated: 2023/08/07 19:26:38 by wmardin          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -53,10 +53,12 @@ class	Server
 	
 	private:
 		void	handleConnection(clientVec_it);
+		void	receive();
+		void	handleRequestHead_server();
 		int		freePollStructIndex();
 		void	closeClient(clientVec_it);
 		
-		bool		RequestError(clientVec_it);
+		bool		requestError(clientVec_it);
 		void		sendResponse(Response, int);
 		void		sendStatusCodePage(int);
 		std::string	getStatusPage(int) const;
@@ -75,7 +77,6 @@ class	Server
 		void	setDefaultDirListing(std::string input);
 
 		int								_server_fd;
-		//int								_listen_fd;
 		std::vector<std::string>		_names;
 		strLocMap						_locations;
 		intStrMap						_errorPagesPaths;
@@ -88,6 +89,7 @@ class	Server
 		sockaddr_in						_serverAddress;
 		int								_statuscode;
 		int								_currentClientfd;
+		clientVec_it					_currentClientIt;
 		std::vector<Client>				_clients;
 		std::vector<int>				_clientFDs;
 		char							_recvBuffer[RECV_CHUNK_SIZE];

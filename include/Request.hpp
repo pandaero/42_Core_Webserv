@@ -39,16 +39,8 @@ class	Request
 		int			contentLength() const;
 		std::string	getContentType() const;
 
-		bool		headComplete();
-		bool		bodyComplete();
-
-		void		addToBodyBytesWritten(size_t);
-
 	private:
 		strMap		createHeaderMap(std::string&, std::string, std::string, std::string);
-
-		bool		_headComplete;
-		size_t		_bodyBytesWritten;
 
 		std::string	_method;
 		std::string	_path;

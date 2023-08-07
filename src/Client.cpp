@@ -6,7 +6,7 @@
 /*   By: wmardin <wmardin@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/03/28 20:51:05 by pandalaf          #+#    #+#             */
-/*   Updated: 2023/08/07 13:56:20 by wmardin          ###   ########.fr       */
+/*   Updated: 2023/08/07 19:48:41 by wmardin          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -18,6 +18,9 @@ Client::Client(int pollStructIndex)
 {
 	_clientSocketfd = -42;
 	_pollStructIndex = pollStructIndex;
+	_bodyBytesWritten = 0;
+	_requestHeadComplete = false;
+	_requestBodyComplete = false;
 }
 
 void Client::setSocketfd(int clientSocketfd)
@@ -28,32 +31,30 @@ void Client::setSocketfd(int clientSocketfd)
 void Client::handleRequestHead()
 {
 	ANNOUNCEME
-	if (_request.bodyComplete())
+	if (requestHeadComplete())
 		return;
 	if (_buffer.find("\r\n\r\n") != std::string::npos)
 	{
 		_request = Request(_buffer);
-		if (requestBodyComplete())
-			return;
 		_buffer.erase(0, _buffer.find("\r\n\r\n") + 4);
+		_requestHeadComplete = true;
 	}
+}
+
+std::string& Client::buffer()
+{
+	return _buffer;
 }
 
 void Client::handleRequestBody()
 {
 	ANNOUNCEME
-	if (_request.bodyComplete())
+	if (requestBodyComplete())
 		return;
 }
 
-
-void Client::writeToBuffer(std::string newData, int bytesReceived)
-{
-	_buffer.append(newData, 0, bytesReceived);
-}
-
 // throw not yet caught
-void Client::writeToFile()
+void Client::writeBodyToFile()
 {
 	//now just taking request path, have to modify this with the config file given directory
 	std::string		writePath(_request.path());
@@ -69,12 +70,12 @@ void Client::writeToFile()
 
 bool Client::requestHeadComplete()
 {
-	return _request.headComplete();
+	return _requestHeadComplete;
 }
 
 bool Client::requestBodyComplete()
 {
-	return _request.bodyComplete();
+	return _requestBodyComplete;
 }
 
 sockaddr_in* Client::sockaddr()

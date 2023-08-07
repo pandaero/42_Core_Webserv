@@ -6,7 +6,7 @@
 /*   By: wmardin <wmardin@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/04/07 17:49:49 by pandalaf          #+#    #+#             */
-/*   Updated: 2023/08/07 14:31:10 by wmardin          ###   ########.fr       */
+/*   Updated: 2023/08/07 19:53:07 by wmardin          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -156,11 +156,20 @@ void	Server::checkConnections()
 	ANNOUNCEME
 	for (clientVec_it clientIt = _clients.begin(); clientIt != _clients.end(); ++clientIt)
 	{
-		int	currentIndex = clientIt->pollStructIndex();
+		_currentClientfd = clientIt->socketfd();
+		_currentClientIt = clientIt;
 		
-		std::cout << "Pollstructindex returned in checkConnections:" << currentIndex << std::endl;
-		if (_pollStructs[currentIndex].revents & POLLIN)
-			handleConnection(clientIt);
+		std::cout << "Pollstructindex in checkConnections:" << clientIt->pollStructIndex() << std::endl;
+		if (_pollStructs[clientIt->pollStructIndex()].revents & POLLIN)
+		{
+			try
+			{
+				handleConnection(clientIt);
+			}
+			catch (const char *msg)
+			{
+				std::cerr << msg << std::endl;
+			}
 	}
 }
 
@@ -188,32 +197,64 @@ void	Server::checkConnections()
 			clientIt->_gotRequest = false;
 		} */
 
-
-
-void Server::handleConnection(clientVec_it clientIt)
+void Server::receive()
 {
-	ANNOUNCEME
-	
-	// receive data from client
-	_currentClientfd = clientIt->socketfd();
-	
 	_bytesReceived = recv(_currentClientfd, _recvBuffer, RECV_CHUNK_SIZE, 0);
 	std::cout << "Received " << _bytesReceived << " bytes from client:\n" << _recvBuffer << std::endl;
 	
 	if (_bytesReceived <= 0)
 	{
-		closeClient(clientIt);
+		closeClient(_currentClientIt);
 		std::cout << "closing because nothing received" << std::endl;
 		return;
 	}
-	clientIt->writeToBuffer(_recvBuffer, _bytesReceived);
+	_currentClientIt->buffer().
+	_currentClientIt->writeToBuffer(_recvBuffer, _bytesReceived);
+}
+
+void Server::handleRequestHead_server()
+{
+	clientIt->handleRequestHead();
+
+	ANNOUNCEME
+	if (_currentClientIt->requestHeadComplete())
+		return;
+	if (_buffer.find("\r\n\r\n") != std::string::npos)
+	{
+		_request = Request(_buffer);
+		_buffer.erase(0, _buffer.find("\r\n\r\n") + 4);
+		_requestHeadComplete = true;
+	}
+	
+	if (!clientIt->requestHeadComplete())
+		return;
+	if (requestError(clientIt)) //decline header if not completed in first chunk?
+	{
+		sendStatusCodePage(_statuscode);
+		closeClient(clientIt);
+		return;
+	}
+}
+
+void Server::handleConnection(clientVec_it clientIt)
+{
+	ANNOUNCEME
+	
+	
+	
+	// receive data from client
+	receive();
+	handleRequestHead_server();
+	
+	
+	
 
 
 	// process the header
 	clientIt->handleRequestHead();
 	if (!clientIt->requestHeadComplete())
 		return;
-	if (RequestError(clientIt)) //decline header if not completed in first chunk?
+	if (requestError(clientIt)) //decline header if not completed in first chunk?
 	{
 		sendStatusCodePage(_statuscode);
 		closeClient(clientIt);
@@ -269,7 +310,7 @@ void Server::handleConnection(clientVec_it clientIt)
 	
 }
 
-bool Server::RequestError(clientVec_it clientIt)
+bool Server::requestError(clientVec_it clientIt)
 {
 	// wrong protocol
 	if (clientIt->_request.httpProtocol() != HTTPVERSION)
