@@ -3,3 +3,11 @@
 - ackchual file sending back
 - chunking
 - alt location
+
+
+- define a list of accepted HTTP methods for a route
+- A request to your server should never hang forever.
+- handle server names and servers listening on same port
+		The first server for a host:port will be the default for this host:port (that means
+		it will answer to all the requests that don’t belong to an other server).
+- Make the route able to accept uploaded files and configure where they should be saved.

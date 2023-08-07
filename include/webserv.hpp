@@ -6,7 +6,7 @@
 /*   By: wmardin <wmardin@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/03/26 01:51:20 by pandalaf          #+#    #+#             */
-/*   Updated: 2023/08/06 21:51:07 by wmardin          ###   ########.fr       */
+/*   Updated: 2023/08/07 09:58:17 by wmardin          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -107,6 +107,9 @@
 # define E_FCNTL				"Error: Server: fcntl()"
 # define E_ACCEPT				"Error: Server: accept()"
 
+// Client
+# define E_REQUESTFILE			"Error: Client: outputfile"
+
 // ===== ===== ===== ===== TYPEDEFS ===== ===== ===== =====
 // forward declarations
 class	Request;
@@ -156,11 +159,11 @@ std::string		strToLower(std::string);
 // Removes the characters defined by the macro WHITESPACE from the beginning and end of a string ref.
 std::string		trim(std::string &);
 // Returns a substring from the beginning of the passed string ref to the beginning of the first occurence of the 2nd argument. Deletes the substring and the 2nd argument from the passed string.
-std::string		splitEraseStr(std::string &, std::string);
+std::string		splitEraseStr(std::string &, const std::string&);
 // Returns a substring from the beginning of the passed string ref to the first occurence of any char from the 2nd argument. Deletes the substring from the passed string, but not the encountered delimiting char. Calls trim function on both the remainder of the string ref and the returned element.
-std::string		splitEraseTrimChars(std::string&, std::string);
+std::string		splitEraseTrimChars(std::string&, const std::string&);
 // Returns a string vector. First argument is the string ref to operate on. 2nd argument is a string containing the characters of which any single one delimits the final strings. The 3rd argument denotes the end of the region to be processed.
-strVec 			splitEraseStrVec(std::string& input, std::string targetChars, std::string endOfParsing);
+strVec 			splitEraseStrVec(std::string& input, const std::string& targetChars, const std::string& endOfParsing);
 // Determines the file/content type according to the file's full path. (based on dot-preceded extensions)
 contentType		extensionType(const std::string &);
 // Determines the size of a file.

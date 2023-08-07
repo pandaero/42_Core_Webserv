@@ -6,7 +6,7 @@
 /*   By: wmardin <wmardin@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/03/28 20:51:05 by pandalaf          #+#    #+#             */
-/*   Updated: 2023/08/06 21:51:07 by wmardin          ###   ########.fr       */
+/*   Updated: 2023/08/07 11:09:36 by wmardin          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -17,72 +17,79 @@
 Client::Client(int serverSocketfd, int pollStructIndex)
 {
 	_serverSocketfd = serverSocketfd;
+	_clientSocketfd = -42;
 	_pollStructIndex = pollStructIndex;
-	_RequestComplete = false;
-	_requestBodyComplete = false;
-	_bodyBytesRead = 0;
 }
 
-void Client::setClientSocketfd(int clientSocketfd)
+void Client::setSocketfd(int clientSocketfd)
 {
 	_clientSocketfd = clientSocketfd;
 }
 
-void Client::handleRequest()
+void Client::handleRequestHead()
 {
 	ANNOUNCEME
-	if (_RequestComplete)
+	if (_request.bodyComplete())
 		return;
 	if (_buffer.find("\r\n\r\n") != std::string::npos)
 	{
-		_Request = Request(_buffer);
+		_request = Request(_buffer);
+		if (requestBodyComplete())
+			return;
 		_buffer.erase(0, _buffer.find("\r\n\r\n") + 4);
-		_RequestComplete = true;
-		_bodyBytesRead += _buffer.size();
 	}
 }
 
-void Client::appendToBuffer(std::string newData, int bytesReceived)
+void Client::handleRequestBody()
 {
-	_buffer.append(newData, 0, bytesReceived);
-	if (_RequestComplete)
-		_bodyBytesRead += bytesReceived;
-	// but not useful for chunking there has to be another var in the headers for chunking.
-	// i think this is necessary because in case of super big headers, the body 
-	// may not be read completely in one go even tho it is not in itself too big 
-	_requestBodyComplete = _bodyBytesRead >= _Request.contentLength();
+	ANNOUNCEME
+	if (_request.bodyComplete())
+		return;
 }
 
-bool Client::RequestComplete()
+
+void Client::writeToBuffer(std::string newData, int bytesReceived)
 {
-	return _RequestComplete;
+	_buffer.append(newData, 0, bytesReceived);
+}
+
+// throw not yet caught
+void Client::writeToFile()
+{
+	//now just taking request path, have to modify this with the config file given directory
+	std::string		writePath(_request.path());
+
+	std::ofstream	outputFile(writePath.c_str(), std::ios::binary | std::ios::app);
+	
+	if (!outputFile.is_open())
+		throw (E_REQUESTFILE);
+	outputFile.write(_buffer.c_str(), _buffer.size());
+	outputFile.close();
+	_request.addToBodyBytesWritten(_buffer.size()); // outputFile.tellp() delta prolly better but nah.
+}
+
+bool Client::requestHeadComplete()
+{
+	return _request.headComplete();
 }
 
 bool Client::requestBodyComplete()
 {
-	return _requestBodyComplete;
+	return _request.bodyComplete();
 }
 
-sockaddr_in* Client::getSockaddr()
+sockaddr_in* Client::sockaddr()
 {
 	return &_clientAddress;
 }
 
-int	Client::getSocketfd() const
+int	Client::socketfd() const
 {
 	return _clientSocketfd;
 }
 
-int Client::getPollStructIndex() const
+int Client::pollStructIndex() const
 {
 	ANNOUNCEME
 	return _pollStructIndex;
-}
-
-void Client::resetData()
-{
-	_buffer = "";
-	_RequestComplete = false;
-	_bodyBytesRead = -1;
-	//incomplete! but prolly obsolete
 }

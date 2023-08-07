@@ -15,11 +15,12 @@
 Request::Request()
 {
 	_contentLength = -1;
+	_headComplete = false;
+	_bodyBytesWritten = 0;
 }
 
 Request::Request(std::string requestData)
 {
-	ANNOUNCEME
 	_method = splitEraseStr(requestData, " ");
 	_path = splitEraseStr(requestData, " ");
 	_protocol = splitEraseStr(requestData, "\r\n");
@@ -30,6 +31,8 @@ Request::Request(std::string requestData)
 		_contentLength = -1;
 	if (headerValue("content-type") != NOTFOUND)
 		_contentType = headerValue("content-type");
+	_headComplete = true;
+	_bodyBytesWritten = 0;
 }
 
 std::string	Request::headerValue(std::string header) const
@@ -69,6 +72,21 @@ int	Request::contentLength() const
 std::string Request::getContentType() const
 {
 	return _contentType;
+}
+
+bool Request::headComplete()
+{
+	return _headComplete;
+}
+
+bool Request::bodyComplete()
+{
+	return _bodyBytesWritten >= (size_t)_contentLength;
+}
+
+void Request::addToBodyBytesWritten(size_t bytesWritten)
+{
+	_bodyBytesWritten += bytesWritten;
 }
 
 strMap Request::createHeaderMap(std::string& input, std::string endOfKey, std::string endOfValue, std::string endOfMap)

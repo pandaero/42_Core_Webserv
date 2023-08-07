@@ -6,7 +6,7 @@
 /*   By: wmardin <wmardin@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/03/28 20:29:39 by pandalaf          #+#    #+#             */
-/*   Updated: 2023/08/06 21:51:07 by wmardin          ###   ########.fr       */
+/*   Updated: 2023/08/07 11:01:35 by wmardin          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -26,31 +26,27 @@ class	Client
 	public:
 		Client(int, int);
 
-		sockaddr_in*	getSockaddr();
-		int				getSocketfd() const;
-		int				getPollStructIndex() const;
+		sockaddr_in*	sockaddr();
+		int				socketfd() const;
+		int				pollStructIndex() const;
 		
-		void			setClientSocketfd(int);
+		void			setSocketfd(int);
 
-		void			appendToBuffer(std::string, int);
-		void			handleRequest();
+		void			handleRequestHead();
+		void			handleRequestBody();
 
-		void			resetData();
-		
-		bool			RequestComplete();
+		void			writeToBuffer(std::string, int);
+		void			writeToFile();
+
+		bool			requestHeadComplete();
 		bool			requestBodyComplete();
 		
-		Request		_Request;
-		std::string		_requestbody;
+		Request			_request;
 
 	private:
 		std::string		_buffer;
-		int				_bodyBytesRead;
 		
-		bool			_RequestComplete;
-		bool			_requestBodyComplete;
-		
-		int				_serverSocketfd;
+		int				_serverSocketfd; //try delete
 		int				_clientSocketfd;
 		int				_pollStructIndex;
 		sockaddr_in		_clientAddress;

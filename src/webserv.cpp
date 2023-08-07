@@ -19,7 +19,7 @@ std::string trim(std::string& input)
 	return input;
 }
 
-std::string splitEraseStr(std::string& input, std::string targetString)
+std::string splitEraseStr(std::string& input, const std::string& targetString)
 {
 	std::string	element;
 	size_t 		len;
@@ -39,7 +39,7 @@ std::string splitEraseStr(std::string& input, std::string targetString)
 	return element;
 }
 
-std::string splitEraseTrimChars(std::string& input, std::string targetChars)
+std::string splitEraseTrimChars(std::string& input, const std::string& targetChars)
 {
 	std::string element;
 	size_t 		len;
@@ -60,7 +60,7 @@ std::string splitEraseTrimChars(std::string& input, std::string targetChars)
 	return element;
 }
 
-strVec splitEraseStrVec(std::string& input, std::string targetChars, std::string endOfParsing)
+strVec splitEraseStrVec(std::string& input, const std::string& targetChars, const std::string& endOfParsing)
 {
 	strVec 		stringVector;
 	std::string	parseRegion, element;
@@ -134,7 +134,7 @@ std::vector<std::string>	splitString(std::string str, const std::string & del)
 	return (out);
 }
 
-bool isSameNoCase(std::string str_a, std::string str_b)
+bool isSameNoCase(const std::string& str_a, const std::string& str_b)
 {
 	return strToLower(str_a) == strToLower(str_b);
 }
@@ -188,7 +188,7 @@ std::string getInstruction(std::string& inputStr)
 
 bool	resourceExists(const std::string& path)
 {
-	std::ifstream	resource(path);
+	std::ifstream	resource(path.c_str());
 	
 	return resource.good();
 }

@@ -21,7 +21,7 @@
 # include <cstdlib>
 
 // Forward declaration necessary here, even though included in webserv.hpp
-typedef std::map<std::string, std::string> 				strMap;
+typedef std::map<std::string, std::string> 	strMap;
 class	Client;
 
 class	Request
@@ -32,14 +32,23 @@ class	Request
 		
 		std::string	headerValue(std::string) const;
 		std::string	getFilename() const;
+		
 		std::string	method() const;
 		std::string path() const;
 		std::string	httpProtocol() const;
 		int			contentLength() const;
 		std::string	getContentType() const;
 
+		bool		headComplete();
+		bool		bodyComplete();
+
+		void		addToBodyBytesWritten(size_t);
+
 	private:
 		strMap		createHeaderMap(std::string&, std::string, std::string, std::string);
+
+		bool		_headComplete;
+		size_t		_bodyBytesWritten;
 
 		std::string	_method;
 		std::string	_path;

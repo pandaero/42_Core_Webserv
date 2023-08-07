@@ -6,7 +6,7 @@
 /*   By: wmardin <wmardin@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/04/07 17:49:49 by pandalaf          #+#    #+#             */
-/*   Updated: 2023/08/06 21:51:07 by wmardin          ###   ########.fr       */
+/*   Updated: 2023/08/07 10:56:44 by wmardin          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -133,7 +133,7 @@ void Server::acceptConnections()
 		int		new_sock;
 		int 	addrlen = sizeof(_serverAddress);
 	
-		new_sock = accept(_server_fd, (sockaddr*)newClient.getSockaddr(), (socklen_t*)&addrlen);
+		new_sock = accept(_server_fd, (sockaddr*)newClient.sockaddr(), (socklen_t*)&addrlen);
 		if (new_sock == -1)
 		{
 			if (errno != EWOULDBLOCK) // if errno is EWOULDBLOCK that just means no more incoming connections. So not an error. But we dont wanna output a new client.
@@ -142,7 +142,7 @@ void Server::acceptConnections()
 		else
 		{
 			_clientFDs.push_back(new_sock); //maybe not necessary but prolly yes. prolly not supposed to poll for every server.
-			newClient.setClientSocketfd(new_sock);
+			newClient.setSocketfd(new_sock);
 			_pollStructs[index].fd = new_sock;
 			_pollStructs[index].events = POLLIN | POLLHUP;
 			std::cout << "New client accepted on fd " << new_sock << "." << std::endl;
@@ -156,7 +156,7 @@ void	Server::checkConnections()
 	ANNOUNCEME
 	for (clientVec_it clientIt = _clients.begin(); clientIt != _clients.end(); ++clientIt)
 	{
-		int	currentIndex = clientIt->getPollStructIndex();
+		int	currentIndex = clientIt->pollStructIndex();
 		
 		std::cout << "Pollstructindex returned in checkConnections:" << currentIndex << std::endl;
 		if (_pollStructs[currentIndex].revents & POLLIN)
@@ -193,7 +193,9 @@ void	Server::checkConnections()
 void Server::handleConnection(clientVec_it clientIt)
 {
 	ANNOUNCEME
-	_currentClientfd = clientIt->getSocketfd();
+	
+	// receive data from client
+	_currentClientfd = clientIt->socketfd();
 	
 	_bytesReceived = recv(_currentClientfd, _recvBuffer, RECV_CHUNK_SIZE, 0);
 	std::cout << "Received " << _bytesReceived << " bytes from client:\n\n" << _recvBuffer << std::endl;
@@ -204,22 +206,24 @@ void Server::handleConnection(clientVec_it clientIt)
 		std::cout << "closing because nothing received" << std::endl;
 		return;
 	}
-	clientIt->appendToBuffer(_recvBuffer, _bytesReceived);
-	clientIt->handleRequest();
-	if (!clientIt->RequestComplete())
+	clientIt->writeToBuffer(_recvBuffer, _bytesReceived);
+
+
+	// process the header
+	clientIt->handleRequestHead();
+	if (!clientIt->requestHeadComplete())
 		return;
-	if (RequestError(clientIt)) //decline header if not completed in first chunk
+	if (RequestError(clientIt)) //decline header if not completed in first chunk?
 	{
 		sendStatusCodePage(_statuscode);
 		closeClient(clientIt);
 		return;
 	}
+
+	// process the body
+	clientIt->handleRequestBody();
 	if (clientIt->requestBodyComplete())
 	{
-		
-		
-		
-		
 		//bs, just for now to send shit
 		sendStatusCodePage(200);
 		closeClient(clientIt);
@@ -245,7 +249,7 @@ void Server::handleConnection(clientVec_it clientIt)
 		if (contentLength <= 0) //there was no request body
 		{
 			Response	response(clientIt->_Request, *this);
-			response.send(clientIt->getSocketfd(), *this);
+			response.send(clientIt->socketfd(), *this);
 			clientIt->resetData();
 		}
 		else
@@ -256,7 +260,7 @@ void Server::handleConnection(clientVec_it clientIt)
 			{
 				Response	response(clientIt->_Request, *this);
 				// handle CGI
-				response.send(clientIt->getSocketfd(), *this);
+				response.send(clientIt->socketfd(), *this);
 				clientIt->resetData();
 			}
 			
@@ -267,22 +271,22 @@ void Server::handleConnection(clientVec_it clientIt)
 bool Server::RequestError(clientVec_it clientIt)
 {
 	// wrong protocol
-	if (clientIt->_Request.httpProtocol() != HTTPVERSION)
+	if (clientIt->_request.httpProtocol() != HTTPVERSION)
 		return (_statuscode = 505);
 	// body size too large
-	if (clientIt->_Request.contentLength() > (int)_clientMaxBody)
+	if (clientIt->_request.contentLength() > (int)_clientMaxBody)
 		return (_statuscode = 413);
 	// method not supported by server
-	if (clientIt->_Request.method() != GET
-		&& clientIt->_Request.method() != POST
-		&& clientIt->_Request.method() != DELETE)
+	if (clientIt->_request.method() != GET
+		&& clientIt->_request.method() != POST
+		&& clientIt->_request.method() != DELETE)
 		return (_statuscode = 501);
 	// access forbidden (have to specifically allow access in config file)
-	if (_locations.find(clientIt->_Request.path()) == _locations.end())
+	if (_locations.find(clientIt->_request.path()) == _locations.end())
 		return (_statuscode = 403);
 		
 	
-	std::string	completePath(_root + clientIt->_Request.path());
+	std::string	completePath(_root + clientIt->_request.path());
 	
 	if (completePath[completePath.size() - 1] == '/')
 		completePath += "index.html";
@@ -292,7 +296,7 @@ bool Server::RequestError(clientVec_it clientIt)
 		return (_statuscode = 404);
 	if (isDirectory(completePath))
 	{
-		if (dirListing(clientIt->_Request.path()))
+		if (dirListing(clientIt->_request.path()))
 			std::cout << "Will be showing dir listing here." << std::endl;
 		else
 			return (_statuscode = 403);
@@ -301,7 +305,7 @@ bool Server::RequestError(clientVec_it clientIt)
  
 	std::ifstream	file;
 	//should be completepath?
-	file.open(clientIt->_Request.path().c_str(), std::ios::binary);
+	file.open(clientIt->_request.path().c_str(), std::ios::binary);
 	// file not accessible - we treat it as file not found. Maybe more specific behavior? Wr already checked folder permissions tho!
 	if (file.fail())
 	{
@@ -335,7 +339,7 @@ bool Server::RequestError(clientVec_it clientIt)
 			// 	// attempt to serve file (html from cgi)
 			// }
 
-// remember to change other functions also to take const string &
+// change other functions also to take const string &
 bool Server::dirListing(const std::string& path)
 {
 	strLocMap_it	locIt =_locations.find(path);
@@ -382,8 +386,8 @@ void Server::sendStatusCodePage(int code)
 void Server::closeClient(clientVec_it clientIt)
 {
 	ANNOUNCEME
-	int	currentfd = clientIt->getSocketfd();
-	int	currentIndex = clientIt->getPollStructIndex();
+	int	currentfd = clientIt->socketfd();
+	int	currentIndex = clientIt->pollStructIndex();
 	
 	close(currentfd);
 	_pollStructs[currentIndex].fd = -1;
