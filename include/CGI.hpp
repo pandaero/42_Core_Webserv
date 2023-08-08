@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   CGI.hpp                                            :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: apielasz <apielasz@student.42.fr>          +#+  +:+       +#+        */
+/*   By: ialinaok <ialinaok@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/08/07 16:59:02 by apielasz          #+#    #+#             */
-/*   Updated: 2023/08/07 17:04:07 by apielasz         ###   ########.fr       */
+/*   Updated: 2023/08/07 23:10:57 by ialinaok         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -19,10 +19,17 @@
 class CGI {
 	public:
 		CGI();
+		CGI(std::string, std::string, std::string);
 		~CGI();
-		
-		bool	handle_env(std::string path_to_script);
+
+		int		doTheThing();
+		bool	handleEnv(std::string);
 
 	private:
 		char	**_env;
-}
+		std::string	_path;
+		std::string _method;
+		std::string _queries;
+};
+
+#endif
