@@ -1,6 +1,3 @@
-#include "../include/Server.hpp"
-#include "../include/ServerConfig.hpp"
-#include "../include/ConfigFile.hpp"
 #include "../include/webserv.hpp"
 
 int main()
