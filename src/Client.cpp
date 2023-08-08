@@ -84,6 +84,5 @@ const int&	Client::socketfd() const
 
 const int& Client::pollStructIndex() const
 {
-	ANNOUNCEME
 	return _pollStructIndex;
 }

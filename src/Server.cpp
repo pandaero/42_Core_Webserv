@@ -132,6 +132,41 @@ void Server::receiveData()
 	_currentClientIt->buffer().append(buffer);
 }
 
+void Server::handleConnections()
+{
+	ANNOUNCEME
+	for (clientVec_it clientIt = _clients.begin(); clientIt != _clients.end(); ++clientIt)
+	{
+		ANNOUNCEME
+		if (_clients.empty())
+		{
+			std::cout << "How in the fuck?" << std::endl;
+			return;
+		}
+		_currentClientfd = clientIt->socketfd();
+		_currentClientIt = clientIt;
+
+		if (_pollStructs[clientIt->pollStructIndex()].revents & (POLLIN | POLLHUP))
+		{
+			try
+			{
+				receiveData();
+				handleRequestHead_server();
+				//handle body
+				
+				
+				// bs, just to send stuff
+				sendStatusCodePage(200);
+			}
+			catch(const char* msg)
+			{
+				std::cerr << msg << std::endl;
+			}
+
+		}
+	}
+}
+
 bool Server::requestError()
 {
 	_statuscode = 0;
@@ -213,38 +248,6 @@ void Server::handleRequestHead_server()
 	// if not complete, have to skip rest of shmisms. maybe better to put guard clause in the others
 	// or can throw...
 }
-
-void Server::handleConnections()
-{
-	ANNOUNCEME
-	for (clientVec_it clientIt = _clients.begin(); clientIt != _clients.end(); ++clientIt)
-	{
-		ANNOUNCEME
-		_currentClientfd = clientIt->socketfd();
-		_currentClientIt = clientIt;
-		
-		std::cout << "Pollstructindex in checkConnections:" << clientIt->pollStructIndex() << std::endl;
-		if (_pollStructs[clientIt->pollStructIndex()].revents & (POLLIN | POLLHUP))
-		{
-			try
-			{
-				receiveData();
-				handleRequestHead_server();
-				//handle body
-				
-				
-				// bs, just to send stuff
-				sendStatusCodePage(200);
-			}
-			catch(const char* msg)
-			{
-				std::cerr << msg << std::endl;
-			}
-
-		}
-	}
-}
-
 
 /* WRITETOFILE
 // throw not yet caught
