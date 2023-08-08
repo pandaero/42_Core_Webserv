@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   CGI.hpp                                            :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: apielasz <apielasz@student.42.fr>          +#+  +:+       +#+        */
+/*   By: ialinaok <ialinaok@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/08/07 16:59:02 by apielasz          #+#    #+#             */
-/*   Updated: 2023/08/08 17:07:27 by apielasz         ###   ########.fr       */
+/*   Updated: 2023/08/08 22:14:32 by ialinaok         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -19,7 +19,7 @@
 #include <cstdlib>
 #include <sys/types.h>
 #include <sys/wait.h>
-#include <fstream>
+#include <signal.h>
 #include "Request.hpp"
 #include "Client.hpp"
 

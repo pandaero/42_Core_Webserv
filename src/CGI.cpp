@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   CGI.cpp                                            :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: apielasz <apielasz@student.42.fr>          +#+  +:+       +#+        */
+/*   By: ialinaok <ialinaok@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/08/07 22:34:49 by ialinaok          #+#    #+#             */
-/*   Updated: 2023/08/08 17:10:11 by apielasz         ###   ########.fr       */
+/*   Updated: 2023/08/08 22:57:19 by ialinaok         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -19,11 +19,11 @@ CGI::~CGI() {}
 
 CGI::CGI(Client &client) : _clientInfos(client) {}
 
-// we'll have 2 scripts I think - 1 php that work woth POST and GET
+// we'll have 2 scripts I think - 1 php that works with POST and GET
 // and one py to get the bonus
 // it would be cool if these two scripts took the same variables for env...
 // OK so first I need to establish the environment right
-// in my script I have $_SERVER['REQUEST_METHOD'] $_FILES['file']
+//TODO check if env really works with this script
 
 int	CGI::fillEnv() {
 	
@@ -48,7 +48,7 @@ int	CGI::fillEnv() {
 	tmpEnv.push_back(tmpVar);
 	tmpVar = "REQUEST_METHOD=" + _clientInfos._request.method();
 	tmpEnv.push_back(tmpVar);
-	tmpVar = "PATH_INFO=" + _clientInfos.path();
+	tmpVar = "PATH_INFO=" + _clientInfos._request.path();
 	tmpEnv.push_back(tmpVar);
 	tmpVar = "SCRIPT_NAME=" + _clientInfos._request.path();
 	tmpEnv.push_back(tmpVar);
@@ -72,11 +72,6 @@ int	CGI::doTheThing() {
 	
 	std::string	pathToScript = _clientInfos._request.path();
 	std::string pathToExec = "default/cgi/php-cgi-8.2.5_MacOS-10.15";
-//creating a name for outfile with http request
-	clientID = 12345;//🍏
-	std::ostringstream oss;
-	oss << clientID;
-	std::string	outfilePath = "/cgi-bin/req/outfile" + clientID;
 
 	int		pipeFd[2];
 
@@ -92,32 +87,40 @@ int	CGI::doTheThing() {
 		throw CGIerrorException();
 	}
 	if (pid == 0) {
-//creating output file
-		std::ofstream	outfile(outfilePath);
-		if (!outfile.is_open()) {
-			std::cerr << "CGI error: creating outfile failed" << std::endl;
-			throw CGIerrorException();
-		}
-//duping the outfile
 		close(pipeFd[0]);
-		if (dup2(outfile.fileno(), STDOUT_FILENO) == -1) {
-			outfile.close();
+		if (dup2(pipeFd[1], STDOUT_FILENO) == -1) {
 			std::cerr << "CGI error: dup2() failed" << std::endl;
 			throw CGIerrorException();
 		}
-		outfile.close();
+//calling env filler - it's only needed in child process
+		fillEnv();
 //creating argv for execve
-		char	*argv[3];
-		argv[0] = pathToExec;
-		argv[1] = pathToScript;
+		const char	*argv[3];
+		argv[0] = pathToExec.c_str();
+		argv[1] = pathToScript.c_str();
 		argv[2] = NULL;
-		execve(pathToExec, argv, _env);
+		execve(pathToExec.c_str(), const_cast<char *const *>(argv), _env);
 		std::cerr << "CGI error: execve() failed" << std::endl;
 		throw CGIerrorException();
 	} else {
 		close(pipeFd[1]);
+		if (timeoutKillChild(pid, 2) == -1) {
+			close(pipeFd[0]);
+			throw CGIerrorException();
+		}
+//only if there wasnt timeout we get here
+		char	buffer[1024];
+		ssize_t	bytesRead;
+		std::string	cgiResponse;
+		while ((bytesRead == read(pipeFd[0], buffer, sizeof(buffer) - 1)) > 0) {
+			buffer[bytesRead] = '\0';
+			cgiResponse += buffer;
+		}
 		close(pipeFd[0]);
+		int	status;
+		waitpid(pid, &status, 0);
 	}
+//so here I have the cgiResponse string that needs to be sent to the client 🍏
 }
 
 int	CGI::timeoutKillChild(pid_t childPid, int timeoutSec) {
@@ -127,7 +130,10 @@ int	CGI::timeoutKillChild(pid_t childPid, int timeoutSec) {
 
 	if (killSuccessful == 0) {
 		std::cerr << "CGI error: TIMEOUT" << std::endl;
+		return (-1);
 	} else {
-		std::cerr << "CGI error: TIMEOUT failed to kill" << std::endl;
+		std::cerr << "CGI error: TIMEOUT, but failed to kill" << std::endl;
+		return (-1);
 	}
+	return (0);
 }
