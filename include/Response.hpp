@@ -26,7 +26,6 @@ class	Response
 
 	private:
 		void			build();
-		std::string		getHttpMsg(int);
 		
 		std::string		_statusPage;
 		contentType		_contentType;

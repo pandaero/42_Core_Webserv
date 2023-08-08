@@ -118,6 +118,7 @@ void Server::acceptConnections()
 
 void Server::receiveData()
 {
+	ANNOUNCEME
 	char	buffer[RECV_CHUNK_SIZE];
 	
 	bzero(buffer, RECV_CHUNK_SIZE);
@@ -127,7 +128,7 @@ void Server::receiveData()
 	if (_bytesReceived <= 0)
 	{
 		closeClient(_currentClientIt);
-		throw (I_CLOSENODATA);
+		throw (I_CLOSENODATA); //prolly gonna throw a real exception here
 	}
 	_currentClientIt->buffer().append(buffer);
 }
@@ -145,14 +146,14 @@ void Server::handleConnections()
 		}
 		_currentClientfd = clientIt->socketfd();
 		_currentClientIt = clientIt;
-
 		if (_pollStructs[clientIt->pollStructIndex()].revents & (POLLIN | POLLHUP))
 		{
 			try
 			{
 				receiveData();
-				handleRequestHead_server();
-				//handle body
+				handleRequestHead();
+				handleRequestBody();
+				//send response after cmopleting head and body
 				
 				
 				// bs, just to send stuff
@@ -160,9 +161,8 @@ void Server::handleConnections()
 			}
 			catch(const char* msg)
 			{
-				std::cerr << msg << std::endl;
+				std::cerr << msg << _statuscode << ": " << getHttpMsg(_statuscode) << std::endl;
 			}
-
 		}
 	}
 }
@@ -182,15 +182,29 @@ bool Server::requestError()
 	if (_currentClientIt->contentLength() > (int)_clientMaxBody)
 		return (_statuscode = 413);
 	// access forbidden (have to specifically allow access in config file)
-	// probably have to add root here?
-	if (_locations.find(_root + _currentClientIt->directory()) == _locations.end())
-		return (_statuscode = 403);
-		
-	
+	std::cout << "client->directory:'" << _currentClientIt->directory() << "'" << std::endl;
+	strLocMap_it locIt = _locations.find(_currentClientIt->directory());
+	if (locIt == _locations.end())
+		return (_statuscode = 404); // only returning 404 (and not 403) to not leak file structure
+	// acces granted, but not for the requested method
+	if (_currentClientIt->method() == GET && !locIt->second.get
+		|| _currentClientIt->method() == POST && !locIt->second.post
+		|| _currentClientIt->method() == DELETE && !locIt->second.delete_)
+		return (_statuscode = 405);
 	std::string	completePath(_root + _currentClientIt->path());
+	std::cout << "completePath(root + clientPath):'" << completePath << "'" << std::endl;
 	
 	if (isDirectory(completePath))
 	{
+		std::cout << "completePath is a directory" << std::endl;
+		if (resourceExists(completePath + "index.html"))
+		{
+			std::cout << "yes, '" << completePath + "index.html" << "' exists." << std::endl;
+			//send file
+			// THis should not happen here tho. this is just the head error checker.
+			// prolly can just return here and then reach main send function
+		}
+
 		if (dirListing(completePath))
 			std::cout << "Will be showing dir listing here." << std::endl;
 		else
@@ -199,7 +213,7 @@ bool Server::requestError()
 	}
 	if (completePath[completePath.size() - 1] == '/') // .back() is not compiling on WSL2 Ubuntu
 		completePath += "index.html";
-	std::cout << "completePath:'" << completePath << '\'' << std::endl;
+	std::cout << "completePath:'" << completePath << "'" << std::endl;
 	
 	if (!resourceExists(completePath))
 		return (_statuscode = 404);
@@ -225,28 +239,43 @@ bool Server::requestError()
 	return false;
 }
 
-void Server::handleRequestHead_server()
+void Server::handleRequestHead()
 {
 	ANNOUNCEME
 	if (_currentClientIt->requestHeadComplete())
 		return;
+	if (_currentClientIt->buffer().size() > MAX_HEADERSIZE)
+	{
+		sendStatusCodePage(431); //obviously not cool, integrate this. can be done with comment below, prolly throw a real exception
+		closeClient(_currentClientIt);
+		throw (I_REQUESTHEADERROR);
+	}
 	if (_currentClientIt->buffer().find("\r\n\r\n") != std::string::npos)
 	{
 		_currentClientIt->buildRequest();
+		std::cout << "request path raw:'" << _currentClientIt->path() << "'" << std::endl;
 		if (requestError())
 		{
 			sendStatusCodePage(_statuscode);
 			closeClient(_currentClientIt);
 			throw (I_REQUESTHEADERROR);
 			
-			// maybe most elegant: set errorcode in client and when client would try to 
+			// maybe most elegant: set errorcode and just continue process (or throw real excepetion). when send starts and finds error it fucks off
 			// process rest of requst it would see error code and then instead just send that
 		}
+		// handle the request
 
 	}
 	throw ("request head not complete, skipping rest of handleConnections loop");
 	// if not complete, have to skip rest of shmisms. maybe better to put guard clause in the others
 	// or can throw...
+}
+
+void Server::handleRequestBody()
+{
+	if (_currentClientIt->requestBodyComplete())
+		return;
+	// process body
 }
 
 /* WRITETOFILE
@@ -264,98 +293,14 @@ void Client::writeBodyToFile()
 	outputFile.close();
 	_request.addToBodyBytesWritten(_buffer.size()); // outputFile.tellp() delta prolly better but nah.
 }
- */
+ 
 
-//	take from here
-
-		// process the header
+	chunkhandler(TM).
 	
-	// process the body
-	/*
-	if (clientIt->requestBodyComplete())
-	{
-		//bs, just for now to send shit
-		
-		
-		return;
-		//perform Method of request
-		// send response
-		// close client
-	}
-	*/
-	// wrong? no, because long headers may stop request body from being read completely
-	// 
-	// but this still has to be augmented by a chunkhandler(TM).
-	
-	// check if body is complete / handle chunking
-	// make response
-	// send response
-	// close client
-	
-		
-		
-		/*
-		
-		int	contentLength = clientIt->_Request.getContentLength();
-		if (contentLength <= 0) //there was no request body
-		{
-			Response	response(clientIt->_Request, *this);
-			response.send(clientIt->socketfd(), *this);
-			clientIt->resetData();
-		}
-		else
-		{
-			if (clientIt->_buffer.size() < (size_t)contentLength)
-				clientIt->_buffer.append(_recvBuffer, _bytesReceived); //body not complete
-			else
-			{
-				Response	response(clientIt->_Request, *this);
-				// handle CGI
-				response.send(clientIt->socketfd(), *this);
-				clientIt->resetData();
-			}
-			
-		} */
 	
 
-
-
-		/*
-		was inside receive
-		
-		 if (clientIt->_gotRequest == true)
-		{
-			Request		request(buffer);
-			
-			Response	standard(request, *this);
-			// standard.setStatusCode(200);
-			std::cout << "Raw path: " << request.path() << std::endl;
-			std::cout << "Pathity path path: " << _filePaths.find(ROOT)->second << request.path() << "index.html" << std::endl;
-			// if (*(request._path.end() - 1) == '/')
-			// {
-			// 	// serve index (try html, htm, shtml, php), if not present, check directory listing setting to create it (or not)
-			// 	standard.setFile(_filePaths.find(ROOT)->second + request._path + "index.html");
-			// }
-			// if (request.getFile() != "")
-			// 	standard.setFile(_filePaths.find(ROOT)->second + request._path);
-			std::cout << "Sending response." << std::endl;
-			standard.send(_pollStructs[i + 1].fd, *this);
-			clientIt->_gotRequest = false;
-		} */
-
-
-
-
-
-		//else: check if exists
-		//if not: check if dir listing 
 		 
-	//405 method not allowed for speficic resource
 	
-	//return false;
-	// check method rights at requested location
-	// check file accessibility at requested location
-//}
 
 // CGI handling (for php and potentially python scripts)
 			// if (request.path() == ".php")
@@ -368,6 +313,7 @@ void Client::writeBodyToFile()
 			// 	}
 			// 	// attempt to serve file (html from cgi)
 			// }
+*/
 
 // change other functions also to take const string &
 bool Server::dirListing(const std::string& path)
@@ -387,14 +333,12 @@ bool Server::dirListing(const std::string& path)
 
 int Server::freePollStructIndex()
 {
-	ANNOUNCEME
 	size_t i = 0;
 	
 	while (i < _maxConns && _pollStructs[i].fd != -1)
 		i++;
 	if (i == _maxConns)
 		i = -1;
-	std::cout << "pollstruct index returned: " << i <<std::endl;
 	return i;
 }
 
@@ -405,24 +349,20 @@ void Server::sendStatusCodePage(int code)
 	//gotta check for client supplied error page and try to send that. only if not supplied or fail, send this
 	//use getStatusPage in server for this, also rename shit, too ambiguous
 	if (::send(_currentClientfd, response.getStatusPage(), response.getSize(), 0) == -1)
-		std::cerr << "Error: Server::sendStatusCodePage: send.";
+		throw (E_SEND);
 }
 
 void Server::closeClient(clientVec_it clientIt)
 {
 	ANNOUNCEME
-	int	currentfd = clientIt->socketfd();
-	int	currentIndex = clientIt->pollStructIndex();
+	int	pollStructIndex = clientIt->pollStructIndex();
 	
-	close(currentfd);
-	_pollStructs[currentIndex].fd = -1;
-	_pollStructs[currentIndex].events = 0;
-	_pollStructs[currentIndex].revents = 0;
-	std::cout << "closeClient on fd " << currentfd << std::endl;
+	close(_currentClientfd);
+	_pollStructs[pollStructIndex].fd = -1;
+	_pollStructs[pollStructIndex].events = 0;
+	_pollStructs[pollStructIndex].revents = 0;
+	std::cout << "closeClient on fd " << _currentClientfd << std::endl;
 	_clients.erase(clientIt);
-	
-	//_clientFDs.erase(_clientFDs);
-	// Still have to remove the fd listed in clientFDs, if that list is even needed...
 }
 
 void Server::sendResponse(Response response, int socketfd)
@@ -560,14 +500,6 @@ void Server::setCgiDir(std::string input)
 	_cgiDir = input;
 }
 
-/* void Server::setErrorPages(std::map<size_t, std::string> input)
-{
-	for (size_t i = 0; i < input.size(); i++)
-	for (std::map<size_t, std::string>::iterator it = input.begin(); it != input.end(); it++)
-		checkReadAccess(it->second);
-	_errorPagesPath = input;
-} */
-
 void Server::setClientMaxBody(std::string input)
 {
 	if (input.find_first_not_of("0123456789") != std::string::npos)
@@ -610,14 +542,6 @@ std::string Server::getStatusPage(int code) const
 	else
 		return _errorPagesPaths.find(-1)->second;
 }
-
-// void Server::errorHandler(int code, int clientfd)
-// {
-// 	Response	response(code, *this);
-// 	response.send(clientfd, *this);
-// }
-
-// PRIVATE MEMBER FUNCTIONS
 
 /* void Server::checkMethodAccess(std::string path)
 {

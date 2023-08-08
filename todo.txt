@@ -4,10 +4,33 @@
 - chunking
 - alt location
 
-
-- define a list of accepted HTTP methods for a route
 - A request to your server should never hang forever.
+
 - handle server names and servers listening on same port
 		The first server for a host:port will be the default for this host:port (that means
 		it will answer to all the requests that don’t belong to an other server).
+
+
+Config File:
+- define a list of accepted HTTP methods for a route
 - Make the route able to accept uploaded files and configure where they should be saved.
+- Set a default file to answer if the request is a directory.
+
+
+Info: ServerConfig: Unrecognized value in config file: NOTSET
+
+new segfault:
+--- Handling Server index 0 ---
+Announcer: poll
+Announcer: acceptConnections
+Announcer: handleConnections
+Announcer: handleConnections
+Announcer: handleConnections
+0 bytes received.
+Content:
+
+Announcer: closeClient
+closeClient on fd 5
+Info: Server: Connection closed (no data received).0: Unknown Error
+Announcer: handleConnections
+Segmentation fault

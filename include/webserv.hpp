@@ -79,6 +79,7 @@ typedef enum contentTypes
 # include "Url.hpp"
 
 // MACROS
+# define SERVERVERSION	"shmismserv v0.69"
 # define WHITESPACE		" \t\v\r\n"
 # define TERMINATION	"\r\n\r\n"
 # define HTTPVERSION	"HTTP/1.1"
@@ -91,6 +92,7 @@ typedef enum contentTypes
 # define MAX_MAXCLIENTBODY		10000
 # define MAX_MAXCONNECTIONS		1000
 # define MAX_BACKLOG			100
+# define MAX_HEADERSIZE			8192
 
 // ===== ===== ===== ===== DEFAULT CONFIG PATHS ===== ===== ===== =====
 # define PATH_DEFAULTCONFIG		"default/config/default.conf"
@@ -164,10 +166,11 @@ typedef enum contentTypes
 # define E_FCNTL				"Error: Server: fcntl()"
 # define E_ACCEPT				"Error: Server: accept()"
 # define E_POLL					"Error: Server: poll()"
+# define E_SEND					"Error: Server: send()"
 
 # define I_CONNECTIONLIMIT		"Info: Server: Connection limit reached."
 # define I_CLOSENODATA			"Info: Server: Connection closed (no data received)."
-# define I_REQUESTHEADERROR		"Info: Server: Connection closed (request head handler)."
+# define I_REQUESTHEADERROR		"Info: Server: Connection closed by request head handler: "
 
 // Client
 # define E_REQUESTFILE			"Error: Client: outputfile"
@@ -199,4 +202,7 @@ std::string		getInstruction(std::string& inputStr);
 bool			resourceExists(const std::string&);
 // Checks whether a path corresponds to a directory
 bool			isDirectory(const std::string&);
+// Returns the message string associated with an HTTP status code
+std::string		getHttpMsg(int);
+
 #endif

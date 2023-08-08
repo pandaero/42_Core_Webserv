@@ -59,7 +59,9 @@ void Client::buildRequest()
 {
 	_request = new Request(_buffer);
 	_buffer.erase(0, _buffer.find("\r\n\r\n") + 4);
-	_directory = _request->path().substr(0, _request->path().find_last_of("/"));
+	_directory = _request->path().substr(0, _request->path().find_last_of("/") + 1);
+	if (_request->contentLength() <= 0 || _request->method() != POST) // we don't process bodies of GET or DELETE requests
+		_requestBodyComplete = true;
 }
 
 bool Client::requestHeadComplete()

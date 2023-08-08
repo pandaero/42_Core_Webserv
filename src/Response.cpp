@@ -6,7 +6,6 @@ Response::~Response(){}
 
 Response::Response(int code, strVec serverNames)
 {
-	
 	(void)serverNames;
 	std::string			httpMsg(getHttpMsg(code));
 	std::stringstream	ss_body, ss_header;
@@ -16,7 +15,7 @@ Response::Response(int code, strVec serverNames)
 	ss_body << "<head>\n";
 	ss_body << "<title>webserv - " << code << ": " << httpMsg << "</title>\n";
 	ss_body << "<style>\n";
-	ss_body << "body {background-color: black; color: white; font-family: Arial, sans-serif; margin: 0; padding: 200px 0px 0px 0px; text-align: center;}\n";
+	ss_body << "body {background-color: black; color: white; font-family: Arial, sans-serif; margin: 0; padding: 5% 0 0 0; text-align: center;}\n";
 	ss_body << "h1 {font-size: 42px;}\n";
 	ss_body << "p {font-size: 16px; line-height: 1.5;}\n";
 	ss_body << "</style>\n";
@@ -28,7 +27,7 @@ Response::Response(int code, strVec serverNames)
 	ss_body << "</html>\n";
 	
 	ss_header << HTTPVERSION << ' ' << code << ' ' << httpMsg << "\r\n";
-	ss_header << "Server: shmangserv/0.69 (knudel)" << "\r\n";
+	ss_header << "Server: " << SERVERVERSION << "\r\n";
 	ss_header << "content-type: text/html; charset=utf-8" << "\r\n";
 	ss_header << "content-length: " << ss_body.str().size() << "\r\n";
 	ss_header << "\r\n";
@@ -51,14 +50,6 @@ Response::Response(const Request & request, const Server & server)
 	// check for file access success etc.
 	std::cout << "Response got made with full path: " << _filePath << std::endl;
 }
-
-//BULLSHIT CONSTRUCTOR? - set file to error page, perhaps
-// Response::Response(int code, const Server & server)
-// {
-// 	setStatusCode(code);
-// 	setFile(server.getStatusPage(code), server);
-// }
-
 
 const char* Response::getStatusPage()
 {
@@ -230,78 +221,3 @@ std::string Response::getFilePath()
 {
 	return _filePath;
 }
-
-std::string Response::getHttpMsg(int code)
-{
-	switch (code)
-	{
-		case 100: return "Continue";
-		case 101: return "Switching Protocols";
-		case 102: return "Processing";
-		case 103: return "Checkpoint";
-
-		case 200: return "OK";
-		case 201: return "Created";
-		case 202: return "Accepted";
-		case 203: return "Non-Authoritative Information";
-		case 204: return "No Content";
-		case 205: return "Reset Content";
-		case 206: return "Partial Content";
-		case 207: return "Multi-Status";
-		case 208: return "Already Reported";
-
-		case 300: return "Multiple Choices";
-		case 301: return "Moved Permanently";
-		case 302: return "Found";
-		case 303: return "See Other";
-		case 304: return "Not Modified";
-		case 305: return "Use Proxy";
-		case 306: return "Switch Proxy";
-		case 307: return "Temporary Redirect";
-		case 308: return "Permanent Redirect";
-
-		case 400: return "Bad Request";
-		case 401: return "Unauthorized";
-		case 402: return "Payment Required";
-		case 403: return "Forbidden";
-		case 404: return "Not Found";
-		case 405: return "Method Not Allowed";
-		case 406: return "Not Acceptable";
-		case 407: return "Proxy Authentication Required";
-		case 408: return "Request Timeout";
-		case 409: return "Conflict";
-		case 410: return "Gone";
-		case 411: return "Length Required";
-		case 412: return "Precondition Failed";
-		case 413: return "Payload Too Large";
-		case 414: return "URI Too Long";
-		case 415: return "Unsupported Media Type";
-		case 416: return "Requested Range Not Satisfiable";
-		case 417: return "Expectation Failed";
-		case 418: return "I'm a teapot";
-		case 421: return "Misdirected Request";
-		case 422: return "Unprocessable Entity";
-		case 423: return "Locked";
-		case 424: return "Failed Dependency";
-		case 426: return "Upgrade Required";
-		case 428: return "Precondition Required";
-		case 429: return "Too Many Request";
-		case 431: return "Request Header Fields Too Large";
-		case 451: return "Unavailable For Legal Reasons";
-
-		case 500: return "Internal Server Error";
-		case 501: return "Not Implemented";
-		case 502: return "Bad Gateway";
-		case 503: return "Service Unavailable";
-		case 504: return "Gateway Timeout";
-		case 505: return "HTTP Version Not Supported";
-		case 506: return "Variant Also Negotiates";
-		case 507: return "Insufficient Storage";
-		case 508: return "Loop Detected";
-		case 510: return "Not Extended";
-		case 511: return "Network Authentication Required";
-
-		default: return "Unknown Error";
-	}
-}
-

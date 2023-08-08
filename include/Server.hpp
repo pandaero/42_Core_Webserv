@@ -17,7 +17,9 @@ class	Server
 	
 	private:
 		void	receiveData();
-		void	handleRequestHead_server();
+		void	handleRequestHead();
+		void	handleRequestBody();
+
 		int		freePollStructIndex();
 		void	closeClient(clientVec_it);
 		
