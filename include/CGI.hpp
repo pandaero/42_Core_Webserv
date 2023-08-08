@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   CGI.hpp                                            :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: ialinaok <ialinaok@student.42.fr>          +#+  +:+       +#+        */
+/*   By: apielasz <apielasz@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/08/07 16:59:02 by apielasz          #+#    #+#             */
-/*   Updated: 2023/08/07 23:10:57 by ialinaok         ###   ########.fr       */
+/*   Updated: 2023/08/08 17:07:27 by apielasz         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -15,21 +15,34 @@
 
 #include <string>
 #include <iostream>
+#include <unistd.h>
+#include <cstdlib>
+#include <sys/types.h>
+#include <sys/wait.h>
+#include <fstream>
+#include "Request.hpp"
+#include "Client.hpp"
+
 
 class CGI {
 	public:
-		CGI();
-		CGI(std::string, std::string, std::string);
+		CGI(Client &);
 		~CGI();
 
 		int		doTheThing();
-		bool	handleEnv(std::string);
+		int		fillEnv();
+		int		timeoutKillChild(pid_t, int);
+
+		class	CGIerrorException : public std::exception {
+				virtual const char	*what() const throw();
+		};
 
 	private:
-		char	**_env;
-		std::string	_path;
-		std::string _method;
-		std::string _queries;
+		char	*_env[12];
+		Client	&_clientInfos;
+		// std::string	_path;
+		// std::string _method;
+		// std::string _queries;
 };
 
 #endif
