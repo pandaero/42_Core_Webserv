@@ -9,7 +9,7 @@ class	Request
 		Request();
 		Request(std::string);
 		
-		std::string			headerValue(std::string) const; //const... i mean...
+		std::string			headerValue(std::string);
 		
 		const std::string&	method() const;
 		const std::string&	path() const;

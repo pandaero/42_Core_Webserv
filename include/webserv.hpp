@@ -167,7 +167,7 @@ typedef enum contentTypes
 
 # define I_CONNECTIONLIMIT		"Info: Server: Connection limit reached."
 # define I_CLOSENODATA			"Info: Server: Connection closed (no data received)."
-# define I_REQUESTHEADERROR		"Info: Server: Connection closed (invalid request header)."
+# define I_REQUESTHEADERROR		"Info: Server: Connection closed (request head handler)."
 
 // Client
 # define E_REQUESTFILE			"Error: Client: outputfile"

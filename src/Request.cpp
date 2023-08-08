@@ -19,12 +19,12 @@ Request::Request(std::string requestData)
 		_contentType = headerValue("content-type");
 }
 
-std::string Request::headerValue(std::string header) const
+std::string Request::headerValue(std::string header)
 {
 	std::string	query = strToLower(header);
 	if (_headers.find(query) != _headers.end())
 		return (_headers.find(query)->second);
-	return (NULL);
+	return (NOTFOUND);
 }
 
 /* //prolly not needed

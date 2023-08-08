@@ -26,18 +26,17 @@ class	Client
 		
 		bool					requestHeadComplete();
 		bool					requestBodyComplete();
-		Request*				_request;
 		
 	private:
 		std::string		_buffer;
+		Request*		_request;
 		
-		int				_clientSocketfd;
+		int				_socketfd;
 		int				_pollStructIndex;
 		sockaddr_in		_clientAddress;
 
 		std::string		_directory;
 		size_t			_bodyBytesWritten;
-		bool			_requestHeadComplete;
 		bool			_requestBodyComplete;
 };
 

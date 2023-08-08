@@ -2,10 +2,9 @@
 
 Client::Client(int pollStructIndex)
 {
-	_clientSocketfd = -42;
+	_socketfd = -42;
 	_pollStructIndex = pollStructIndex;
 	_bodyBytesWritten = 0;
-	_requestHeadComplete = false;
 	_requestBodyComplete = false;
 	_request = NULL;
 }
@@ -18,7 +17,7 @@ Client::~Client()
 
 void Client::setSocketfd(int clientSocketfd)
 {
-	_clientSocketfd = clientSocketfd;
+	_socketfd = clientSocketfd;
 }
 
 std::string& Client::buffer()
@@ -56,18 +55,16 @@ const std::string& Client::contentType() const
 	return _request->contentType();
 }
 		
-// change this to new alloc later
 void Client::buildRequest()
 {
 	_request = new Request(_buffer);
 	_buffer.erase(0, _buffer.find("\r\n\r\n") + 4);
-	_requestHeadComplete = true;
 	_directory = _request->path().substr(0, _request->path().find_last_of("/"));
 }
 
 bool Client::requestHeadComplete()
 {
-	return _requestHeadComplete;
+	return _request;
 }
 
 bool Client::requestBodyComplete()
@@ -82,7 +79,7 @@ sockaddr_in* Client::sockaddr()
 
 const int&	Client::socketfd() const
 {
-	return _clientSocketfd;
+	return _socketfd;
 }
 
 const int& Client::pollStructIndex() const

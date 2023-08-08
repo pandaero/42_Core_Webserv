@@ -1,11 +1,8 @@
 #include "../include/Server.hpp"
 
 Server::Server(const ServerConfig & config):
-	_pollStructs(NULL),
-	_numConns(1)
+	_pollStructs(NULL)
 {
-	(void)_numConns;
-	
 	// Set main values stored in configPairs
 	strMap		configPairs = config.getConfigPairs();
 	setNames(configPairs.find(SERVERNAME)->second);
@@ -210,6 +207,7 @@ void Server::handleRequestHead_server()
 			// maybe most elegant: set errorcode in client and when client would try to 
 			// process rest of requst it would see error code and then instead just send that
 		}
+
 	}
 	throw ("request head not complete, skipping rest of handleConnections loop");
 	// if not complete, have to skip rest of shmisms. maybe better to put guard clause in the others
