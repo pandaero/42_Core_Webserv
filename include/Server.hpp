@@ -1,43 +1,7 @@
-/* ************************************************************************** */
-/*                                                                            */
-/*                                                        :::      ::::::::   */
-/*   Server.hpp                                         :+:      :+:    :+:   */
-/*                                                    +:+ +:+         +:+     */
-/*   By: wmardin <wmardin@student.42.fr>            +#+  +:+       +#+        */
-/*                                                +#+#+#+#+#+   +#+           */
-/*   Created: 2023/04/07 19:17:18 by pandalaf          #+#    #+#             */
-/*   Updated: 2023/08/07 19:26:38 by wmardin          ###   ########.fr       */
-/*                                                                            */
-/* ************************************************************************** */
-
 #ifndef SERVER_HPP
 # define SERVER_HPP
 
 # include "webserv.hpp"
-# include "Client.hpp"
-# include "Response.hpp"
-# include "Request.hpp"
-# include "ServerConfig.hpp"
-
-# include <string>
-# include <list>
-# include <iostream>
-# include <sstream>
-# include <exception>
-# include <algorithm>
-# include <cstdio>
-# include <cstdlib>
-# include <fcntl.h>
-# include <unistd.h>
-# include <arpa/inet.h>
-# include <sys/socket.h>
-# include <sys/poll.h>
-# include <netinet/in.h>
-
-class ServerConfig;
-
-//forward retarded declaration
-class Response;
 
 class	Server
 {
@@ -48,17 +12,16 @@ class	Server
 		void	startListening();
 		void	poll();
 		void	acceptConnections();
-		void	checkConnections();
+		void	handleConnections();
 		void	cleanup();
 	
 	private:
-		void	handleConnection(clientVec_it);
-		void	receive();
+		void	receiveData();
 		void	handleRequestHead_server();
 		int		freePollStructIndex();
 		void	closeClient(clientVec_it);
 		
-		bool		requestError(clientVec_it);
+		bool		requestError();
 		void		sendResponse(Response, int);
 		void		sendStatusCodePage(int);
 		std::string	getStatusPage(int) const;
@@ -91,8 +54,6 @@ class	Server
 		int								_currentClientfd;
 		clientVec_it					_currentClientIt;
 		std::vector<Client>				_clients;
-		std::vector<int>				_clientFDs;
-		char							_recvBuffer[RECV_CHUNK_SIZE];
 		ssize_t							_bytesReceived;
 		
 		// TO BE DEMOLISHED:
@@ -133,10 +94,6 @@ class	Server
 		const char *	what() const throw();
 	};
 	class	pollFailureException: public std::exception
-	{
-		const char *	what() const throw();
-	};
-	class	connectionLimitExceededException: public std::exception
 	{
 		const char *	what() const throw();
 	};

@@ -1,10 +1,6 @@
 #ifndef SERVERCONFIG_HPP
 # define SERVERCONFIG_HPP
 
-# include <fstream>
-# include <map>
-
-# include "Server.hpp"
 # include "webserv.hpp"
 
 class ServerConfig

@@ -22,33 +22,18 @@ int main()
 			try
 			{
 				servers[i].poll();
-			}
-			catch (std::exception & exc)
-			{
-				perror("poll");
-				continue;
-			}
-			try
-			{
 				servers[i].acceptConnections();
+				servers[i].handleConnections();
 			}
-			catch (const std::exception& e)
+			catch (const char* msg)
 			{
-				std::cerr << e.what() << std::endl;
-			}
-			try
-			{
-				servers[i].checkConnections();
-			}
-			catch (const std::exception& e)
-			{
-				std::cerr << e.what() << std::endl;
+				std::cerr << msg << std::endl;
 			}
 		}
 	}
 
 	// I mean... we are behind a while true loop with no break
-	// still, this reminds us of stuff that should be freed on shutdown
+	// still, this reminds us of stuff that should be freed
 	// maybe capture SIGINT and run this shite then if we rly want
 	for (size_t i = 0; i < servers.size(); ++i)
 		servers[i].cleanup();

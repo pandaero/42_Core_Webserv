@@ -15,8 +15,6 @@
 Request::Request()
 {
 	_contentLength = -1;
-	_headComplete = false;
-	_bodyBytesWritten = 0;
 }
 
 Request::Request(std::string requestData)
@@ -31,64 +29,45 @@ Request::Request(std::string requestData)
 		_contentLength = -1;
 	if (headerValue("content-type") != NOTFOUND)
 		_contentType = headerValue("content-type");
-	_headComplete = true;
-	_bodyBytesWritten = 0;
 }
 
-std::string	Request::headerValue(std::string header) const
+std::string Request::headerValue(std::string header) const
 {
 	std::string	query = strToLower(header);
 	if (_headers.find(query) != _headers.end())
 		return (_headers.find(query)->second);
-	return (NOTFOUND);
+	return (NULL);
 }
 
-//prolly not needed
-std::string	Request::getFilename() const
+/* //prolly not needed
+const std::string&	Request::getFilename() const
 {
 	return _path.substr(_path.find_last_of('/'), _path.size() - 1);
-}
+} */
 
-std::string Request::method() const
+const std::string& Request::method() const
 {
 	return _method;
 }
 
-std::string Request::httpProtocol() const
+const std::string& Request::httpProtocol() const
 {
 	return _protocol;
 }
 
-std::string	Request::path() const
+const std::string& Request::path() const
 {
 	return _path;
 }
 
-int	Request::contentLength() const
+const int& Request::contentLength() const
 {
 	return _contentLength;
 }
 
-std::string Request::getContentType() const
+const std::string& Request::contentType() const
 {
 	return _contentType;
-}
-
-bool Request::headComplete()
-{
-	return _headComplete;
-}
-
-bool Request::bodyComplete()
-{
-	if (_bodyBytesWritten >= (size_t)_contentLength)
-		std::cout << "bodyCmoplete" << std::endl;
-	return _bodyBytesWritten >= (size_t)_contentLength;
-}
-
-void Request::addToBodyBytesWritten(size_t bytesWritten)
-{
-	_bodyBytesWritten += bytesWritten;
 }
 
 strMap Request::createHeaderMap(std::string& input, std::string endOfKey, std::string endOfValue, std::string endOfMap)

@@ -1,49 +1,33 @@
-/* ************************************************************************** */
-/*                                                                            */
-/*                                                        :::      ::::::::   */
-/*   Client.hpp                                         :+:      :+:    :+:   */
-/*                                                    +:+ +:+         +:+     */
-/*   By: wmardin <wmardin@student.42.fr>            +#+  +:+       +#+        */
-/*                                                +#+#+#+#+#+   +#+           */
-/*   Created: 2023/03/28 20:29:39 by pandalaf          #+#    #+#             */
-/*   Updated: 2023/08/07 19:47:33 by wmardin          ###   ########.fr       */
-/*                                                                            */
-/* ************************************************************************** */
-
 #ifndef CLIENT_HPP
 # define CLIENT_HPP
 
 # include "webserv.hpp"
-# include "Request.hpp"
-
-# include <sstream>
-# include <exception>
-# include <arpa/inet.h>
-# include <sys/socket.h>
 
 class	Client
 {
 	public:
 		Client(int);
+		~Client();
 
-		sockaddr_in*	sockaddr();
-		int				socketfd() const;
-		int				pollStructIndex() const;
+		sockaddr_in*			sockaddr();
+		const int&				socketfd() const;
+		const int&				pollStructIndex() const;
 		
-		void			setSocketfd(int);
+		void					setSocketfd(int);
+		void					buildRequest();
 
-		void			handleRequestHead();
-		void			handleRequestBody();
-
-		std::string&	buffer();
-		void			writeToBuffer(std::string, int);
-		void			writeBodyToFile();
-
-		bool			requestHeadComplete();
-		bool			requestBodyComplete();
+		const std::string&		httpProtocol() const;
+		const std::string& 		method() const;
+		const std::string& 		path() const;
+		const std::string&		directory() const;
+		const int& 				contentLength() const;
+		const std::string& 		contentType() const;
+		std::string&			buffer();
 		
-		Request			_request;
-
+		bool					requestHeadComplete();
+		bool					requestBodyComplete();
+		Request*				_request;
+		
 	private:
 		std::string		_buffer;
 		
@@ -51,6 +35,7 @@ class	Client
 		int				_pollStructIndex;
 		sockaddr_in		_clientAddress;
 
+		std::string		_directory;
 		size_t			_bodyBytesWritten;
 		bool			_requestHeadComplete;
 		bool			_requestBodyComplete;

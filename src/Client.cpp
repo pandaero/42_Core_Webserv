@@ -6,7 +6,7 @@
 /*   By: wmardin <wmardin@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/03/28 20:51:05 by pandalaf          #+#    #+#             */
-/*   Updated: 2023/08/07 19:48:41 by wmardin          ###   ########.fr       */
+/*   Updated: 2023/08/08 16:39:28 by wmardin          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -21,6 +21,13 @@ Client::Client(int pollStructIndex)
 	_bodyBytesWritten = 0;
 	_requestHeadComplete = false;
 	_requestBodyComplete = false;
+	_request = NULL;
+}
+
+Client::~Client()
+{
+	if (_request)
+		delete _request;
 }
 
 void Client::setSocketfd(int clientSocketfd)
@@ -28,44 +35,48 @@ void Client::setSocketfd(int clientSocketfd)
 	_clientSocketfd = clientSocketfd;
 }
 
-void Client::handleRequestHead()
-{
-	ANNOUNCEME
-	if (requestHeadComplete())
-		return;
-	if (_buffer.find("\r\n\r\n") != std::string::npos)
-	{
-		_request = Request(_buffer);
-		_buffer.erase(0, _buffer.find("\r\n\r\n") + 4);
-		_requestHeadComplete = true;
-	}
-}
-
 std::string& Client::buffer()
 {
 	return _buffer;
 }
 
-void Client::handleRequestBody()
+const std::string& Client::httpProtocol() const
 {
-	ANNOUNCEME
-	if (requestBodyComplete())
-		return;
+	return _request->httpProtocol();
 }
 
-// throw not yet caught
-void Client::writeBodyToFile()
+const std::string& Client::method() const
 {
-	//now just taking request path, have to modify this with the config file given directory
-	std::string		writePath(_request.path());
+	return _request->method();
+}
 
-	std::ofstream	outputFile(writePath.c_str(), std::ios::binary | std::ios::app);
-	
-	if (!outputFile.is_open())
-		throw (E_REQUESTFILE);
-	outputFile.write(_buffer.c_str(), _buffer.size());
-	outputFile.close();
-	_request.addToBodyBytesWritten(_buffer.size()); // outputFile.tellp() delta prolly better but nah.
+const std::string& Client::path() const
+{
+	return _request->path();
+}
+
+const std::string& Client::directory() const
+{
+	return _directory;
+}
+
+const int& Client::contentLength() const
+{
+	return _request->contentLength();
+}
+
+const std::string& Client::contentType() const
+{
+	return _request->contentType();
+}
+		
+// change this to new alloc later
+void Client::buildRequest()
+{
+	_request = new Request(_buffer);
+	_buffer.erase(0, _buffer.find("\r\n\r\n") + 4);
+	_requestHeadComplete = true;
+	_directory = _request->path().substr(0, _request->path().find_last_of("/"));
 }
 
 bool Client::requestHeadComplete()
@@ -83,12 +94,12 @@ sockaddr_in* Client::sockaddr()
 	return &_clientAddress;
 }
 
-int	Client::socketfd() const
+const int&	Client::socketfd() const
 {
 	return _clientSocketfd;
 }
 
-int Client::pollStructIndex() const
+const int& Client::pollStructIndex() const
 {
 	ANNOUNCEME
 	return _pollStructIndex;

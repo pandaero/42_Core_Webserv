@@ -1,25 +1,82 @@
-/* ************************************************************************** */
-/*                                                                            */
-/*                                                        :::      ::::::::   */
-/*   webserv.hpp                                        :+:      :+:    :+:   */
-/*                                                    +:+ +:+         +:+     */
-/*   By: wmardin <wmardin@student.42.fr>            +#+  +:+       +#+        */
-/*                                                +#+#+#+#+#+   +#+           */
-/*   Created: 2023/03/26 01:51:20 by pandalaf          #+#    #+#             */
-/*   Updated: 2023/08/07 09:58:17 by wmardin          ###   ########.fr       */
-/*                                                                            */
-/* ************************************************************************** */
-
 #ifndef WEBSERV_HPP
 # define WEBSERV_HPP
 
-// Headers required by this header.
-# include <iostream>
 # include <fstream>
-# include <vector>
+# include <iostream>
+# include <sstream>
+
+# include <cstdio>
+# include <cstdlib>
+# include <cstring>
+
+# include <algorithm>
+# include <exception>
+# include <list>
 # include <map>
 # include <string>
+# include <vector>
+
+# include <arpa/inet.h>
+# include <fcntl.h>
+# include <netinet/in.h>
+# include <sys/poll.h>
+# include <sys/socket.h>
 # include <sys/stat.h>
+# include <unistd.h>
+
+// ===== ===== ===== ===== TYPEDEFS ===== ===== ===== =====
+// forward declarations
+class	Request;
+class	Client;
+class	Response;
+class	Server;
+class	ServerConfig;
+class	ConfigFile;
+
+typedef struct
+{
+	bool			get;
+	bool			post;
+	bool			delete_;
+	std::string		dir_listing;
+	std::string		alt_location;
+}	s_locInfo;
+
+typedef std::map<std::string, std::string> 				strMap;
+typedef std::map<std::string, std::string>::iterator	strMap_it;
+typedef std::vector<std::string>						strVec;
+typedef std::vector<std::string>::iterator				strVec_it;
+typedef std::map<std::string, s_locInfo>				strLocMap;
+typedef std::map<std::string, s_locInfo>::iterator		strLocMap_it;
+typedef	std::map<int, std::string>						intStrMap;
+typedef	std::map<int, std::string>::iterator			intStrMap_it;
+typedef std::vector<Client>								clientVec;
+typedef std::vector<Client>::iterator					clientVec_it;
+
+typedef enum contentTypes
+{
+	PLAINTEXT,
+	HTML,
+	CSS,
+	OCTETSTREAM,
+	ZIP,
+	PNG,
+	JPEG,
+	PDF,
+	XML,
+	JSON,
+	AVIF
+}	contentType;
+
+
+// Internal headers
+# include "Request.hpp"
+# include "Client.hpp"
+# include "ServerConfig.hpp"
+# include "ConfigFile.hpp"
+# include "Response.hpp"
+# include "Server.hpp"
+# include "Url.hpp"
 
 // MACROS
 # define WHITESPACE		" \t\v\r\n"
@@ -77,11 +134,11 @@
 # define E_ELMNTDECL		"Error: ConfigFile: Invalid element declaration, (only \"server\" allowed): "
 
 // ServerConfig
-# define E_FILEOPEN		"Error: ServerConfig: Could not open config file: "
-# define E_NOSERVER		"Error: ServerConfig: No valid server configs found."
-# define E_MANYSERVER	"Error: ServerConfig: Too many server configs found. Maximum of 10 allowed."
-# define E_SUBELEMNT	"Error: ServerConfig: Second level subelements not allowed: "
-# define E_INVALERRNUM	"Error: ServerConfig: Invalid HTML response code (range is from 100 to 599): "
+# define E_FILEOPEN			"Error: ServerConfig: Could not open config file: "
+# define E_NOSERVER			"Error: ServerConfig: No valid server configs found."
+# define E_MANYSERVER		"Error: ServerConfig: Too many server configs found. Maximum of 10 allowed."
+# define E_SUBELEMNT		"Error: ServerConfig: Second level subelements not allowed: "
+# define E_INVALERRNUM		"Error: ServerConfig: Invalid HTML response code (range is from 100 to 599): "
 
 # define I_INVALIDKEY		"Info: ServerConfig: Unrecognized identifier in config file: "
 # define I_INVALIDVALUE		"Info: ServerConfig: Unrecognized value in config file: "
@@ -106,48 +163,14 @@
 # define E_SOCKOPT				"Error: Server: setsockopt()"
 # define E_FCNTL				"Error: Server: fcntl()"
 # define E_ACCEPT				"Error: Server: accept()"
+# define E_POLL					"Error: Server: poll()"
+
+# define I_CONNECTIONLIMIT		"Info: Server: Connection limit reached."
+# define I_CLOSENODATA			"Info: Server: Connection closed (no data received)."
+# define I_REQUESTHEADERROR		"Info: Server: Connection closed (invalid request header)."
 
 // Client
 # define E_REQUESTFILE			"Error: Client: outputfile"
-
-// ===== ===== ===== ===== TYPEDEFS ===== ===== ===== =====
-// forward declarations
-class	Request;
-class	Client;
-
-typedef struct
-{
-	bool			get;
-	bool			post;
-	bool			delete_;
-	std::string		dir_listing;
-	std::string		alt_location;
-}	s_locInfo;
-typedef std::map<std::string, std::string> 				strMap;
-typedef std::map<std::string, std::string>::iterator	strMap_it;
-typedef std::vector<std::string>						strVec;
-typedef std::vector<std::string>::iterator				strVec_it;
-typedef std::map<std::string, s_locInfo>				strLocMap;
-typedef std::map<std::string, s_locInfo>::iterator		strLocMap_it;
-typedef	std::map<int, std::string>						intStrMap;
-typedef	std::map<int, std::string>::iterator			intStrMap_it;
-typedef std::vector<Client>								clientVec;
-typedef std::vector<Client>::iterator					clientVec_it;
-
-typedef enum contentTypes
-{
-	PLAINTEXT,
-	HTML,
-	CSS,
-	OCTETSTREAM,
-	ZIP,
-	PNG,
-	JPEG,
-	PDF,
-	XML,
-	JSON,
-	AVIF
-}	contentType;
 
 // ===== ===== ===== ===== GLOBAL FUNCTIONS ===== ===== ===== =====
 // Determines whether a string contains purely alphanumerical characters.

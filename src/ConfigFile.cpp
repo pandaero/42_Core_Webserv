@@ -6,7 +6,7 @@
 /*   By: wmardin <wmardin@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/05/09 16:03:29 by wmardin           #+#    #+#             */
-/*   Updated: 2023/08/04 10:44:35 by wmardin          ###   ########.fr       */
+/*   Updated: 2023/08/08 17:01:00 by wmardin          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -17,16 +17,16 @@ ConfigFile::ConfigFile(const char* userConfigPath)
 	std::string	configData;
 	
 	// parse default ServerConfig object from internal default config file
+	_defaultServerConfig = NULL;
 	configData = loadFile(PATH_DEFAULTCONFIG);
-	ServerConfig	defaultConfig(getServerConfigElement(configData));
-	_defaultServerConfig = defaultConfig;
+	_defaultServerConfig = new ServerConfig(getServerConfigElement(configData));
 	std::cout << I_DEFAULTIMPORT << PATH_DEFAULTCONFIG << std::endl;
 	
 	// parse intended ServerConfig objects from client supplied config file
 	configData = loadFile(userConfigPath);
 	while (!configData.empty())
 	{
-		ServerConfig newConfig(_defaultServerConfig);
+		ServerConfig newConfig(*_defaultServerConfig);
 		newConfig.applySettings(getServerConfigElement(configData));
 		_serverConfigs.push_back(newConfig);
 	}
@@ -38,6 +38,13 @@ ConfigFile::ConfigFile(const char* userConfigPath)
 		_servers.push_back(Server(_serverConfigs[i]));
 	std::cout << I_CONFIGIMPORT << std::endl;
 }
+
+ConfigFile::~ConfigFile()
+{
+	if (_defaultServerConfig)
+		delete _defaultServerConfig;
+}
+
 
 std::vector<ServerConfig> ConfigFile::getConfigs() const
 {

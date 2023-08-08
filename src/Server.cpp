@@ -6,37 +6,11 @@
 /*   By: wmardin <wmardin@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/04/07 17:49:49 by pandalaf          #+#    #+#             */
-/*   Updated: 2023/08/07 19:53:07 by wmardin          ###   ########.fr       */
+/*   Updated: 2023/08/08 16:38:18 by wmardin          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #include "../include/Server.hpp"
-
-/* Server::Server():
-	_pollStructs(NULL),
-	_numConns(1)
-{
-	(void)_numConns;
-
-	setNames("default");
-	setHost("ANY");
-	setPort("50000");
-	_filePaths.insert(std::make_pair(ROOT, "default/site"));_filePaths.insert(std::make_pair(PATH_DEFAULTERRPAGE, "default/error/default.html"));
-	_serverParams.insert(std::make_pair(CLIMAXBODY, 1024));
-
-	/ setRoot(config.root);
-	setDir(config.dir);
-	setUploadDir(config.uploadDir);
-	setCgiDir(config.cgiDir);
-	setDefaultErrorPage(config.defaultErrorPage);
-	setErrorPages(config.errorPages);
-	
-	setBacklog(config.backlog);
-	setMaxConnections(config.maxConnections); 
-	
-	_pollStructs = new pollfd[_maxConns];
-	startListening();
-} */
 
 Server::Server(const ServerConfig & config):
 	_pollStructs(NULL),
@@ -104,20 +78,21 @@ void	Server::startListening()
 	// init tables?
 }
 
-void	Server::cleanup()
+void Server::cleanup()
 {
+	for (clientVec_it it = _clients.begin(); it != _clients.end(); ++it)
+		closeClient(it);
 	if (_server_fd != -1)
 		close(_server_fd);
-	//pollstruct fds (client fds)
 	if (_pollStructs)
 		delete [] _pollStructs;
 }
 
-void	Server::poll()
+void Server::poll()
 {
 	ANNOUNCEME
 	if (::poll(_pollStructs, _clients.size() + 1, -1) == -1)
-		throw pollFailureException();
+		throw (E_POLL);
 }
 
 void Server::acceptConnections()
@@ -126,22 +101,27 @@ void Server::acceptConnections()
 	if (_pollStructs[0].revents & POLLIN)
 	{
 		int		index = freePollStructIndex();
-		// try catch block or smth to catch too many clients error in findFreeIndex
+		
+		if (index == -1)
+		{
+			std::cerr << I_CONNECTIONLIMIT << std::endl;
+			return;
+		}
 		_clients.push_back(Client(index));
 		
 		Client&	newClient = _clients.back();
-		int		new_sock;
 		int 	addrlen = sizeof(_serverAddress);
-	
-		new_sock = accept(_server_fd, (sockaddr*)newClient.sockaddr(), (socklen_t*)&addrlen);
-		if (new_sock == -1)
+
+		// while loop to deal with all incoming connections until -1 triggers return
+		while (true)
 		{
-			if (errno != EWOULDBLOCK) // if errno is EWOULDBLOCK that just means no more incoming connections. So not an error. But we dont wanna output a new client.
-				throw std::runtime_error(E_ACCEPT);
-		}
-		else
-		{
-			_clientFDs.push_back(new_sock); //maybe not necessary but prolly yes. prolly not supposed to poll for every server.
+			int new_sock = accept(_server_fd, (sockaddr*)newClient.sockaddr(), (socklen_t*)&addrlen);
+			if (new_sock == -1)
+			{
+				if (errno != EWOULDBLOCK)
+					std::cerr << E_ACCEPT << std::endl;
+				return;
+			}
 			newClient.setSocketfd(new_sock);
 			_pollStructs[index].fd = new_sock;
 			_pollStructs[index].events = POLLIN | POLLHUP;
@@ -151,119 +131,158 @@ void Server::acceptConnections()
 	}
 }
 
-void	Server::checkConnections()
+void Server::receiveData()
 {
-	ANNOUNCEME
-	for (clientVec_it clientIt = _clients.begin(); clientIt != _clients.end(); ++clientIt)
-	{
-		_currentClientfd = clientIt->socketfd();
-		_currentClientIt = clientIt;
-		
-		std::cout << "Pollstructindex in checkConnections:" << clientIt->pollStructIndex() << std::endl;
-		if (_pollStructs[clientIt->pollStructIndex()].revents & POLLIN)
-		{
-			try
-			{
-				handleConnection(clientIt);
-			}
-			catch (const char *msg)
-			{
-				std::cerr << msg << std::endl;
-			}
-	}
-}
-
-
-		/*
-		was inside receive
-		
-		 if (clientIt->_gotRequest == true)
-		{
-			Request		request(buffer);
-			
-			Response	standard(request, *this);
-			// standard.setStatusCode(200);
-			std::cout << "Raw path: " << request.path() << std::endl;
-			std::cout << "Pathity path path: " << _filePaths.find(ROOT)->second << request.path() << "index.html" << std::endl;
-			// if (*(request._path.end() - 1) == '/')
-			// {
-			// 	// serve index (try html, htm, shtml, php), if not present, check directory listing setting to create it (or not)
-			// 	standard.setFile(_filePaths.find(ROOT)->second + request._path + "index.html");
-			// }
-			// if (request.getFile() != "")
-			// 	standard.setFile(_filePaths.find(ROOT)->second + request._path);
-			std::cout << "Sending response." << std::endl;
-			standard.send(_pollStructs[i + 1].fd, *this);
-			clientIt->_gotRequest = false;
-		} */
-
-void Server::receive()
-{
-	_bytesReceived = recv(_currentClientfd, _recvBuffer, RECV_CHUNK_SIZE, 0);
-	std::cout << "Received " << _bytesReceived << " bytes from client:\n" << _recvBuffer << std::endl;
+	char	buffer[RECV_CHUNK_SIZE];
+	
+	bzero(buffer, RECV_CHUNK_SIZE);
+	_bytesReceived = recv(_currentClientfd, buffer, RECV_CHUNK_SIZE, 0);
+	std::cout << _bytesReceived << " bytes received.\nContent:\n" << buffer << std::endl;
 	
 	if (_bytesReceived <= 0)
 	{
 		closeClient(_currentClientIt);
-		std::cout << "closing because nothing received" << std::endl;
-		return;
+		throw (I_CLOSENODATA);
 	}
-	_currentClientIt->buffer().
-	_currentClientIt->writeToBuffer(_recvBuffer, _bytesReceived);
+	_currentClientIt->buffer().append(buffer);
+}
+
+bool Server::requestError()
+{
+	_statuscode = 0;
+	// wrong protocol
+	if (_currentClientIt->httpProtocol() != HTTPVERSION)
+		return (_statuscode = 505);
+	// method not supported by server
+	if (_currentClientIt->method() != GET
+		&& _currentClientIt->method() != POST
+		&& _currentClientIt->method() != DELETE)
+		return (_statuscode = 501);
+	// body size too large
+	if (_currentClientIt->contentLength() > (int)_clientMaxBody)
+		return (_statuscode = 413);
+	// access forbidden (have to specifically allow access in config file)
+	// probably have to add root here?
+	if (_locations.find(_root + _currentClientIt->directory()) == _locations.end())
+		return (_statuscode = 403);
+		
+	
+	std::string	completePath(_root + _currentClientIt->path());
+	
+	if (isDirectory(completePath))
+	{
+		if (dirListing(completePath))
+			std::cout << "Will be showing dir listing here." << std::endl;
+		else
+			return (_statuscode = 404);
+			// 404 and not 403 (forbidden), because we don't want to leak file structure information.
+	}
+	if (completePath[completePath.size() - 1] == '/') // .back() is not compiling on WSL2 Ubuntu
+		completePath += "index.html";
+	std::cout << "completePath:'" << completePath << '\'' << std::endl;
+	
+	if (!resourceExists(completePath))
+		return (_statuscode = 404);
+	if (_currentClientIt->method() == GET || _currentClientIt->method() == DELETE)
+	{
+		std::ifstream	file;
+		//should be completepath?
+		file.open(_currentClientIt->path().c_str(), std::ios::binary);
+		// file not accessible - we treat it as file not found. Maybe more specific behavior? Wr already checked folder permissions tho!
+		if (file.fail())
+		{
+			file.close();
+			return (_statuscode = 404);
+		}
+		
+	}
+	if (_statuscode)
+	{
+		// non bool strcutrue
+		// senderrormsg
+		// throw error
+	}
+	return false;
 }
 
 void Server::handleRequestHead_server()
 {
-	clientIt->handleRequestHead();
-
 	ANNOUNCEME
 	if (_currentClientIt->requestHeadComplete())
 		return;
-	if (_buffer.find("\r\n\r\n") != std::string::npos)
+	if (_currentClientIt->buffer().find("\r\n\r\n") != std::string::npos)
 	{
-		_request = Request(_buffer);
-		_buffer.erase(0, _buffer.find("\r\n\r\n") + 4);
-		_requestHeadComplete = true;
+		_currentClientIt->buildRequest();
+		if (requestError())
+		{
+			sendStatusCodePage(_statuscode);
+			closeClient(_currentClientIt);
+			throw (I_REQUESTHEADERROR);
+			
+			// maybe most elegant: set errorcode in client and when client would try to 
+			// process rest of requst it would see error code and then instead just send that
+		}
 	}
-	
-	if (!clientIt->requestHeadComplete())
-		return;
-	if (requestError(clientIt)) //decline header if not completed in first chunk?
+	throw ("request head not complete, skipping rest of handleConnections loop");
+	// if not complete, have to skip rest of shmisms. maybe better to put guard clause in the others
+	// or can throw...
+}
+
+void Server::handleConnections()
+{
+	ANNOUNCEME
+	for (clientVec_it clientIt = _clients.begin(); clientIt != _clients.end(); ++clientIt)
 	{
-		sendStatusCodePage(_statuscode);
-		closeClient(clientIt);
-		return;
+		ANNOUNCEME
+		_currentClientfd = clientIt->socketfd();
+		_currentClientIt = clientIt;
+		
+		std::cout << "Pollstructindex in checkConnections:" << clientIt->pollStructIndex() << std::endl;
+		if (_pollStructs[clientIt->pollStructIndex()].revents & (POLLIN | POLLHUP))
+		{
+			try
+			{
+				receiveData();
+				handleRequestHead_server();
+				//handle body
+				
+				
+				// bs, just to send stuff
+				sendStatusCodePage(200);
+			}
+			catch(const char* msg)
+			{
+				std::cerr << msg << std::endl;
+			}
+
+		}
 	}
 }
 
-void Server::handleConnection(clientVec_it clientIt)
+
+/* WRITETOFILE
+// throw not yet caught
+void Client::writeBodyToFile()
 {
-	ANNOUNCEME
-	
-	
-	
-	// receive data from client
-	receive();
-	handleRequestHead_server();
-	
-	
-	
+	//now just taking request path, have to modify this with the config file given directory
+	std::string		writePath(_request.path());
 
+	std::ofstream	outputFile(writePath.c_str(), std::ios::binary | std::ios::app);
+	
+	if (!outputFile.is_open())
+		throw (E_REQUESTFILE);
+	outputFile.write(_buffer.c_str(), _buffer.size());
+	outputFile.close();
+	_request.addToBodyBytesWritten(_buffer.size()); // outputFile.tellp() delta prolly better but nah.
+}
+ */
 
-	// process the header
-	clientIt->handleRequestHead();
-	if (!clientIt->requestHeadComplete())
-		return;
-	if (requestError(clientIt)) //decline header if not completed in first chunk?
-	{
-		sendStatusCodePage(_statuscode);
-		closeClient(clientIt);
-		return;
-	}
+//	take from here
 
+		// process the header
+	
 	// process the body
-	clientIt->handleRequestBody();
-	sendStatusCodePage(200);
+	/*
 	if (clientIt->requestBodyComplete())
 	{
 		//bs, just for now to send shit
@@ -274,6 +293,7 @@ void Server::handleConnection(clientVec_it clientIt)
 		// send response
 		// close client
 	}
+	*/
 	// wrong? no, because long headers may stop request body from being read completely
 	// 
 	// but this still has to be augmented by a chunkhandler(TM).
@@ -308,54 +328,33 @@ void Server::handleConnection(clientVec_it clientIt)
 			
 		} */
 	
-}
 
-bool Server::requestError(clientVec_it clientIt)
-{
-	// wrong protocol
-	if (clientIt->_request.httpProtocol() != HTTPVERSION)
-		return (_statuscode = 505);
-	// body size too large
-	if (clientIt->_request.contentLength() > (int)_clientMaxBody)
-		return (_statuscode = 413);
-	// method not supported by server
-	if (clientIt->_request.method() != GET
-		&& clientIt->_request.method() != POST
-		&& clientIt->_request.method() != DELETE)
-		return (_statuscode = 501);
-	// access forbidden (have to specifically allow access in config file)
-	if (_locations.find(clientIt->_request.path()) == _locations.end())
-		return (_statuscode = 403);
+
+
+		/*
+		was inside receive
 		
-	
-	std::string	completePath(_root + clientIt->_request.path());
-	
-	if (completePath[completePath.size() - 1] == '/')
-		completePath += "index.html";
-	std::cout << "completePath:'" << completePath << '\'' << std::endl;
-	
-	if (!resourceExists(completePath))
-		return (_statuscode = 404);
-	if (isDirectory(completePath))
-	{
-		if (dirListing(clientIt->_request.path()))
-			std::cout << "Will be showing dir listing here." << std::endl;
-		else
-			return (_statuscode = 403);
-	}
-	//else return resource (but not here)
- 
-	std::ifstream	file;
-	//should be completepath?
-	file.open(clientIt->_request.path().c_str(), std::ios::binary);
-	// file not accessible - we treat it as file not found. Maybe more specific behavior? Wr already checked folder permissions tho!
-	if (file.fail())
-	{
-		file.close();
-		return (_statuscode = 404);
-	}
-	return false;
-}
+		 if (clientIt->_gotRequest == true)
+		{
+			Request		request(buffer);
+			
+			Response	standard(request, *this);
+			// standard.setStatusCode(200);
+			std::cout << "Raw path: " << request.path() << std::endl;
+			std::cout << "Pathity path path: " << _filePaths.find(ROOT)->second << request.path() << "index.html" << std::endl;
+			// if (*(request._path.end() - 1) == '/')
+			// {
+			// 	// serve index (try html, htm, shtml, php), if not present, check directory listing setting to create it (or not)
+			// 	standard.setFile(_filePaths.find(ROOT)->second + request._path + "index.html");
+			// }
+			// if (request.getFile() != "")
+			// 	standard.setFile(_filePaths.find(ROOT)->second + request._path);
+			std::cout << "Sending response." << std::endl;
+			standard.send(_pollStructs[i + 1].fd, *this);
+			clientIt->_gotRequest = false;
+		} */
+
+
 
 
 
@@ -405,12 +404,7 @@ int Server::freePollStructIndex()
 	while (i < _maxConns && _pollStructs[i].fd != -1)
 		i++;
 	if (i == _maxConns)
-	{
-		std::cerr << __FUNCTION__ << " i = maxConns" << std::endl;
-		throw connectionLimitExceededException(); // gotta catch this! this is not a kill point
-		// prolly better to just retunr -1 here and check for that in calling function
-		return -1;
-	}
+		i = -1;
 	std::cout << "pollstruct index returned: " << i <<std::endl;
 	return i;
 }
@@ -686,17 +680,6 @@ const char *	Server::listenFailureException::what() const throw()
 {
 	return ("error using listen.");
 }
-
-const char *	Server::pollFailureException::what() const throw()
-{
-	return ("error using poll.");
-}
-
-const char *	Server::connectionLimitExceededException::what() const throw()
-{
-	return ("connection limit reached.");
-}
-
 const char *	Server::sendFailureException::what() const throw()
 {
 	return ("error sending data to client.");
