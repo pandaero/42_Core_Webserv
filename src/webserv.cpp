@@ -195,11 +195,20 @@ bool resourceExists(const std::string& path)
 
 bool isDirectory(const std::string& path)
 {
-	struct stat	fileStat;
+	struct stat	fileInfo;
 	
-	if (stat(path.c_str(), &fileStat) == 0)
-		return S_ISDIR(fileStat.st_mode);
+	if (stat(path.c_str(), &fileInfo) == 0)
+		return S_ISDIR(fileInfo.st_mode);
 	return false;
+}
+
+size_t	getFileSize(const std::string& filePath)
+{
+	struct	stat fileInfo;
+
+	if (stat(filePath.c_str(), &fileInfo) != 0)
+		return static_cast<size_t>(-1);
+	return static_cast<size_t>(fileInfo.st_size);
 }
 
 std::string getHttpMsg(int code)

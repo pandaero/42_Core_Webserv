@@ -34,4 +34,4 @@ int main()
 	// maybe capture SIGINT and run this shite then if we rly want
 	for (size_t i = 0; i < servers.size(); ++i)
 		servers[i].cleanup();
-}
+} 

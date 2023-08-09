@@ -12,6 +12,7 @@ Server::Server(const ServerConfig & config):
 	setClientMaxBody(configPairs.find(CLIMAXBODY)->second);
 	setMaxConnections(configPairs.find(MAXCONNS)->second);
 	setDefaultDirListing(configPairs.find(DIRLISTING)->second);
+	setMIMEtype(); // should do this for webserv, not for each server. maybe implement that later
 	//setBacklog(config.backlog); need this?!
 	
 	// Copy remaining values directly to server variables 
@@ -153,6 +154,7 @@ void Server::handleConnections()
 				receiveData();
 				handleRequestHead();
 				handleRequestBody();
+				sendResponse();
 				//send response after cmopleting head and body
 				
 				
@@ -191,45 +193,9 @@ bool Server::requestError()
 		|| _currentClientIt->method() == POST && !locIt->second.post
 		|| _currentClientIt->method() == DELETE && !locIt->second.delete_)
 		return (_statuscode = 405);
-	std::string	completePath(_root + _currentClientIt->path());
-	std::cout << "completePath(root + clientPath):'" << completePath << "'" << std::endl;
 	
-	if (isDirectory(completePath))
-	{
-		std::cout << "completePath is a directory" << std::endl;
-		if (resourceExists(completePath + "index.html"))
-		{
-			std::cout << "yes, '" << completePath + "index.html" << "' exists." << std::endl;
-			//send file
-			// THis should not happen here tho. this is just the head error checker.
-			// prolly can just return here and then reach main send function
-		}
-
-		if (dirListing(completePath))
-			std::cout << "Will be showing dir listing here." << std::endl;
-		else
-			return (_statuscode = 404);
-			// 404 and not 403 (forbidden), because we don't want to leak file structure information.
-	}
-	if (completePath[completePath.size() - 1] == '/') // .back() is not compiling on WSL2 Ubuntu
-		completePath += "index.html";
-	std::cout << "completePath:'" << completePath << "'" << std::endl;
 	
-	if (!resourceExists(completePath))
-		return (_statuscode = 404);
-	if (_currentClientIt->method() == GET || _currentClientIt->method() == DELETE)
-	{
-		std::ifstream	file;
-		//should be completepath?
-		file.open(_currentClientIt->path().c_str(), std::ios::binary);
-		// file not accessible - we treat it as file not found. Maybe more specific behavior? Wr already checked folder permissions tho!
-		if (file.fail())
-		{
-			file.close();
-			return (_statuscode = 404);
-		}
-		
-	}
+	
 	if (_statuscode)
 	{
 		// non bool strcutrue
@@ -276,26 +242,168 @@ void Server::handleRequestBody()
 	if (_currentClientIt->requestBodyComplete())
 		return;
 	// process body
+
+/* 	WRITETOFILE
+	// throw not yet caught
+	void Client::writeBodyToFile()
+	{
+		//now just taking request path, have to modify this with the config file given directory
+		std::string		writePath(_request.path());
+
+		std::ofstream	outputFile(writePath.c_str(), std::ios::binary | std::ios::app);
+		
+		if (!outputFile.is_open())
+			throw (E_REQUESTFILE);
+		outputFile.write(_buffer.c_str(), _buffer.size());
+		outputFile.close();
+		_request.addToBodyBytesWritten(_buffer.size()); // outputFile.tellp() delta prolly better but nah.
+		chunkhandler(TM).
+	} */
 }
 
-/* WRITETOFILE
-// throw not yet caught
-void Client::writeBodyToFile()
+std::string Server::buildHeader(int code, std::string filePath)
 {
-	//now just taking request path, have to modify this with the config file given directory
-	std::string		writePath(_request.path());
-
-	std::ofstream	outputFile(writePath.c_str(), std::ios::binary | std::ios::app);
+	std::stringstream	ss_header;
 	
-	if (!outputFile.is_open())
-		throw (E_REQUESTFILE);
-	outputFile.write(_buffer.c_str(), _buffer.size());
-	outputFile.close();
-	_request.addToBodyBytesWritten(_buffer.size()); // outputFile.tellp() delta prolly better but nah.
+	ss_header << HTTPVERSION << ' ' << code << ' ' << getHttpMsg(code) << "\r\n";
+	ss_header << "Server: " << SERVERVERSION << "\r\n";
+	// select real contenttype!
+	ss_header << "content-type: text/html; charset=utf-8" << "\r\n";
+	ss_header << "content-length: " << getFileSize(filePath) << "\r\n";
+	ss_header << "\r\n";
+	return ss_header.str();
 }
- 
 
-	chunkhandler(TM).
+void Server::sendFile(std::string path)
+{
+
+}
+
+void Server::sendResponse()
+{
+	ANNOUNCEME
+	int					fileBytesSent = 0;
+	int					closingBytesSent = 0;
+	std::stringstream	ss_header;
+	
+	// simple get request
+
+
+	// error checking already handled
+	// location is known
+	// method is allowed
+
+	// select file to send
+	std::string	completePath(_root + _currentClientIt->path());
+	std::string	pathToSend;
+	std::cout << "completePath(root + clientPath):'" << completePath << "'" << std::endl;
+
+	if (isDirectory(completePath))
+	{
+		std::cout << "completePath is a directory" << std::endl;
+		std::string	_standardServeFileName = "index.html"; //change config to specifiable filename later!
+
+		if (resourceExists(completePath + _standardServeFileName))
+		{
+			std::cout << "yes, '" << completePath + _standardServeFileName << "' exists." << std::endl;
+			_statuscode = 200;
+			pathToSend = completePath + _standardServeFileName;
+		}
+		else if (dirListing(completePath))
+		{
+			// send dirlisting and get outta here (at least for now)
+			_statuscode = 200;
+			std::cout << "no, '" << completePath + _standardServeFileName << "' does not exist, but dir listing is allowed. Show dir listing here" << std::endl;
+		}
+		else
+		{
+			std::cout << "no, '" << completePath + _standardServeFileName << "' does not exist, and dir listing is not allowed. Send 404." << std::endl;
+			//send 404, can only set here (atm at least)
+			_statuscode = 404;
+		}
+	}
+	else // is not directory
+	{
+		if (resourceExists(completePath))
+		{
+			_statuscode = 200;
+			pathToSend = completePath;
+		}
+
+			//send file
+		else
+		{
+			_statuscode = 404;
+			// get out / throw w/e
+		}
+	}
+	
+	if (_currentClientIt->method() == GET || _currentClientIt->method() == DELETE)
+	{
+		std::ifstream	file;
+		//should be completepath?
+		file.open(_currentClientIt->path().c_str(), std::ios::binary);
+		// file not accessible - we treat it as file not found. Maybe more specific behavior? Wr already checked folder permissions tho!
+		if (file.fail())
+		{
+			file.close();
+			return (_statuscode = 404);
+		}
+		
+	}
+
+
+
+	
+
+	if (::send(_currentClientfd, ss_header.str().c_str(), ss_header.str().size(), 0) == -1)
+		throw (E_SEND);
+
+	
+
+	std::ifstream	file;
+	// Send file or corresponding status page.
+	if (response._statusCode == 200)
+		file.open(response.getFilePath().c_str(), std::ios::binary);
+	else
+		file.open(getStatusPage(response._statusCode).c_str(), std::ios::binary);
+	if (file.fail())
+		std::cerr << "Error: Response: send: could not open file." << std::endl;
+	char	buffer[1];
+	// DEBUG
+	std::cout << "sending file: " << response.getFilePath() << std::endl;
+	while (file.read(buffer, sizeof(buffer)))
+	{
+		if ((fileBytesSent += ::send(socketfd, buffer, file.gcount(), 0)) == -1)
+		{
+			std::cerr << "Error: Response: send: could not send file data.";
+			
+		}
+		// DEBUG
+		std::cout << "the buffer:\n" << buffer << std::endl;
+	}
+	// if (!file.eof())
+	// {
+	// 	std::cerr << "Error: Response: send: could not read entire file.";
+	// 	return (-1);
+	// }
+	// DEBUG
+	std::cout << "Reached EOF" << std::endl;
+	file.close();
+	// Send termination CRLFs
+	std::string	terminationSequence(TERMINATION);
+	if ((closingBytesSent += ::send(socketfd, terminationSequence.data(), terminationSequence.size(), 0)) == -1)
+	{
+		std::cerr << "Error: Response: send: failure to send termination data.";
+	}
+	// DEBUG
+	std::cout << "Response sent, " << fileBytesSent << " bytes from file." << std::endl;
+	//return (fileBytesSent);
+}
+
+
+/* 
+
 	
 	
 
@@ -365,7 +473,7 @@ void Server::closeClient(clientVec_it clientIt)
 	_clients.erase(clientIt);
 }
 
-void Server::sendResponse(Response response, int socketfd)
+void Server::sendResponse_old(Response response, int socketfd)
 {
 	int	fileBytesSent = 0;
 	int	closingBytesSent = 0;
@@ -533,6 +641,113 @@ void Server::setDefaultDirListing(std::string input)
 		_defaultDirListing = true;
 	else
 		_defaultDirListing = false;
+}
+
+std::string	Server::mimeType(std::string filepath)
+{
+	size_t		dotPosition;
+	std::string extension;
+	std::string defaultType = "application/octet-stream";
+
+	dotPosition = filepath.find_last_of(".");
+	if (dotPosition == std::string::npos)
+		return defaultType;
+	extension = filepath.substr(dotPosition + 1);
+	if (_mimeTypes.find(extension) != _mimeTypes.end())
+		return _mimeTypes[extension];
+	return defaultType;
+}
+
+
+void Server::setMIMEtype()
+{
+	_mimeTypes[".html"] = "text/html";
+	_mimeTypes[".htm"] = "text/html";
+	_mimeTypes[".css"] = "text/css";
+	_mimeTypes[".js"] = "application/javascript";
+	_mimeTypes[".json"] = "application/json";
+	_mimeTypes[".jpg"] = "image/jpeg";
+	_mimeTypes[".jpeg"] = "image/jpeg";
+	_mimeTypes[".png"] = "image/png";
+	_mimeTypes[".gif"] = "image/gif";
+	_mimeTypes[".bmp"] = "image/bmp";
+	_mimeTypes[".ico"] = "image/x-icon";
+	_mimeTypes[".svg"] = "image/svg+xml";
+	_mimeTypes[".xml"] = "application/xml";
+	_mimeTypes[".pdf"] = "application/pdf";
+	_mimeTypes[".zip"] = "application/zip";
+	_mimeTypes[".gz"] = "application/gzip";
+	_mimeTypes[".tar"] = "application/x-tar";
+	_mimeTypes[".mp4"] = "video/mp4";
+	_mimeTypes[".mpeg"] = "video/mpeg";
+	_mimeTypes[".avi"] = "video/x-msvideo";
+	_mimeTypes[".ogg"] = "audio/ogg";
+	_mimeTypes[".mp3"] = "audio/mpeg";
+	_mimeTypes[".wav"] = "audio/wav";
+	_mimeTypes[".mov"] = "video/quicktime";
+	_mimeTypes[".ppt"] = "application/vnd.ms-powerpoint";
+	_mimeTypes[".xls"] = "application/vnd.ms-excel";
+	_mimeTypes[".doc"] = "application/msword";
+	_mimeTypes[".csv"] = "text/csv";
+	_mimeTypes[".txt"] = "text/plain";
+	_mimeTypes[".rtf"] = "application/rtf";
+	_mimeTypes[".shtml"] = "text/html";
+	_mimeTypes[".php"] = "application/php";
+	_mimeTypes[".jsp"] = "text/plain";
+	_mimeTypes[".swf"] = "application/x-shockwave-flash";
+	_mimeTypes[".ttf"] = "application/x-font-truetype";
+	_mimeTypes[".eot"] = "application/vnd.ms-fontobject";
+	_mimeTypes[".woff"] = "application/font-woff";
+	_mimeTypes[".woff2"] = "font/woff2";
+	_mimeTypes[".ics"] = "text/calendar";
+	_mimeTypes[".vcf"] = "text/x-vcard";
+	_mimeTypes[".mid"] = "audio/midi";
+	_mimeTypes[".midi"] = "audio/midi";
+	_mimeTypes[".wmv"] = "video/x-ms-wmv";
+	_mimeTypes[".webm"] = "video/webm";
+	_mimeTypes[".3gp"] = "video/3gpp";
+	_mimeTypes[".3g2"] = "video/3gpp2";
+	_mimeTypes[".pl"] = "text/plain";
+	_mimeTypes[".py"] = "text/x-python";
+	_mimeTypes[".java"] = "text/x-java-source";
+	_mimeTypes[".c"] = "text/x-c";
+	_mimeTypes[".cpp"] = "text/x-c++";
+	_mimeTypes[".cs"] = "text/plain";
+	_mimeTypes[".rb"] = "text/x-ruby";
+	_mimeTypes[".htm"] = "text/html";
+	_mimeTypes[".shtml"] = "text/html";
+	_mimeTypes[".xhtml"] = "application/xhtml+xml";
+	_mimeTypes[".m4a"] = "audio/mp4";
+	_mimeTypes[".mp4a"] = "audio/mp4";
+	_mimeTypes[".oga"] = "audio/ogg";
+	_mimeTypes[".ogv"] = "video/ogg";
+	_mimeTypes[".ogx"] = "application/ogg";
+	_mimeTypes[".oga"] = "audio/ogg";
+	_mimeTypes[".m3u8"] = "application/vnd.apple.mpegurl";
+	_mimeTypes[".qt"] = "video/quicktime";
+	_mimeTypes[".ts"] = "video/mp2t";
+	_mimeTypes[".xl"] = "application/excel";
+	_mimeTypes[".cab"] = "application/vnd.ms-cab-compressed";
+	_mimeTypes[".msi"] = "application/x-msdownload";
+	_mimeTypes[".dmg"] = "application/x-apple-diskimage";
+	_mimeTypes[".exe"] = "application/octet-stream";
+	_mimeTypes[".bin"] = "application/octet-stream";
+	_mimeTypes[".ps"] = "application/postscript";
+	_mimeTypes[".so"] = "application/octet-stream";
+	_mimeTypes[".dll"] = "application/octet-stream";
+	_mimeTypes[".m4v"] = "video/x-m4v";
+	_mimeTypes[".ser"] = "application/java-serialized-object";
+	_mimeTypes[".sh"] = "application/x-sh";
+	_mimeTypes[".log"] = "text/plain";
+	_mimeTypes[".diff"] = "text/x-diff";
+	_mimeTypes[".patch"] = "text/x-diff";
+	_mimeTypes[".xhtml"] = "application/xhtml+xml";
+	_mimeTypes[".php"] = "application/x-httpd-php";
+	_mimeTypes[".plist"] = "application/xml";
+	_mimeTypes[".sln"] = "text/plain";
+	_mimeTypes[".tiff"] = "image/tiff";
+	_mimeTypes[".app"] = "application/octet-stream";
+	_mimeTypes[".ics"] = "text/calendar";
 }
 
 std::string Server::getStatusPage(int code) const

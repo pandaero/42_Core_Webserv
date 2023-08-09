@@ -19,15 +19,18 @@ class	Server
 		void	receiveData();
 		void	handleRequestHead();
 		void	handleRequestBody();
+		void	sendResponse();
 
 		int		freePollStructIndex();
 		void	closeClient(clientVec_it);
 		
-		bool		requestError();
-		void		sendResponse(Response, int);
-		void		sendStatusCodePage(int);
-		std::string	getStatusPage(int) const;
-		bool		dirListing(const std::string&);
+		bool			requestError();
+		void			sendFile(std::string);
+		std::string		buildHeader(int, std::string);
+		std::string		mimeType(std::string);
+		void			sendStatusCodePage(int);
+		std::string		getStatusPage(int) const;
+		bool			dirListing(const std::string&);
 
 		void	setNames(std::string);
 		void	setHost(std::string);
@@ -40,6 +43,7 @@ class	Server
 		void	setMaxConnections(std::string);
 		void	setBacklog(std::string);
 		void	setDefaultDirListing(std::string input);
+		void	setMIMEtype();
 
 		int								_server_fd;
 		std::vector<std::string>		_names;
@@ -49,6 +53,7 @@ class	Server
 		size_t							_maxConns;
 		bool							_defaultDirListing;
 		strMap							_cgiPaths;
+		strMap							_mimeTypes;
 
 		pollfd *						_pollStructs;
 		sockaddr_in						_serverAddress;

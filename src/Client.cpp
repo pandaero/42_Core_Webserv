@@ -4,7 +4,7 @@ Client::Client(int pollStructIndex)
 {
 	_socketfd = -42;
 	_pollStructIndex = pollStructIndex;
-	_bodyBytesWritten = 0;
+	_bodyBytesHandled = 0;
 	_requestBodyComplete = false;
 	_request = NULL;
 }

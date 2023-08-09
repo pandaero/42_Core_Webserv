@@ -18,6 +18,8 @@ Config File:
 
 
 Info: ServerConfig: Unrecognized value in config file: NOTSET
+introduce specifiable standard serve filename
+introduce http version selection configfile
 
 new segfault:
 --- Handling Server index 0 ---

@@ -202,6 +202,8 @@ std::string		getInstruction(std::string& inputStr);
 bool			resourceExists(const std::string&);
 // Checks whether a path corresponds to a directory
 bool			isDirectory(const std::string&);
+// Returns the size of a file. Returns (size_t)-1 on error.
+size_t			getFileSize(const std::string&);
 // Returns the message string associated with an HTTP status code
 std::string		getHttpMsg(int);
 

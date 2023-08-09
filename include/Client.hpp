@@ -36,7 +36,7 @@ class	Client
 		sockaddr_in		_clientAddress;
 
 		std::string		_directory;
-		size_t			_bodyBytesWritten;
+		size_t			_bodyBytesHandled;
 		bool			_requestBodyComplete;
 };
 
