@@ -21,6 +21,8 @@ Info: ServerConfig: Unrecognized value in config file: NOTSET
 introduce specifiable standard serve filename
 introduce http version selection configfile
 
+first error check round should happen at request line level (maybe not, because reqeust header shoudl be read in one go most times?)
+
 new segfault:
 --- Handling Server index 0 ---
 Announcer: poll

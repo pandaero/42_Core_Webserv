@@ -5,7 +5,14 @@ Client::Client(int pollStructIndex)
 	_socketfd = -42;
 	_pollStructIndex = pollStructIndex;
 	_bodyBytesHandled = 0;
+
+	state = requestHead;
+
+	_receivingComplete = false;
+	_requestHeadComplete = false;
 	_requestBodyComplete = false;
+	_responseFileSelected = false;
+	_sendingComplete = false;
 	_request = NULL;
 }
 
@@ -20,9 +27,25 @@ void Client::setSocketfd(int clientSocketfd)
 	_socketfd = clientSocketfd;
 }
 
+void Client::setReceivingComplete()
+{
+	_requestBodyComplete = true;
+	_receivingComplete = true;
+}
+
 std::string& Client::buffer()
 {
 	return _buffer;
+}
+
+bool Client::receivingComplete()
+{
+	return _receivingComplete;
+}
+
+bool Client::responseFileSelected()
+{
+	return _responseFileSelected;
 }
 
 const std::string& Client::httpProtocol() const
@@ -62,11 +85,12 @@ void Client::buildRequest()
 	_directory = _request->path().substr(0, _request->path().find_last_of("/") + 1);
 	if (_request->contentLength() <= 0 || _request->method() != POST) // we don't process bodies of GET or DELETE requests
 		_requestBodyComplete = true;
+	_requestHeadComplete = true;
 }
 
 bool Client::requestHeadComplete()
 {
-	return _request;
+	return _requestHeadComplete;
 }
 
 bool Client::requestBodyComplete()

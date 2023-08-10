@@ -33,6 +33,15 @@ class	Server;
 class	ServerConfig;
 class	ConfigFile;
 
+enum clientState
+{
+	requestHead,
+	requestBody,
+	selectResponseFile,
+	sendResponseHead,
+	sendResponseBody
+};
+
 typedef struct
 {
 	bool			get;
@@ -52,22 +61,6 @@ typedef	std::map<int, std::string>						intStrMap;
 typedef	std::map<int, std::string>::iterator			intStrMap_it;
 typedef std::vector<Client>								clientVec;
 typedef std::vector<Client>::iterator					clientVec_it;
-
-typedef enum contentTypes
-{
-	PLAINTEXT,
-	HTML,
-	CSS,
-	OCTETSTREAM,
-	ZIP,
-	PNG,
-	JPEG,
-	PDF,
-	XML,
-	JSON,
-	AVIF
-}	contentType;
-
 
 // Internal headers
 # include "Request.hpp"
@@ -167,6 +160,7 @@ typedef enum contentTypes
 # define E_ACCEPT				"Error: Server: accept()"
 # define E_POLL					"Error: Server: poll()"
 # define E_SEND					"Error: Server: send()"
+# define E_TEMPFILE				"Error: Server: Could not create error page file."
 
 # define I_CONNECTIONLIMIT		"Info: Server: Connection limit reached."
 # define I_CLOSENODATA			"Info: Server: Connection closed (no data received)."
@@ -190,12 +184,6 @@ std::string		splitEraseStr(std::string &, const std::string&);
 std::string		splitEraseTrimChars(std::string&, const std::string&);
 // Returns a string vector. First argument is the string ref to operate on. 2nd argument is a string containing the characters of which any single one delimits the final strings. The 3rd argument denotes the end of the region to be processed.
 strVec 			splitEraseStrVec(std::string& input, const std::string& targetChars, const std::string& endOfParsing);
-// Determines the file/content type according to the file's full path. (based on dot-preceded extensions)
-contentType		extensionType(const std::string &);
-// Determines the size of a file.
-off_t			fileSize(std::string);
-// Splits a string according to a string, outputs vector of strings.
-std::vector<std::string>	splitString(std::string, const std::string &);
 // Splits a string ref and returns the first instruction it contains, defined as all characters from the string ref's start until the next top-level semicolon. Deletes the instruction from the string ref.
 std::string		getInstruction(std::string& inputStr);
 // Checks whether a resource exists, be it file or directory
@@ -203,7 +191,7 @@ bool			resourceExists(const std::string&);
 // Checks whether a path corresponds to a directory
 bool			isDirectory(const std::string&);
 // Returns the size of a file. Returns (size_t)-1 on error.
-size_t			getFileSize(const std::string&);
+size_t			fileSize(const std::string&);
 // Returns the message string associated with an HTTP status code
 std::string		getHttpMsg(int);
 

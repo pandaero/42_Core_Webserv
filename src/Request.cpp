@@ -27,12 +27,6 @@ std::string Request::headerValue(std::string header)
 	return (NOTFOUND);
 }
 
-/* //prolly not needed
-const std::string&	Request::getFilename() const
-{
-	return _path.substr(_path.find_last_of('/'), _path.size() - 1);
-} */
-
 const std::string& Request::method() const
 {
 	return _method;

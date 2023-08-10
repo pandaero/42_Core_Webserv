@@ -25,10 +25,7 @@ class	Response
 		std::string		_statusMessage;
 
 	private:
-		void			build();
-		
 		std::string		_statusPage;
-		contentType		_contentType;
 		off_t			_bodySize;
 		std::string		_filePath;
 };

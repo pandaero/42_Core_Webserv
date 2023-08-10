@@ -75,65 +75,6 @@ strVec splitEraseStrVec(std::string& input, const std::string& targetChars, cons
 	return stringVector;
 }
 
-contentType	extensionType(const std::string & filePath)
-{
-	size_t	pos;
-
-	if ((pos = filePath.find_last_of('.')) == std::string::npos)
-		return (OCTETSTREAM);
-	if (filePath.find(".txt", pos) != std::string::npos)
-		return (PLAINTEXT);
-	else if (filePath.find(".css", pos) != std::string::npos)
-		return (CSS);
-	else if (filePath.find(".html", pos) != std::string::npos)
-		return (HTML);
-	else if (filePath.find(".zip", pos) != std::string::npos)
-		return (ZIP);
-	else if (filePath.find(".png", pos) != std::string::npos)
-		return (PNG);
-	else if (filePath.find(".jpeg", pos) != std::string::npos || filePath.find(".jpg", pos) != std::string::npos)
-		return (JPEG);
-	else if (filePath.find(".pdf", pos) != std::string::npos)
-		return (PDF);
-	else if (filePath.find(".xml", pos) != std::string::npos)
-		return (XML);
-	else if (filePath.find(".json", pos) != std::string::npos)
-		return (JSON);
-	else if (filePath.find(".avif", pos) != std::string::npos)
-		return (AVIF);
-	return (OCTETSTREAM);
-}
-
-off_t			fileSize(std::string filePath)
-{
-	struct	stat st;
-
-	if (stat(filePath.c_str(), &st) == 0)
-		return (st.st_size);
-	return (-1);
-}
-
-std::vector<std::string>	splitString(std::string str, const std::string & del)
-{
-	std::vector<std::string>	out;
-	out.reserve(100);
-	if (str.find(del) == std::string::npos)
-	{
-		out.push_back(str);
-		return (out);
-	}
-	size_t end = str.find(del);
-	while (end != std::string::npos)
-	{
-		out.push_back(str.substr(0, end));
-		str.erase(str.begin(), str.begin() + end + 1);
-		end = str.find(del);
-	}
-	size_t	endPos = str.find(*(str.end() - 1));
-	out.push_back(str.substr(0, endPos));
-	return (out);
-}
-
 bool isSameNoCase(const std::string& str_a, const std::string& str_b)
 {
 	return strToLower(str_a) == strToLower(str_b);
@@ -202,7 +143,7 @@ bool isDirectory(const std::string& path)
 	return false;
 }
 
-size_t	getFileSize(const std::string& filePath)
+size_t	fileSize(const std::string& filePath)
 {
 	struct	stat fileInfo;
 

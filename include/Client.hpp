@@ -14,6 +14,7 @@ class	Client
 		const int&				pollStructIndex() const;
 		
 		void					setSocketfd(int);
+		void					setReceivingComplete();
 		void					buildRequest();
 
 		const std::string&		httpProtocol() const;
@@ -23,9 +24,16 @@ class	Client
 		const int& 				contentLength() const;
 		const std::string& 		contentType() const;
 		std::string&			buffer();
+		std::string&			pathToSendFile();
+		
+		
+		clientState				state;
+		std::string				sendPath;
 		
 		bool					requestHeadComplete();
 		bool					requestBodyComplete();
+		bool					receivingComplete();
+		bool					responseFileSelected();
 		
 	private:
 		std::string		_buffer;
@@ -36,8 +44,14 @@ class	Client
 		sockaddr_in		_clientAddress;
 
 		std::string		_directory;
-		size_t			_bodyBytesHandled;
+
+		bool			_receivingComplete;
+		bool			_requestHeadComplete;
 		bool			_requestBodyComplete;
+		bool			_responseFileSelected;
+		
+		size_t			_bodyBytesHandled;
+		bool			_sendingComplete;
 };
 
 #endif
