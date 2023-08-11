@@ -714,8 +714,7 @@ void Server::selectErrorPage(int code)
 	}
 
 	std::string			httpMsg(getHttpMsg(code));
-	std::stringstream	ss_body, ss_header;
-	std::string			message;
+	std::stringstream	ss_body;
 
 	ss_body << "<!DOCTYPE html>";
 	ss_body << "<html>\n";
@@ -733,14 +732,7 @@ void Server::selectErrorPage(int code)
 	ss_body << "</body>\n";
 	ss_body << "</html>\n";
 	
-	ss_header << HTTPVERSION << ' ' << code << ' ' << httpMsg << "\r\n";
-	ss_header << "Server: " << SERVERVERSION << "\r\n";
-	ss_header << "content-type: text/html; charset=utf-8" << "\r\n";
-	ss_header << "content-length: " << ss_body.str().size() << "\r\n";
-	ss_header << "\r\n";
-
-	message = ss_header.str() + ss_body.str();
-	errorPage.write(message.c_str(), message.size());
+	errorPage.write(ss_body.str().c_str(), ss_body.str().size());
 	errorPage.close();
 	
 	_clientIt->sendPath = "temp/errorPage.html";
