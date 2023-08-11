@@ -24,16 +24,19 @@ class	Client
 		const int& 				contentLength() const;
 		const std::string& 		contentType() const;
 		std::string&			buffer();
-		std::string&			pathToSendFile();
 		
 		
-		clientState				state;
+		static int				clientCount;
+		int						clientNumber;
+		//clientState			state;
 		std::string				sendPath;
+		std::streampos			filePosition;
 		
-		bool					requestHeadComplete();
-		bool					requestBodyComplete();
-		bool					receivingComplete();
-		bool					responseFileSelected();
+		
+		bool					requestHeadComplete;
+		bool					requestBodyComplete;
+		bool					responseFileSelected;
+		bool					responseHeadSent;
 		
 	private:
 		std::string		_buffer;
@@ -45,13 +48,8 @@ class	Client
 
 		std::string		_directory;
 
-		bool			_receivingComplete;
-		bool			_requestHeadComplete;
-		bool			_requestBodyComplete;
-		bool			_responseFileSelected;
 		
 		size_t			_bodyBytesHandled;
-		bool			_sendingComplete;
 };
 
 #endif

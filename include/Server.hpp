@@ -20,20 +20,17 @@ class	Server
 		void	handleRequestHead();
 		void	handleRequestBody();
 		void	selectResponseContent();
-
-		void	handleResponseHead();
-		void	sendResponse();
+		void	sendResponseHead();
+		void	sendResponseBody();
 
 		int		freePollStructIndex();
-		void	closeClient(clientVec_it);
+		void	closeClient();
 		
 		bool			requestError();
-		void			sendFile(std::string);
-		std::string		buildHeader(int, std::string);
 		std::string		mimeType(std::string);
 		
 		
-		std::string		selectErrorPage(int);
+		void			selectErrorPage(int);
 		void			sendBuiltinErrorPage(int);
 
 		//void			sendStatusCodePage(int);
@@ -66,7 +63,7 @@ class	Server
 		pollfd *						_pollStructs;
 		sockaddr_in						_serverAddress;
 		int								_statuscode;
-		int								_currentClientfd;
+		int								_clientfd;
 		clientVec_it					_clientIt;
 		std::vector<Client>				_clients;
 		ssize_t							_bytesReceived;

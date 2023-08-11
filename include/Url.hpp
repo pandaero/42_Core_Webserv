@@ -6,7 +6,7 @@
 /*   By: wmardin <wmardin@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/03/17 20:15:58 by pandalaf          #+#    #+#             */
-/*   Updated: 2023/08/08 16:33:33 by wmardin          ###   ########.fr       */
+/*   Updated: 2023/08/11 08:47:09 by wmardin          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -23,7 +23,7 @@ enum	e_urlProperties
 {
 	SCHEME,
 	DOMAJN,
-	PORT,
+	PORT_,
 	PATH,
 	PARAMETERS,
 	ANCHOR

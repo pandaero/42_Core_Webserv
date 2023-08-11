@@ -2,7 +2,7 @@
 
 Server::Server(const ServerConfig & config):
 	_pollStructs(NULL)
-{
+{	
 	// Set main values stored in configPairs
 	strMap		configPairs = config.getConfigPairs();
 	setNames(configPairs.find(SERVERNAME)->second);
@@ -59,7 +59,7 @@ void	Server::startListening()
 	}
 
 	_pollStructs[0].fd = _server_fd;
-	_pollStructs[0].events = POLLIN;
+	_pollStructs[0].events = POLLIN | POLLOUT | POLLHUP;
 	_pollStructs[0].revents = 0;
 
 	// init tables?
@@ -68,7 +68,10 @@ void	Server::startListening()
 void Server::cleanup()
 {
 	for (clientVec_it it = _clients.begin(); it != _clients.end(); ++it)
-		closeClient(it);
+	{
+		_clientIt = it;
+		closeClient();
+	}
 	if (_server_fd != -1)
 		close(_server_fd);
 	if (_pollStructs)
@@ -111,7 +114,7 @@ void Server::acceptConnections()
 			}
 			newClient.setSocketfd(new_sock);
 			_pollStructs[index].fd = new_sock;
-			_pollStructs[index].events = POLLIN | POLLHUP;
+			_pollStructs[index].events = POLLIN | POLLOUT | POLLHUP;
 			std::cout << "New client accepted on fd " << new_sock << "." << std::endl;
 			std::cout << "Clients size: " << _clients.size() << std::endl;
 		}
@@ -120,19 +123,22 @@ void Server::acceptConnections()
 
 void Server::receiveData()
 {
-	ANNOUNCEME
-	if (_clientIt->state > requestBody)
+	ANNOUNCEMECL
+	if (_clientIt->requestBodyComplete)
+	{
+		std::cout << "receiveData returning because reqeustbodyComplete" << std::endl;
 		return;
+	}
 
 	char	buffer[RECV_CHUNK_SIZE];
 	
 	bzero(buffer, RECV_CHUNK_SIZE);
-	_bytesReceived = recv(_currentClientfd, buffer, RECV_CHUNK_SIZE, 0);
+	_bytesReceived = recv(_clientfd, buffer, RECV_CHUNK_SIZE, 0);
 	std::cout << _bytesReceived << " bytes received.\nContent:\n" << buffer << std::endl;
 	
 	if (_bytesReceived <= 0)
 	{
-		closeClient(_clientIt);
+		closeClient();
 		throw (I_CLOSENODATA); //prolly gonna throw a real exception here
 	}
 	_clientIt->buffer().append(buffer);
@@ -143,31 +149,39 @@ void Server::handleConnections()
 	ANNOUNCEME
 	for (clientVec_it clientIt = _clients.begin(); clientIt != _clients.end(); ++clientIt)
 	{
-		ANNOUNCEME
 		if (_clients.empty())
 		{
 			std::cout << "How in the fuck?" << std::endl;
 			return;
 		}
-		_currentClientfd = clientIt->socketfd();
+		_clientfd = clientIt->socketfd();
 		_clientIt = clientIt;
-		if (_pollStructs[clientIt->pollStructIndex()].revents & (POLLIN | POLLOUT | POLLHUP))
+		_statuscode = 0;
+		if (_pollStructs[clientIt->pollStructIndex()].revents & POLLHUP)
+		{
+			closeClient();
+			continue;
+		}
+		if ((_pollStructs[clientIt->pollStructIndex()].revents & POLLIN) && !clientIt->requestBodyComplete)
+		{
+			receiveData();
+			//continue;
+		}
+		//if (_pollStructs[clientIt->pollStructIndex()].revents & (POLLIN | POLLOUT | POLLHUP))
 		{
 			try
 			{
-				receiveData();
 				handleRequestHead();
 				handleRequestBody();
 				selectResponseContent();
-				handleResponseHead();
-				sendResponse();
-				//send response after cmopleting head and body
+				sendResponseHead();
+				sendResponseBody();
 				
 				
 			}
 			catch(const char* msg)
 			{
-				std::cerr << msg << _statuscode << ": " << getHttpMsg(_statuscode) << std::endl;
+				std::cerr << msg << std::endl << _statuscode << ": " << getHttpMsg(_statuscode) << std::endl;
 			}
 		}
 	}
@@ -209,26 +223,28 @@ bool Server::requestError()
 	return false;
 }
 
-void Server::handleRequestHead()
+void Server:: handleRequestHead()
 {
-	ANNOUNCEME
-	if (_clientIt->state > requestHead)
+	if (_clientIt->requestHeadComplete)
 		return;
+	ANNOUNCEMECL
 	if (_clientIt->buffer().size() > MAX_HEADERSIZE)
 	{
-		_statuscode = 431;
-		_clientIt->state = sendResponseHead;
-		_clientIt->sendPath = selectErrorPage(_statuscode);
+		selectErrorPage(431);
+		//sendResponseHead();
+		return;
 	}
 	if (_clientIt->buffer().find("\r\n\r\n") != std::string::npos)
 	{
 		_clientIt->buildRequest();
+		_clientIt->requestHeadComplete = true;
 		std::cout << "request path raw:'" << _clientIt->path() << "'" << std::endl;
 		if (requestError())
 		{
-			_clientIt->state = sendResponseHead;
-			_clientIt->sendPath = selectErrorPage(_statuscode);
+			selectErrorPage(_statuscode);
+			//sendResponseHead();
 		}
+		return;
 	}
 	throw ("request head not complete, skipping rest of handleConnections loop");
 	// if not complete, have to skip rest of shmisms. maybe better to put guard clause in the others
@@ -237,9 +253,15 @@ void Server::handleRequestHead()
 
 void Server::handleRequestBody()
 {
-	if (_clientIt->state > requestBody)
+	if (_clientIt->requestBodyComplete)
 		return;
+	if (_clientIt->contentLength() < 0)
+	{
+		_clientIt->requestBodyComplete = true;
+		return;
+	}
 	// process body
+	_clientIt->requestBodyComplete = true;
 
 /* 	WRITETOFILE
 	// throw not yet caught
@@ -259,23 +281,12 @@ void Server::handleRequestBody()
 	} */
 }
 
-std::string Server::buildHeader(int code, std::string filePath)
+void Server::sendResponseHead()
 {
-	std::stringstream	ss_header;
-	
-	ss_header << HTTPVERSION << ' ' << code << ' ' << getHttpMsg(code) << "\r\n";
-	ss_header << "Server: " << SERVERVERSION << "\r\n";
-	// select real contenttype!
-	ss_header << "content-type: text/html; charset=utf-8" << "\r\n";
-	ss_header << "content-length: " << fileSize(filePath) << "\r\n";
-	ss_header << "\r\n";
-	return ss_header.str();
-}
-
-void Server::handleResponseHead()
-{
-	if (_clientIt->state > sendResponseHead)
+	if (_clientIt->responseHeadSent)
 		return;
+	ANNOUNCEMECL
+	std::cout << "clientIt.sendpath:'" << _clientIt->sendPath << "'" << std::endl;
 	if (_clientIt->sendPath == "")
 		std::cout << "sendPath was empty. Right now dont think there are such cases outside of errors, but who knows" << std::endl;
 
@@ -287,16 +298,17 @@ void Server::handleResponseHead()
 	ss_header << "content-length: " << fileSize(_clientIt->sendPath) << "\r\n";
 	ss_header << "\r\n";
 	
-	if (::send(_currentClientfd, ss_header.str().c_str(), ss_header.str().size(), 0) == -1)
+	if (::send(_clientfd, ss_header.str().c_str(), ss_header.str().size(), 0) == -1)
 		throw (E_SEND);
-	_clientIt->state = sendResponseBody;
+	std::cout << "responseHead sent to fd: " << _clientfd << "\n" << ss_header.str() << std::endl;
+	_clientIt->responseHeadSent = true;
 }
 
 void Server::selectResponseContent()
 {
-	ANNOUNCEME
-	if (_clientIt->state > selectResponseFile)
+	if (_clientIt->responseFileSelected)
 		return;
+	ANNOUNCEMECL
 	std::string	completePath(_root + _clientIt->path());
 	std::cout << "completePath(root + clientPath):'" << completePath << "'" << std::endl;
 
@@ -309,21 +321,17 @@ void Server::selectResponseContent()
 			std::cout << "'" << completePath + _standardFileName << "' exists." << std::endl;
 			_statuscode = 200;
 			_clientIt->sendPath = completePath + _standardFileName;
-			return;
 		}
 		else if (dirListing(completePath))
 		{
 			std::cout << "no, '" << completePath + _standardFileName << "' does not exist, but dir listing is allowed. Show dir listing here" << std::endl;
 			_statuscode = 200;
 			_clientIt->sendPath = "dirlisting"; // dunno how to handle this best yet. wait to implemnt dirlisting to decide
-			return;
 		}
 		else
 		{
 			std::cout << "'" << completePath + _standardFileName << "' does not exist, and dir listing is not allowed. Send 404." << std::endl;
-			_statuscode = 404;
-			_clientIt->sendPath = selectErrorPage(404);
-			return;
+			selectErrorPage(404);
 		}
 	}
 	else // is not directory
@@ -335,87 +343,56 @@ void Server::selectResponseContent()
 		}
 		else
 		{
-			_statuscode = 404;
-			_clientIt->sendPath = selectErrorPage(404);
+			selectErrorPage(404);
 		}
 	}
-	_clientIt->state = sendResponseHead;
+	_clientIt->responseFileSelected = true;
 }
 
-void Server::sendResponse()
+void Server::sendResponseBody()
 {
-	ANNOUNCEME
-	int					fileBytesSent = 0;
-	int					closingBytesSent = 0;
-	std::stringstream	ss_header;
-	
-	// simple get request
-	std::cout << "sendResponse: " << fileBytesSent << " " << closingBytesSent << std::endl;
+	if (!_clientIt->responseFileSelected)
+		return;
+	ANNOUNCEMECL
+	std::cout << "sendPath:'" << _clientIt->sendPath << "'" << std::endl;
+	std::ifstream	fileStream;
 
-	// error checking already handled
-	// location is known
-	// method is allowed
-
-	// select file to send
-	
-	
-	if (_clientIt->method() == GET || _clientIt->method() == DELETE)
+	if (_clientIt->method() == GET)
 	{
-		std::ifstream	file;
-		//should be completepath?
-		file.open(_clientIt->path().c_str(), std::ios::binary);
-		// file not accessible - we treat it as file not found. Maybe more specific behavior? Wr already checked folder permissions tho!
-		if (file.fail())
+		fileStream.open(_clientIt->sendPath.c_str(), std::ios::binary);
+		if (fileStream.fail())
 		{
-			file.close();
-			_statuscode = 404;
-			// throw
+			// this should only happen in edge cases (system state changes, permissions, etc.), because we already ran resourceExists().
+			fileStream.close();
+			closeClient();
+			throw "sendResponseBody: Could not open file to send. Client closed.";
 		}
+		std::cout << "fileposition: " << _clientIt->filePosition << std::endl;
+		fileStream.seekg(_clientIt->filePosition);
 		
+		char	buffer[SEND_CHUNK_SIZE];
+		bzero(buffer, SEND_CHUNK_SIZE);
+		fileStream.read(buffer, SEND_CHUNK_SIZE);
+		if (::send(_clientfd, buffer, fileStream.gcount(), 0) == -1)
+		{
+			fileStream.close();
+			throw (E_SEND);
+		}
+		if (fileStream.eof())
+		{
+			fileStream.close();
+			closeClient();
+			std::cout << "closed client because file.eof(). do we need to throw / cut the loop?" << std::endl;
+		}
+		_clientIt->filePosition = fileStream.tellg();
+		fileStream.close();
+		std::cout << "sendFile.gcount to fd " << _clientfd << ": " << fileStream.gcount() << std::endl;
 	}
-
-	//build header
-
+	else
+		std::cout << "Post and delete are unhandled as of now." << std::endl;
+}	 
 	
-	// send header
-	if (::send(_currentClientfd, ss_header.str().c_str(), ss_header.str().size(), 0) == -1)
-		throw (E_SEND);
-	// send rest
-
-	// when done, close client
-	
-
-	/* std::ifstream	file;
-	// Send file or corresponding status page.
-	
-	// if (!file.eof())
-	// {
-	// 	std::cerr << "Error: Response: send: could not read entire file.";
-	// 	return (-1);
-	// }
-	// DEBUG
-	std::cout << "Reached EOF" << std::endl;
-	file.close();
-	// Send termination CRLFs
-	std::string	terminationSequence(TERMINATION);
-	if ((closingBytesSent += ::send(socketfd, terminationSequence.data(), terminationSequence.size(), 0)) == -1)
-	{
-		std::cerr << "Error: Response: send: failure to send termination data.";
-	}
-	// DEBUG
-	std::cout << "Response sent, " << fileBytesSent << " bytes from file." << std::endl;
-	//return (fileBytesSent); */
-}
-
-
-/* 
-
-	
-	
-
-		 
-	
-
+/*
 // CGI handling (for php and potentially python scripts)
 			// if (request.path() == ".php")
 			// {
@@ -466,17 +443,17 @@ int Server::freePollStructIndex()
 		throw (E_SEND);
 } */
 
-void Server::closeClient(clientVec_it clientIt)
+void Server::closeClient()
 {
 	ANNOUNCEME
-	int	pollStructIndex = clientIt->pollStructIndex();
+	int	pollStructIndex = _clientIt->pollStructIndex();
 	
-	close(_currentClientfd);
+	close(_clientfd);
 	_pollStructs[pollStructIndex].fd = -1;
 	_pollStructs[pollStructIndex].events = 0;
 	_pollStructs[pollStructIndex].revents = 0;
-	std::cout << "closeClient on fd " << _currentClientfd << std::endl;
-	_clients.erase(clientIt);
+	std::cout << "closeClient on fd " << _clientfd << std::endl;
+	_clients.erase(_clientIt);
 }
 
 void Server::whoIsI()
@@ -607,12 +584,11 @@ std::string	Server::mimeType(std::string filepath)
 	dotPosition = filepath.find_last_of(".");
 	if (dotPosition == std::string::npos)
 		return defaultType;
-	extension = filepath.substr(dotPosition + 1);
+	extension = filepath.substr(dotPosition);
 	if (_mimeTypes.find(extension) != _mimeTypes.end())
 		return _mimeTypes[extension];
 	return defaultType;
 }
-
 
 void Server::setMIMEtype()
 {
@@ -636,6 +612,7 @@ void Server::setMIMEtype()
 	_mimeTypes[".mp4"] = "video/mp4";
 	_mimeTypes[".mpeg"] = "video/mpeg";
 	_mimeTypes[".avi"] = "video/x-msvideo";
+	_mimeTypes[".avif"] = "image/avif";
 	_mimeTypes[".ogg"] = "audio/ogg";
 	_mimeTypes[".mp3"] = "audio/mpeg";
 	_mimeTypes[".wav"] = "audio/wav";
@@ -713,11 +690,20 @@ std::string Server::getStatusPage(int code) const
 		return _errorPagesPaths.find(-1)->second;
 }
 
-std::string Server::selectErrorPage(int code)
+void Server::selectErrorPage(int code)
 {
+	_statuscode = code;
+	
+	_clientIt->requestHeadComplete = true;
+	_clientIt->requestBodyComplete = true;
+	_clientIt->responseFileSelected = true;
+	
 	if (_errorPagesPaths.find(code) != _errorPagesPaths.end()
 		&& resourceExists(_root + _errorPagesPaths[code]))
-		return _root + _errorPagesPaths[code];
+	{
+		_clientIt->sendPath = _root + _errorPagesPaths[code];
+		return;
+	}
 	
 	std::ofstream errorPage("temp/errorPage.html", std::ios::binary | std::ios::trunc);
 
@@ -757,7 +743,7 @@ std::string Server::selectErrorPage(int code)
 	errorPage.write(message.c_str(), message.size());
 	errorPage.close();
 	
-	return "temp/errorPage.html";
+	_clientIt->sendPath = "temp/errorPage.html";
 }
 
 void Server::sendBuiltinErrorPage(int code)
@@ -789,7 +775,7 @@ void Server::sendBuiltinErrorPage(int code)
 	ss_header << "\r\n";
 
 	message = ss_header.str() + ss_body.str();
-	if (::send(_currentClientfd, message.c_str(), message.size(), 0) == -1)
+	if (::send(_clientfd, message.c_str(), message.size(), 0) == -1)
 		throw (E_SEND);
 }
 
