@@ -7,7 +7,7 @@ class ServerConfig
 {
 	public:
 		ServerConfig();
-		ServerConfig(std::string);
+		ServerConfig(std::string, strMap*);
 		ServerConfig(const ServerConfig&);
 
 		ServerConfig& operator=(const ServerConfig&);
@@ -19,6 +19,7 @@ class ServerConfig
 		intStrMap	getErrorPaths() const;
 		strLocMap	getLocations() const;
 		strMap		getCgiPaths() const;
+		strMap*		getMIMETypes() const;
 
 	private:
 		void		parseDefaultErrorPages(std::string&);
@@ -31,6 +32,7 @@ class ServerConfig
 		intStrMap	_errorPages;
 		strLocMap	_locations;
 		strMap		_cgiPaths;
+		strMap*		_mimeTypes;
 };
 
 #endif

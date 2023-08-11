@@ -12,14 +12,14 @@ Server::Server(const ServerConfig & config):
 	setClientMaxBody(configPairs.find(CLIMAXBODY)->second);
 	setMaxConnections(configPairs.find(MAXCONNS)->second);
 	setDefaultDirListing(configPairs.find(DIRLISTING)->second);
-	setMIMEtype(); // should do this for webserv, not for each server. maybe implement that later
 	//setBacklog(config.backlog); need this?!
 	
 	// Copy remaining values directly to server variables 
 	_errorPagesPaths = config.getErrorPaths();
 	_locations = config.getLocations();
 	_cgiPaths = config.getCgiPaths();
-	_standardFileName ="index.html"; //implement this for real
+	_standardFileName = "index.html"; //implement this for real
+	_mimeTypes = config.getMIMETypes();
 
 	// Init polling structs
 	_pollStructs = new pollfd[_maxConns];
@@ -112,7 +112,7 @@ void Server::acceptConnections()
 					std::cerr << E_ACCEPT << std::endl;
 				return;
 			}
-			newClient.setSocketfd(new_sock);
+			newClient.fd = new_sock;
 			_pollStructs[index].fd = new_sock;
 			_pollStructs[index].events = POLLIN | POLLOUT | POLLHUP;
 			std::cout << "New client accepted on fd " << new_sock << "." << std::endl;
@@ -139,9 +139,9 @@ void Server::receiveData()
 	if (_bytesReceived <= 0)
 	{
 		closeClient();
-		throw (I_CLOSENODATA); //prolly gonna throw a real exception here
+		throw (I_CLOSENODATA);
 	}
-	_clientIt->buffer().append(buffer);
+	_clientIt->buffer.append(buffer);
 }
 
 void Server::handleConnections()
@@ -151,10 +151,10 @@ void Server::handleConnections()
 	{
 		if (_clients.empty())
 		{
-			std::cout << "How in the fuck?" << std::endl;
+			std::cout << "This ackchually happens" << std::endl;
 			return;
 		}
-		_clientfd = clientIt->socketfd();
+		_clientfd = clientIt->fd;
 		_clientIt = clientIt;
 		_statuscode = 0;
 		if (_pollStructs[clientIt->pollStructIndex()].revents & POLLHUP)
@@ -162,27 +162,42 @@ void Server::handleConnections()
 			closeClient();
 			continue;
 		}
-		if ((_pollStructs[clientIt->pollStructIndex()].revents & POLLIN) && !clientIt->requestBodyComplete)
+		if (clientIt->errorPending)
 		{
-			receiveData();
-			//continue;
+			if (_pollStructs[clientIt->pollStructIndex()].revents & POLLOUT)
+			{
+				sendResponseHead();
+				sendResponseBody();
+				return;
+			}
+			continue;
 		}
-		//if (_pollStructs[clientIt->pollStructIndex()].revents & (POLLIN | POLLOUT | POLLHUP))
+		if (_pollStructs[clientIt->pollStructIndex()].revents & POLLIN)
 		{
 			try
 			{
+				receiveData();
 				handleRequestHead();
 				handleRequestBody();
 				selectResponseContent();
-				sendResponseHead();
-				sendResponseBody();
-				
-				
 			}
 			catch(const char* msg)
 			{
 				std::cerr << msg << std::endl << _statuscode << ": " << getHttpMsg(_statuscode) << std::endl;
 			}
+		}
+		if (_pollStructs[clientIt->pollStructIndex()].revents & POLLOUT)
+		{
+			try
+			{
+				sendResponseHead();
+				sendResponseBody();
+			}
+			catch(const char* msg/* const std::exception& e */)
+			{
+				std::cerr << "sendblock catch: " << msg << std::endl;
+			}
+			
 		}
 	}
 }
@@ -202,7 +217,6 @@ bool Server::requestError()
 	if (_clientIt->contentLength() > (int)_clientMaxBody)
 		return (_statuscode = 413);
 	// access forbidden (have to specifically allow access in config file)
-	std::cout << "client->directory:'" << _clientIt->directory() << "'" << std::endl;
 	strLocMap_it locIt = _locations.find(_clientIt->directory());
 	if (locIt == _locations.end())
 		return (_statuscode = 404); // only returning 404 (and not 403) to not leak file structure
@@ -223,6 +237,26 @@ bool Server::requestError()
 	return false;
 }
 
+void Server:: handleRequestHead()
+{
+	if (_clientIt->requestHeadComplete)
+		return;
+	ANNOUNCEMECL
+	if (_clientIt->buffer.find("\r\n\r\n") == std::string::npos)
+	{
+		selectErrorPage(431);
+		return;
+	}
+	_clientIt->buildRequest();
+	_clientIt->requestHeadComplete = true;
+	std::cout << "request path raw:'" << _clientIt->path() << "'" << std::endl;
+	if (requestError())
+		selectErrorPage(_statuscode);
+}
+
+
+/* 
+// old version with more flexible request head size allowance
 void Server:: handleRequestHead()
 {
 	if (_clientIt->requestHeadComplete)
@@ -249,7 +283,7 @@ void Server:: handleRequestHead()
 	throw ("request head not complete, skipping rest of handleConnections loop");
 	// if not complete, have to skip rest of shmisms. maybe better to put guard clause in the others
 	// or can throw...
-}
+} */
 
 void Server::handleRequestBody()
 {
@@ -579,107 +613,17 @@ std::string	Server::mimeType(std::string filepath)
 {
 	size_t		dotPosition;
 	std::string extension;
+	strMap_it	it;
 	std::string defaultType = "application/octet-stream";
 
 	dotPosition = filepath.find_last_of(".");
 	if (dotPosition == std::string::npos)
 		return defaultType;
 	extension = filepath.substr(dotPosition);
-	if (_mimeTypes.find(extension) != _mimeTypes.end())
-		return _mimeTypes[extension];
+	it = _mimeTypes->find(extension);
+	if (it != _mimeTypes->end())
+		return it->second;
 	return defaultType;
-}
-
-void Server::setMIMEtype()
-{
-	_mimeTypes[".html"] = "text/html";
-	_mimeTypes[".htm"] = "text/html";
-	_mimeTypes[".css"] = "text/css";
-	_mimeTypes[".js"] = "application/javascript";
-	_mimeTypes[".json"] = "application/json";
-	_mimeTypes[".jpg"] = "image/jpeg";
-	_mimeTypes[".jpeg"] = "image/jpeg";
-	_mimeTypes[".png"] = "image/png";
-	_mimeTypes[".gif"] = "image/gif";
-	_mimeTypes[".bmp"] = "image/bmp";
-	_mimeTypes[".ico"] = "image/x-icon";
-	_mimeTypes[".svg"] = "image/svg+xml";
-	_mimeTypes[".xml"] = "application/xml";
-	_mimeTypes[".pdf"] = "application/pdf";
-	_mimeTypes[".zip"] = "application/zip";
-	_mimeTypes[".gz"] = "application/gzip";
-	_mimeTypes[".tar"] = "application/x-tar";
-	_mimeTypes[".mp4"] = "video/mp4";
-	_mimeTypes[".mpeg"] = "video/mpeg";
-	_mimeTypes[".avi"] = "video/x-msvideo";
-	_mimeTypes[".avif"] = "image/avif";
-	_mimeTypes[".ogg"] = "audio/ogg";
-	_mimeTypes[".mp3"] = "audio/mpeg";
-	_mimeTypes[".wav"] = "audio/wav";
-	_mimeTypes[".mov"] = "video/quicktime";
-	_mimeTypes[".ppt"] = "application/vnd.ms-powerpoint";
-	_mimeTypes[".xls"] = "application/vnd.ms-excel";
-	_mimeTypes[".doc"] = "application/msword";
-	_mimeTypes[".csv"] = "text/csv";
-	_mimeTypes[".txt"] = "text/plain";
-	_mimeTypes[".rtf"] = "application/rtf";
-	_mimeTypes[".shtml"] = "text/html";
-	_mimeTypes[".php"] = "application/php";
-	_mimeTypes[".jsp"] = "text/plain";
-	_mimeTypes[".swf"] = "application/x-shockwave-flash";
-	_mimeTypes[".ttf"] = "application/x-font-truetype";
-	_mimeTypes[".eot"] = "application/vnd.ms-fontobject";
-	_mimeTypes[".woff"] = "application/font-woff";
-	_mimeTypes[".woff2"] = "font/woff2";
-	_mimeTypes[".ics"] = "text/calendar";
-	_mimeTypes[".vcf"] = "text/x-vcard";
-	_mimeTypes[".mid"] = "audio/midi";
-	_mimeTypes[".midi"] = "audio/midi";
-	_mimeTypes[".wmv"] = "video/x-ms-wmv";
-	_mimeTypes[".webm"] = "video/webm";
-	_mimeTypes[".3gp"] = "video/3gpp";
-	_mimeTypes[".3g2"] = "video/3gpp2";
-	_mimeTypes[".pl"] = "text/plain";
-	_mimeTypes[".py"] = "text/x-python";
-	_mimeTypes[".java"] = "text/x-java-source";
-	_mimeTypes[".c"] = "text/x-c";
-	_mimeTypes[".cpp"] = "text/x-c++";
-	_mimeTypes[".cs"] = "text/plain";
-	_mimeTypes[".rb"] = "text/x-ruby";
-	_mimeTypes[".htm"] = "text/html";
-	_mimeTypes[".shtml"] = "text/html";
-	_mimeTypes[".xhtml"] = "application/xhtml+xml";
-	_mimeTypes[".m4a"] = "audio/mp4";
-	_mimeTypes[".mp4a"] = "audio/mp4";
-	_mimeTypes[".oga"] = "audio/ogg";
-	_mimeTypes[".ogv"] = "video/ogg";
-	_mimeTypes[".ogx"] = "application/ogg";
-	_mimeTypes[".oga"] = "audio/ogg";
-	_mimeTypes[".m3u8"] = "application/vnd.apple.mpegurl";
-	_mimeTypes[".qt"] = "video/quicktime";
-	_mimeTypes[".ts"] = "video/mp2t";
-	_mimeTypes[".xl"] = "application/excel";
-	_mimeTypes[".cab"] = "application/vnd.ms-cab-compressed";
-	_mimeTypes[".msi"] = "application/x-msdownload";
-	_mimeTypes[".dmg"] = "application/x-apple-diskimage";
-	_mimeTypes[".exe"] = "application/octet-stream";
-	_mimeTypes[".bin"] = "application/octet-stream";
-	_mimeTypes[".ps"] = "application/postscript";
-	_mimeTypes[".so"] = "application/octet-stream";
-	_mimeTypes[".dll"] = "application/octet-stream";
-	_mimeTypes[".m4v"] = "video/x-m4v";
-	_mimeTypes[".ser"] = "application/java-serialized-object";
-	_mimeTypes[".sh"] = "application/x-sh";
-	_mimeTypes[".log"] = "text/plain";
-	_mimeTypes[".diff"] = "text/x-diff";
-	_mimeTypes[".patch"] = "text/x-diff";
-	_mimeTypes[".xhtml"] = "application/xhtml+xml";
-	_mimeTypes[".php"] = "application/x-httpd-php";
-	_mimeTypes[".plist"] = "application/xml";
-	_mimeTypes[".sln"] = "text/plain";
-	_mimeTypes[".tiff"] = "image/tiff";
-	_mimeTypes[".app"] = "application/octet-stream";
-	_mimeTypes[".ics"] = "text/calendar";
 }
 
 std::string Server::getStatusPage(int code) const
@@ -697,6 +641,7 @@ void Server::selectErrorPage(int code)
 	_clientIt->requestHeadComplete = true;
 	_clientIt->requestBodyComplete = true;
 	_clientIt->responseFileSelected = true;
+	_clientIt->errorPending = true;
 	
 	if (_errorPagesPaths.find(code) != _errorPagesPaths.end()
 		&& resourceExists(_root + _errorPagesPaths[code]))
@@ -707,8 +652,9 @@ void Server::selectErrorPage(int code)
 	
 	std::ofstream errorPage("temp/errorPage.html", std::ios::binary | std::ios::trunc);
 
-	if (!errorPage.is_open())
+	if (!errorPage.fail())
 	{
+		errorPage.close();
 		std::cerr << "Error opening temporary file." << std::endl;
 		throw (E_TEMPFILE);
 	}
@@ -736,39 +682,6 @@ void Server::selectErrorPage(int code)
 	errorPage.close();
 	
 	_clientIt->sendPath = "temp/errorPage.html";
-}
-
-void Server::sendBuiltinErrorPage(int code)
-{
-	std::string			httpMsg(getHttpMsg(code));
-	std::stringstream	ss_body, ss_header;
-	std::string			message;
-
-	ss_body << "<!DOCTYPE html>";
-	ss_body << "<html>\n";
-	ss_body << "<head>\n";
-	ss_body << "<title>webserv - " << code << ": " << httpMsg << "</title>\n";
-	ss_body << "<style>\n";
-	ss_body << "body {background-color: black; color: white; font-family: Arial, sans-serif; margin: 0; padding: 5% 0 0 0; text-align: center;}\n";
-	ss_body << "h1 {font-size: 42px;}\n";
-	ss_body << "p {font-size: 16px; line-height: 1.5;}\n";
-	ss_body << "</style>\n";
-	ss_body << "</head>\n";
-	ss_body << "<body>\n";
-	ss_body << "<h1>" << code << ": " << httpMsg << "</h1>\n";
-	ss_body << "<img style=\"margin-left: auto;\" src=\"https://http.cat/" << code << "\" alt=\"" << httpMsg << "\">\n";
-	ss_body << "</body>\n";
-	ss_body << "</html>\n";
-	
-	ss_header << HTTPVERSION << ' ' << code << ' ' << httpMsg << "\r\n";
-	ss_header << "Server: " << SERVERVERSION << "\r\n";
-	ss_header << "content-type: text/html; charset=utf-8" << "\r\n";
-	ss_header << "content-length: " << ss_body.str().size() << "\r\n";
-	ss_header << "\r\n";
-
-	message = ss_header.str() + ss_body.str();
-	if (::send(_clientfd, message.c_str(), message.size(), 0) == -1)
-		throw (E_SEND);
 }
 
 /* void Server::checkMethodAccess(std::string path)

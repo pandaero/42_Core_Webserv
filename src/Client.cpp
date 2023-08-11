@@ -1,20 +1,16 @@
 #include "../include/Client.hpp"
 
-int Client::clientCount = 0;
-
 Client::Client(int pollStructIndex)
 {
-	clientNumber = clientCount++;
-	
-	_socketfd = -42;
+	fd = -42;
 	_pollStructIndex = pollStructIndex;
-	_bodyBytesHandled = 0;
 
 	//state = receiveRequestHead;
 	filePosition = 0;
 	
 	_request = NULL;
 
+	errorPending = false;
 	requestHeadComplete = false;
 	requestBodyComplete = false;
 	responseFileSelected = false;
@@ -25,16 +21,6 @@ Client::~Client()
 {
 	/* if (_request)
 		delete _request; */
-}
-
-void Client::setSocketfd(int clientSocketfd)
-{
-	_socketfd = clientSocketfd;
-}
-
-std::string& Client::buffer()
-{
-	return _buffer;
 }
 
 const std::string& Client::httpProtocol() const
@@ -69,8 +55,8 @@ const std::string& Client::contentType() const
 		
 void Client::buildRequest()
 {
-	_request = new Request(_buffer);
-	_buffer.erase(0, _buffer.find("\r\n\r\n") + 4);
+	_request = new Request(buffer);
+	buffer.erase(0, buffer.find("\r\n\r\n") + 4);
 	_directory = _request->path().substr(0, _request->path().find_last_of("/") + 1);
 	if (_request->contentLength() <= 0 || _request->method() != POST) // we don't process bodies of GET or DELETE requests
 		requestBodyComplete = true;
@@ -80,11 +66,6 @@ void Client::buildRequest()
 sockaddr_in* Client::sockaddr()
 {
 	return &_clientAddress;
-}
-
-const int&	Client::socketfd() const
-{
-	return _socketfd;
 }
 
 const int& Client::pollStructIndex() const

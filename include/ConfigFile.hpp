@@ -14,11 +14,13 @@ class ConfigFile
 
 	private:
 		std::string					loadFile(const char*);
+		void 						setMIMEtypes();
 		std::string					getServerConfigElement(std::string&);
 		
 		ServerConfig*				_defaultServerConfig;
 		std::vector<ServerConfig>	_serverConfigs;
 		std::vector<Server>			_servers;
+		strMap						_mimeTypes;
 };
 
 #endif

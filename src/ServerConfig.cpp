@@ -11,7 +11,7 @@ files.
 Note: parseLocation has only one version for default and client parsing
 because it performs its own and rigid input checks.
 */
-ServerConfig::ServerConfig(std::string defaultConfigStr)
+ServerConfig::ServerConfig(std::string defaultConfigStr, strMap* mimeTypes)
 {
 	std::string	instruction, key;
 	
@@ -28,6 +28,7 @@ ServerConfig::ServerConfig(std::string defaultConfigStr)
 		else 
 			_configPairs.insert(make_pair(key, instruction));
 	}
+	_mimeTypes = mimeTypes;
 }
 
 ServerConfig::ServerConfig(const ServerConfig& src)
@@ -41,6 +42,7 @@ ServerConfig& ServerConfig::operator=(const ServerConfig& src)
 	_errorPages = src._errorPages;
 	_locations = src._locations;
 	_cgiPaths = src._cgiPaths;
+	_mimeTypes = src._mimeTypes;
 	return *this;
 }
 
@@ -104,9 +106,14 @@ strLocMap ServerConfig::getLocations() const
 	return _locations;
 }
 
-strMap	ServerConfig::getCgiPaths() const
+strMap ServerConfig::getCgiPaths() const
 {
 	return _cgiPaths;
+}
+
+strMap*	ServerConfig::getMIMETypes() const
+{
+	return _mimeTypes;
 }
 
 void ServerConfig::parseDefaultErrorPages(std::string& defaultErrorPages)

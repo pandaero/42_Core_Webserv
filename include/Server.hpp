@@ -28,12 +28,8 @@ class	Server
 		
 		bool			requestError();
 		std::string		mimeType(std::string);
-		
-		
 		void			selectErrorPage(int);
-		void			sendBuiltinErrorPage(int);
 
-		//void			sendStatusCodePage(int);
 		std::string		getStatusPage(int) const;
 		bool			dirListing(const std::string&);
 
@@ -58,7 +54,7 @@ class	Server
 		size_t							_maxConns;
 		bool							_defaultDirListing;
 		strMap							_cgiPaths;
-		strMap							_mimeTypes;
+		strMap*							_mimeTypes;
 
 		pollfd *						_pollStructs;
 		sockaddr_in						_serverAddress;
