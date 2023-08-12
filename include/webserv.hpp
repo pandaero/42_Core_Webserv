@@ -33,9 +33,7 @@
 # include "Client.hpp"
 # include "ServerConfig.hpp"
 # include "ConfigFile.hpp"
-# include "Response.hpp"
 # include "Server.hpp"
-# include "Url.hpp"
 
 // ===== ===== ===== ===== GLOBAL FUNCTIONS ===== ===== ===== =====
 // Determines whether a string contains purely alphanumerical characters.

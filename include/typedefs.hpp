@@ -28,6 +28,7 @@ typedef struct
 	bool			delete_;
 	std::string		dir_listing;
 	std::string		alt_location;
+	std::string		upload_dir;
 }	s_locInfo;
 
 typedef std::map<std::string, std::string> 				strMap;

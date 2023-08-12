@@ -32,6 +32,7 @@
 # define BACKLOG	"backlog"
 # define MAXCONNS	"max_connections"
 # define STDFILE	"standard_file"
+# define UPLOADDIR	"upload_dir"
 
 // ===== ===== ===== ===== CONFIGURATION SUB-ELEMENT IDENTIFIERS ===== ===== ===== =====
 // error_page

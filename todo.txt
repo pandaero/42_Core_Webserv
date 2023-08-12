@@ -1,7 +1,5 @@
 - dir listing
 - cgi
-- ackchual file sending back
-- chunking
 - alt location
 
 - A request to your server should never hang forever.
@@ -9,36 +7,3 @@
 - handle server names and servers listening on same port
 		The first server for a host:port will be the default for this host:port (that means
 		it will answer to all the requests that don’t belong to an other server).
-
-
-Config File:
-- define a list of accepted HTTP methods for a route
-- Make the route able to accept uploaded files and configure where they should be saved.
-- Set a default file to answer if the request is a directory.
-
-
-Info: ServerConfig: Unrecognized value in config file: NOTSET
-introduce specifiable standard serve filename
-introduce http version selection configfile
-
-first error check round should happen at request line level (maybe not, because reqeust header shoudl be read in one go most times?)
-
-
-default -1 errorpage probably not good now that we have automatic generation
-
-new segfault on no data received closeClient (occurs after idle time)
-likely cause: the loop doesnt get skipped after closeclient
---- Handling Server index 0 ---
-Announcer: poll
-Announcer: acceptConnections
-Announcer: handleConnections
-Announcer: handleConnections
-Announcer: handleConnections
-0 bytes received.
-Content:
-
-Announcer: closeClient
-closeClient on fd 5
-Info: Server: Connection closed (no data received).0: Unknown Error
-Announcer: handleConnections
-Segmentation fault

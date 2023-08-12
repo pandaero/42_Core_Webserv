@@ -20,8 +20,8 @@ Client::Client(int pollStructIndex)
 Client::~Client()
 {
 	std::cout << "client destructor fd " << fd << std::endl;
-	if (_request)
-		delete _request;
+	/* if (_request)
+		delete _request; */
 }
 
 void Client::reset()
@@ -78,11 +78,6 @@ void Client::buildRequest()
 		requestBodyComplete = true;
 	requestHeadComplete = true;
 }
-
-/* sockaddr_in* Client::sockaddr()
-{
-	return &_clientAddress;
-} */
 
 const int& Client::pollStructIndex() const
 {

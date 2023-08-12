@@ -179,13 +179,13 @@ void Server::handleConnections()
 				receiveData();
 				handleRequestHead();
 				handleRequestBody();
-				selectResponseContent();
 			}
 			catch(const char* msg)
 			{
 				std::cerr << msg << std::endl << _statuscode << ": " << getHttpMsg(_statuscode) << std::endl;
 			}
 		}
+		selectResponseContent();
 		if (_pollStructs[clientIt->pollStructIndex()].revents & POLLOUT)
 		{
 			std::cout << "POLLOUT." << std::endl;
@@ -258,37 +258,6 @@ void Server:: handleRequestHead()
 		selectErrorPage(_statuscode);
 }
 
-
-/* 
-// old version with more flexible request head size allowance
-void Server:: handleRequestHead()
-{
-	if (_clientIt->requestHeadComplete)
-		return;
-	ANNOUNCEMECL
-	if (_clientIt->buffer().size() > MAX_HEADERSIZE)
-	{
-		selectErrorPage(431);
-		//sendResponseHead();
-		return;
-	}
-	if (_clientIt->buffer().find("\r\n\r\n") != std::string::npos)
-	{
-		_clientIt->buildRequest();
-		_clientIt->requestHeadComplete = true;
-		std::cout << "request path raw:'" << _clientIt->path() << "'" << std::endl;
-		if (requestError())
-		{
-			selectErrorPage(_statuscode);
-			//sendResponseHead();
-		}
-		return;
-	}
-	throw ("request head not complete, skipping rest of handleConnections loop");
-	// if not complete, have to skip rest of shmisms. maybe better to put guard clause in the others
-	// or can throw...
-} */
-
 void Server::handleRequestBody()
 {
 	if (_clientIt->requestBodyComplete)
@@ -340,6 +309,7 @@ void Server::sendResponseHead()
 	ss_header << "Server: " << SERVERVERSION << "\r\n";
 	ss_header << "content-type: " << mimeType(_clientIt->sendPath) << "\r\n";
 	ss_header << "content-length: " << fileSize(_clientIt->sendPath) << "\r\n";
+	ss_header << "connection: close" << "\r\n";
 	ss_header << "\r\n";
 	
 	if (::send(_clientfd, ss_header.str().c_str(), ss_header.str().size(), 0) == -1)
@@ -350,7 +320,7 @@ void Server::sendResponseHead()
 
 void Server::selectResponseContent()
 {
-	if (_clientIt->responseFileSelected)
+	if (_clientIt->responseFileSelected || !_clientIt->requestBodyComplete)
 		return;
 	ANNOUNCEMECL
 	std::string	completePath(_root + _clientIt->path());

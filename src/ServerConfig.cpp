@@ -135,10 +135,7 @@ void ServerConfig::parseDefaultErrorPages(std::string& defaultErrorPages)
 		{
 			key = lineStrings.back();
 			lineStrings.pop_back();
-			if (key == "default")
-				_errorPages.insert(std::make_pair(-1, value));
-			else
-				_errorPages.insert(std::make_pair(atoi(key.c_str()), value));	
+			_errorPages.insert(std::make_pair(atoi(key.c_str()), value));	
 		}
 	}	
 }
@@ -147,6 +144,7 @@ void ServerConfig::parseUserErrorPages(std::string& userErrorPages)
 {
 	std::string		key, value;
 	strVec			lineStrings;
+	int				code;
 	
 	while (!userErrorPages.empty())
 	{
@@ -156,10 +154,11 @@ void ServerConfig::parseUserErrorPages(std::string& userErrorPages)
 		while (!lineStrings.empty())
 		{
 			key = lineStrings.back();
-			if (key == "default" && _errorPages.find(-1) != _errorPages.end())
-				_errorPages.find(-1)->second = value;
-			else if (_errorPages.find(atoi(key.c_str())) != _errorPages.end())
-				_errorPages.find(atoi(key.c_str()))->second = value;
+			code = atoi(key.c_str());
+			if (_errorPages.find(code) != _errorPages.end())
+				_errorPages[code] = value;
+			else if (code > 99 && code < 600)
+				_errorPages.insert(std::make_pair(code, value));
 			else
 				std::cerr << I_INVALIDKEY << key << std::endl;
 			lineStrings.pop_back();
@@ -195,13 +194,15 @@ void ServerConfig::parseLocation(std::string& locationElement)
 		}
 		else if (key == DIRLISTING)
 		{
-			if (instruction == "yes" || instruction == "no")
+			if (instruction == "yes" || instruction == "no" || instruction == "NOTSET")
 				locInfo.dir_listing = instruction;
 			else
 				std::cerr << I_INVALIDVALUE << instruction << std::endl;
 		}
 		else if (key == ALTLOC)
 			locInfo.alt_location = instruction;
+		else if (key == UPLOADDIR)
+			locInfo.upload_dir = instruction;
 		else
 			std::cerr << I_INVALIDKEY << key << std::endl;
 	}

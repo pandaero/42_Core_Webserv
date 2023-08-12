@@ -156,6 +156,8 @@ std::string getHttpMsg(int code)
 {
 	switch (code)
 	{
+		case 0: return "No error.";
+		
 		case 100: return "Continue";
 		case 101: return "Switching Protocols";
 		case 102: return "Processing";
