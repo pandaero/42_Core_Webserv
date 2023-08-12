@@ -143,7 +143,6 @@ void Server::receiveData()
 
 void Server::handleConnections()
 {
-	ANNOUNCEME
 	for (clientVec_it clientIt = _clients.begin(); clientIt != _clients.end(); ++clientIt)
 	{
 		_clientfd = clientIt->fd;
@@ -186,7 +185,7 @@ void Server::handleConnections()
 			}
 		}
 		selectResponseContent();
-		if (_pollStructs[clientIt->pollStructIndex].revents & POLLOUT)
+		//if (_pollStructs[clientIt->pollStructIndex].revents & POLLOUT)
 		{
 			std::cout << "POLLOUT." << std::endl;
 			try

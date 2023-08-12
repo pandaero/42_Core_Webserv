@@ -22,11 +22,9 @@ Client::~Client()
 
 void Client::reset()
 {
-	
 	contentLength = -1;
-	
-	
 	filePosition = 0;
+	
 	errorPending = false;
 	requestHeadComplete = false;
 	requestBodyComplete = false;
@@ -44,7 +42,7 @@ void Client::parseRequest()
 		contentLength = atoi(headers["content-length"].c_str());
 	if (headers.find("content-type") != headers.end())
 		contentType = headers["content-type"];
-	buffer.erase(0, buffer.find("\r\n\r\n") + 4);
+	//buffer.erase(0, buffer.find("\r\n\r\n") + 4);
 	directory = path.substr(0, path.find_last_of("/") + 1);
 	if (contentLength<= 0 || method != POST) // we don't process bodies of GET or DELETE requests
 		requestBodyComplete = true;

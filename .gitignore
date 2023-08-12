@@ -11,3 +11,4 @@ test/url
 *.out
 
 .vscode/
+output.txt
