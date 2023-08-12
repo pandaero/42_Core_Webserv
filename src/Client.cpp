@@ -3,13 +3,11 @@
 Client::Client(int pollStructIndex)
 {
 	fd = -42;
-	_pollStructIndex = pollStructIndex;
+	pollStructIndex = pollStructIndex;
 
-	//state = receiveRequestHead;
+	contentLength = -1;
 	filePosition = 0;
 	
-	_request = NULL;
-
 	errorPending = false;
 	requestHeadComplete = false;
 	requestBodyComplete = false;
@@ -20,17 +18,14 @@ Client::Client(int pollStructIndex)
 Client::~Client()
 {
 	std::cout << "client destructor fd " << fd << std::endl;
-	/* if (_request)
-		delete _request; */
 }
 
 void Client::reset()
 {
-	if (_request)
-	{
-		delete _request;
-		 _request = NULL;
-	}
+	
+	contentLength = -1;
+	
+	
 	filePosition = 0;
 	errorPending = false;
 	requestHeadComplete = false;
@@ -38,48 +33,39 @@ void Client::reset()
 	responseFileSelected = false;
 	responseHeadSent = false;
 }
-
-const std::string& Client::httpProtocol() const
-{
-	return _request->httpProtocol();
-}
-
-const std::string& Client::method() const
-{
-	return _request->method();
-}
-
-const std::string& Client::path() const
-{
-	return _request->path();
-}
-
-const std::string& Client::directory() const
-{
-	return _directory;
-}
-
-const int& Client::contentLength() const
-{
-	return _request->contentLength();
-}
-
-const std::string& Client::contentType() const
-{
-	return _request->contentType();
-}
 		
-void Client::buildRequest()
+void Client::parseRequest()
 {
-	_request = new Request(buffer);
+	method = splitEraseStr(buffer, " ");
+	path = splitEraseStr(buffer, " ");
+	httpProtocol = splitEraseStr(buffer, "\r\n");
+	headers = createHeaderMap(buffer, ":", "\r\n", "\r\n");
+	if (headers.find("content-length") != headers.end())
+		contentLength = atoi(headers["content-length"].c_str());
+	if (headers.find("content-type") != headers.end())
+		contentType = headers["content-type"];
 	buffer.erase(0, buffer.find("\r\n\r\n") + 4);
-	_directory = _request->path().substr(0, _request->path().find_last_of("/") + 1);
-	if (_request->contentLength() <= 0 || _request->method() != POST) // we don't process bodies of GET or DELETE requests
+	directory = path.substr(0, path.find_last_of("/") + 1);
+	if (contentLength<= 0 || method != POST) // we don't process bodies of GET or DELETE requests
 		requestBodyComplete = true;
 	requestHeadComplete = true;
 }
 
-const int& Client::pollStructIndex() const
+strMap Client::createHeaderMap(std::string& input, std::string endOfKey, std::string endOfValue, std::string endOfMap)
 {
-	return _pollStructIndex;
+	strMap 		stringMap;
+	std::string key, value;
+
+	while (!input.empty())
+	{
+		if (input.find(endOfMap) == 0)
+		{
+			input = input.substr(endOfMap.size());
+			return stringMap;
+		}
+		key = splitEraseStr(input, endOfKey);
+		value = splitEraseStr(input, endOfValue);
+		stringMap.insert(std::make_pair(strToLower(key), value));
+	}
+	return stringMap;
 }

@@ -3,6 +3,10 @@
 
 # include "webserv.hpp"
 
+/*
+This class is just a glorified struct. It is only instantiated as a private member
+of the Server class. Therefore everything is public.
+*/
 class	Client
 {
 	public:
@@ -10,24 +14,27 @@ class	Client
 		~Client();
 
 		void					reset();
-		//sockaddr_in*			sockaddr();
-		const int&				pollStructIndex() const;
+		void					parseRequest();
 		
-		void					buildRequest();
+		// infrastructure vars
+		int						fd;
+		int						pollStructIndex;
+		std::string				buffer;
+		
+		// request vars
+		std::string				httpProtocol;
+		std::string		 		method;
+		std::string		 		path;
+		std::string				directory;
+		strMap					headers;
+		int						contentLength;
+		std::string		 		contentType;
 
-		const std::string&		httpProtocol() const;
-		const std::string& 		method() const;
-		const std::string& 		path() const;
-		const std::string&		directory() const;
-		const int& 				contentLength() const;
-		const std::string& 		contentType() const;
-		
+		// response vars
 		std::string				sendPath;
 		std::streampos			filePosition;
 		
-		int						fd;
-		std::string				buffer;
-		
+		// status bools
 		bool					errorPending;
 		bool					requestHeadComplete;
 		bool					requestBodyComplete;
@@ -35,12 +42,7 @@ class	Client
 		bool					responseHeadSent;
 		
 	private:
-		Request*				_request;
-		
-		int						_pollStructIndex;
-		//sockaddr_in				_clientAddress;
-
-		std::string				_directory;
+		strMap					createHeaderMap(std::string&, std::string, std::string, std::string);
 };
 
 #endif

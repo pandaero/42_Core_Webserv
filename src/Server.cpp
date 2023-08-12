@@ -150,7 +150,7 @@ void Server::handleConnections()
 		_clientIt = clientIt;
 		_statuscode = 0;
 		ANNOUNCEMECL
-		if (_pollStructs[clientIt->pollStructIndex()].revents & POLLHUP)
+		if (_pollStructs[clientIt->pollStructIndex].revents & POLLHUP)
 		{
 			std::cout << "Hangup." << std::endl;
 			closeClient();
@@ -161,7 +161,7 @@ void Server::handleConnections()
 		if (clientIt->errorPending)
 		{
 			std::cout << "Error Pending." << std::endl;
-			if (_pollStructs[clientIt->pollStructIndex()].revents & POLLOUT)
+			if (_pollStructs[clientIt->pollStructIndex].revents & POLLOUT)
 			{
 				sendResponseHead();
 				sendResponseBody();
@@ -171,7 +171,7 @@ void Server::handleConnections()
 				break;
 			continue;
 		}
-		if (_pollStructs[clientIt->pollStructIndex()].revents & POLLIN)
+		if (_pollStructs[clientIt->pollStructIndex].revents & POLLIN)
 		{
 			std::cout << "POLLIN." << std::endl;
 			try
@@ -186,7 +186,7 @@ void Server::handleConnections()
 			}
 		}
 		selectResponseContent();
-		if (_pollStructs[clientIt->pollStructIndex()].revents & POLLOUT)
+		if (_pollStructs[clientIt->pollStructIndex].revents & POLLOUT)
 		{
 			std::cout << "POLLOUT." << std::endl;
 			try
@@ -210,24 +210,24 @@ bool Server::requestError()
 {
 	_statuscode = 0;
 	// wrong protocol
-	if (_clientIt->httpProtocol() != HTTPVERSION)
+	if (_clientIt->httpProtocol != HTTPVERSION)
 		return (_statuscode = 505);
 	// method not supported by server
-	if (_clientIt->method() != GET
-		&& _clientIt->method() != POST
-		&& _clientIt->method() != DELETE)
+	if (_clientIt->method != GET
+		&& _clientIt->method != POST
+		&& _clientIt->method != DELETE)
 		return (_statuscode = 501);
 	// body size too large
-	if (_clientIt->contentLength() > (int)_clientMaxBody)
+	if (_clientIt->contentLength > (int)_clientMaxBody)
 		return (_statuscode = 413);
 	// access forbidden (have to specifically allow access in config file)
-	strLocMap_it locIt = _locations.find(_clientIt->directory());
+	strLocMap_it locIt = _locations.find(_clientIt->directory);
 	if (locIt == _locations.end())
 		return (_statuscode = 404); // only returning 404 (and not 403) to not leak file structure
 	// acces granted, but not for the requested method
-	if ((_clientIt->method() == GET && !locIt->second.get)
-		|| (_clientIt->method() == POST && !locIt->second.post)
-		|| (_clientIt->method() == DELETE && !locIt->second.delete_))
+	if ((_clientIt->method == GET && !locIt->second.get)
+		|| (_clientIt->method == POST && !locIt->second.post)
+		|| (_clientIt->method == DELETE && !locIt->second.delete_))
 		return (_statuscode = 405);
 	
 	
@@ -251,9 +251,9 @@ void Server:: handleRequestHead()
 		selectErrorPage(431);
 		return;
 	}
-	_clientIt->buildRequest();
+	_clientIt->parseRequest();
 	_clientIt->requestHeadComplete = true;
-	std::cout << "request path raw:'" << _clientIt->path() << "'" << std::endl;
+	std::cout << "request path raw:'" << _clientIt->path << "'" << std::endl;
 	if (requestError())
 		selectErrorPage(_statuscode);
 }
@@ -262,7 +262,7 @@ void Server::handleRequestBody()
 {
 	if (_clientIt->requestBodyComplete)
 		return;
-	if (_clientIt->contentLength() < 0)
+	if (_clientIt->contentLength < 0)
 	{
 		_clientIt->requestBodyComplete = true;
 		return;
@@ -323,7 +323,7 @@ void Server::selectResponseContent()
 	if (_clientIt->responseFileSelected || !_clientIt->requestBodyComplete)
 		return;
 	ANNOUNCEMECL
-	std::string	completePath(_root + _clientIt->path());
+	std::string	completePath(_root + _clientIt->path);
 
 	if (isDirectory(completePath))
 	{
@@ -370,7 +370,7 @@ void Server::sendResponseBody()
 		return;
 	std::ifstream	fileStream;
 
-	if (_clientIt->method() == GET)
+	if (_clientIt->method == GET)
 	{
 		std::cout << "knudel1" << std::endl;
 		fileStream.open(_clientIt->sendPath.c_str(), std::ios::binary);
@@ -464,7 +464,7 @@ int Server::freePollStructIndex()
 void Server::closeClient()
 {
 	ANNOUNCEME
-	int	pollStructIndex = _clientIt->pollStructIndex();
+	int	pollStructIndex = _clientIt->pollStructIndex;
 	
 	close(_clientfd);
 	_pollStructs[pollStructIndex].fd = -1;
