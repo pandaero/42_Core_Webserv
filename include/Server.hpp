@@ -66,14 +66,7 @@ class	Server
 		
 		std::string						_root;
 		std::string						_standardFileName;
-		std::string						_pathToSend;
-		// TO BE DEMOLISHED:
-		strMap							_filePaths;
-		std::string						_dir;
 		std::string						_uploadDir;
-		std::string						_cgiDir;
-		size_t							_backlog; // kill this?
-
 		/* void	checkMethodAccess(std::string);
 		void	checkReadAccess(std::string);
 		void	checkWriteAccess(std::string);

@@ -31,6 +31,7 @@
 # define CLIMAXBODY	"client_max_body"
 # define BACKLOG	"backlog"
 # define MAXCONNS	"max_connections"
+# define STDFILE	"standard_file"
 
 // ===== ===== ===== ===== CONFIGURATION SUB-ELEMENT IDENTIFIERS ===== ===== ===== =====
 // error_page

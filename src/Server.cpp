@@ -5,20 +5,19 @@ Server::Server(const ServerConfig & config):
 {	
 	// Set main values stored in configPairs
 	strMap		configPairs = config.getConfigPairs();
-	setNames(configPairs.find(SERVERNAME)->second);
-	setHost(configPairs.find(HOST)->second); // change these to [asds]
-	setPort(configPairs.find(PORT)->second);
-	setRoot(configPairs.find(ROOT)->second);
-	setClientMaxBody(configPairs.find(CLIMAXBODY)->second);
-	setMaxConnections(configPairs.find(MAXCONNS)->second);
-	setDefaultDirListing(configPairs.find(DIRLISTING)->second);
-	//setBacklog(config.backlog); need this?!
+	setNames(configPairs[SERVERNAME]);
+	setHost(configPairs[HOST]);
+	setPort(configPairs[PORT]);
+	setRoot(configPairs[ROOT]);
+	setClientMaxBody(configPairs[CLIMAXBODY]);
+	setMaxConnections(configPairs[MAXCONNS]);
+	setDefaultDirListing(configPairs[DIRLISTING]);
 	
 	// Copy remaining values directly to server variables 
 	_errorPagesPaths = config.getErrorPaths();
 	_locations = config.getLocations();
 	_cgiPaths = config.getCgiPaths();
-	_standardFileName = "index.html"; //implement this for real
+	_standardFileName = configPairs[STDFILE];
 	_mimeTypes = config.getMIMETypes();
 
 	// Init polling structs
@@ -571,22 +570,10 @@ void Server:: setRoot(std::string input)
 	_root = input;
 }
 
-void Server::setDir(std::string input)
-{
-	// checkMethodAccess(input);
-	_dir = input;
-}
-
 void Server::setUploadDir(std::string input)
 {
 	// checkWriteAccess(input);
 	_uploadDir = input;
-}
-
-void Server::setCgiDir(std::string input)
-{
-	// checkExecAccess(input);
-	_cgiDir = input;
 }
 
 void Server::setClientMaxBody(std::string input)
@@ -607,14 +594,14 @@ void Server::setMaxConnections(std::string input)
 		throw std::runtime_error(E_MAXCONNVAL + input + '\n');
 }
 
-void Server::setBacklog(std::string input)
+/* void Server::setBacklog(std::string input)
 {
 	if (input.find_first_not_of("0123456789") != std::string::npos)
 			throw std::runtime_error(E_BACKLOGINPUT + input + '\n');
 	_backlog = atoi(input.c_str());
 	if (_backlog > MAX_BACKLOG)
 		throw std::runtime_error(E_BACKLOGVAL + input + '\n');
-}
+} */
 
 void Server::setDefaultDirListing(std::string input)
 {
