@@ -19,8 +19,24 @@ Client::Client(int pollStructIndex)
 
 Client::~Client()
 {
-	/* if (_request)
-		delete _request; */
+	std::cout << "client destructor fd " << fd << std::endl;
+	if (_request)
+		delete _request;
+}
+
+void Client::reset()
+{
+	if (_request)
+	{
+		delete _request;
+		 _request = NULL;
+	}
+	filePosition = 0;
+	errorPending = false;
+	requestHeadComplete = false;
+	requestBodyComplete = false;
+	responseFileSelected = false;
+	responseHeadSent = false;
 }
 
 const std::string& Client::httpProtocol() const
@@ -63,10 +79,10 @@ void Client::buildRequest()
 	requestHeadComplete = true;
 }
 
-sockaddr_in* Client::sockaddr()
+/* sockaddr_in* Client::sockaddr()
 {
 	return &_clientAddress;
-}
+} */
 
 const int& Client::pollStructIndex() const
 {

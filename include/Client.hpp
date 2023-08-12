@@ -9,7 +9,8 @@ class	Client
 		Client(int);
 		~Client();
 
-		sockaddr_in*			sockaddr();
+		void					reset();
+		//sockaddr_in*			sockaddr();
 		const int&				pollStructIndex() const;
 		
 		void					buildRequest();
@@ -37,7 +38,7 @@ class	Client
 		Request*				_request;
 		
 		int						_pollStructIndex;
-		sockaddr_in				_clientAddress;
+		//sockaddr_in				_clientAddress;
 
 		std::string				_directory;
 };

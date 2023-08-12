@@ -11,6 +11,7 @@ class	Server;
 class	ServerConfig;
 class	ConfigFile;
 
+//delete soon
 enum clientState
 {
 	receiveRequestHead,

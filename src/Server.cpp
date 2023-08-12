@@ -90,35 +90,32 @@ void Server::acceptConnections()
 	ANNOUNCEME
 	if (_pollStructs[0].revents & POLLIN)
 	{
-		int		index = freePollStructIndex();
-		
-		if (index == -1)
-		{
-			std::cerr << I_CONNECTIONLIMIT << std::endl;
-			return;
-		}
-		_clients.push_back(Client(index));
-		
-		Client&	newClient = _clients.back();
-		int 	addrlen = sizeof(_serverAddress);
-
-		// while loop to deal with all incoming connections until -1 triggers return
 		while (true)
 		{
-			int new_sock = accept(_server_fd, (sockaddr*)newClient.sockaddr(), (socklen_t*)&addrlen);
+			int 	new_sock;
+			int		index = freePollStructIndex();
+			
+			if (index == -1)
+			{
+				std::cerr << I_CONNECTIONLIMIT << std::endl;
+				return;
+			}
+			new_sock = accept(_server_fd, NULL, NULL); // don't need client info, so pass NULL
 			if (new_sock == -1)
 			{
 				if (errno != EWOULDBLOCK)
 					std::cerr << E_ACCEPT << std::endl;
-				return;
+				break;
 			}
-			newClient.fd = new_sock;
+			_clients.push_back(Client(index)); //new this shit?
+			_clients.back().fd = new_sock;
 			_pollStructs[index].fd = new_sock;
 			_pollStructs[index].events = POLLIN | POLLOUT | POLLHUP;
 			std::cout << "New client accepted on fd " << new_sock << "." << std::endl;
-			std::cout << "Clients size: " << _clients.size() << std::endl;
+			std::cout << "Clients count: " << _clients.size() << std::endl;
 		}
 	}
+	std::cout << "leaving Acceptconnections" << std::endl;
 }
 
 void Server::receiveData()
@@ -126,8 +123,9 @@ void Server::receiveData()
 	ANNOUNCEMECL
 	if (_clientIt->requestBodyComplete)
 	{
-		std::cout << "receiveData returning because reqeustbodyComplete" << std::endl;
-		return;
+		//std::cout << "receiveData returning because reqeustbodyComplete" << std::endl;
+		std::cout << "receiveData not returning but reqeustbodyComplete" << std::endl;
+		//return;
 	}
 
 	char	buffer[RECV_CHUNK_SIZE];
@@ -149,31 +147,34 @@ void Server::handleConnections()
 	ANNOUNCEME
 	for (clientVec_it clientIt = _clients.begin(); clientIt != _clients.end(); ++clientIt)
 	{
-		if (_clients.empty())
-		{
-			std::cout << "This ackchually happens" << std::endl;
-			return;
-		}
 		_clientfd = clientIt->fd;
 		_clientIt = clientIt;
 		_statuscode = 0;
+		ANNOUNCEMECL
 		if (_pollStructs[clientIt->pollStructIndex()].revents & POLLHUP)
 		{
+			std::cout << "Hangup." << std::endl;
 			closeClient();
+			if (clientIt == _clients.end())
+				break;
 			continue;
 		}
 		if (clientIt->errorPending)
 		{
+			std::cout << "Error Pending." << std::endl;
 			if (_pollStructs[clientIt->pollStructIndex()].revents & POLLOUT)
 			{
 				sendResponseHead();
 				sendResponseBody();
 				return;
 			}
+			if (clientIt == _clients.end())
+				break;
 			continue;
 		}
 		if (_pollStructs[clientIt->pollStructIndex()].revents & POLLIN)
 		{
+			std::cout << "POLLIN." << std::endl;
 			try
 			{
 				receiveData();
@@ -188,6 +189,7 @@ void Server::handleConnections()
 		}
 		if (_pollStructs[clientIt->pollStructIndex()].revents & POLLOUT)
 		{
+			std::cout << "POLLOUT." << std::endl;
 			try
 			{
 				sendResponseHead();
@@ -199,7 +201,10 @@ void Server::handleConnections()
 			}
 			
 		}
+		 if (clientIt == _clients.end())
+			break;
 	}
+
 }
 
 bool Server::requestError()
@@ -319,10 +324,16 @@ void Server::sendResponseHead()
 {
 	if (_clientIt->responseHeadSent)
 		return;
+	if (!_clientIt->requestBodyComplete)
+	{
+		closeClient();
+		throw ("no data received, but POLLOUT. Why?");
+	}
 	ANNOUNCEMECL
-	std::cout << "clientIt.sendpath:'" << _clientIt->sendPath << "'" << std::endl;
 	if (_clientIt->sendPath == "")
+	{
 		std::cout << "sendPath was empty. Right now dont think there are such cases outside of errors, but who knows" << std::endl;
+	}
 
 	std::stringstream	ss_header;
 	
@@ -344,7 +355,6 @@ void Server::selectResponseContent()
 		return;
 	ANNOUNCEMECL
 	std::string	completePath(_root + _clientIt->path());
-	std::cout << "completePath(root + clientPath):'" << completePath << "'" << std::endl;
 
 	if (isDirectory(completePath))
 	{
@@ -385,14 +395,15 @@ void Server::selectResponseContent()
 
 void Server::sendResponseBody()
 {
-	if (!_clientIt->responseFileSelected)
-		return;
 	ANNOUNCEMECL
 	std::cout << "sendPath:'" << _clientIt->sendPath << "'" << std::endl;
+	if (!_clientIt->responseFileSelected)
+		return;
 	std::ifstream	fileStream;
 
 	if (_clientIt->method() == GET)
 	{
+		std::cout << "knudel1" << std::endl;
 		fileStream.open(_clientIt->sendPath.c_str(), std::ios::binary);
 		if (fileStream.fail())
 		{
@@ -403,6 +414,7 @@ void Server::sendResponseBody()
 		}
 		std::cout << "fileposition: " << _clientIt->filePosition << std::endl;
 		fileStream.seekg(_clientIt->filePosition);
+		std::cout << "knudel2" << std::endl;
 		
 		char	buffer[SEND_CHUNK_SIZE];
 		bzero(buffer, SEND_CHUNK_SIZE);
@@ -410,13 +422,16 @@ void Server::sendResponseBody()
 		if (::send(_clientfd, buffer, fileStream.gcount(), 0) == -1)
 		{
 			fileStream.close();
+			closeClient();
 			throw (E_SEND);
 		}
 		if (fileStream.eof())
 		{
 			fileStream.close();
-			closeClient();
-			std::cout << "closed client because file.eof(). do we need to throw / cut the loop?" << std::endl;
+			_clientIt->reset();
+			//closeClient();
+			std::cout << "reset (but not close) client because file.eof()." << std::endl;
+			return;
 		}
 		_clientIt->filePosition = fileStream.tellg();
 		fileStream.close();
@@ -652,7 +667,7 @@ void Server::selectErrorPage(int code)
 	
 	std::ofstream errorPage("temp/errorPage.html", std::ios::binary | std::ios::trunc);
 
-	if (!errorPage.fail())
+	if (errorPage.fail())
 	{
 		errorPage.close();
 		std::cerr << "Error opening temporary file." << std::endl;
