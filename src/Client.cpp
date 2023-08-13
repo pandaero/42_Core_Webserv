@@ -15,6 +15,8 @@ Client::Client(int pollStructIndex)
 	responseFileSelected = false;
 	responseHeadSent = false;
 	responseBodySent = false;
+
+	statusCode = 0;
 }
 
 Client::~Client()

@@ -7,8 +7,16 @@ int main()
 	
 	for (size_t i = 0; i < servers.size(); ++i)
 	{
-		servers[i].whoIsI();
-		servers[i].startListening();
+		try
+		{
+			servers[i].whoIsI();
+			servers[i].startListening();
+		}
+		catch (const std::exception& e)
+		{
+			std::cerr << e.what() << std::endl;
+			servers.erase(servers.begin() + i--);
+		}
 	}
 	
 	while (true)
@@ -33,10 +41,4 @@ int main()
 			}
 		}
 	}
-
-	// I mean... we are behind a while true loop with no break
-	// still, this reminds us of stuff that should be freed
-	// maybe capture SIGINT and run this shite then if we rly want
-	for (size_t i = 0; i < servers.size(); ++i)
-		servers[i].cleanup();
 } 

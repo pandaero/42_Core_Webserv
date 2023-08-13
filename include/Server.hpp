@@ -7,13 +7,13 @@ class	Server
 {
 	public:
 		Server(const ServerConfig &);
+		~Server();
 		
 		void	whoIsI();
 		void	startListening();
 		void	poll();
 		void	acceptConnections();
 		void	handleConnections();
-		void	cleanup();
 	
 	private:
 		void	receiveData();
@@ -26,9 +26,10 @@ class	Server
 		int		freePollStructIndex();
 		void	closeClient(const char*);
 		
-		bool			requestError();
 		std::string		mimeType(std::string);
+		void			checkRequest();
 		void			selectErrorPage(int);
+		void			generateErrorPage(int);
 
 		std::string		getStatusPage(int) const;
 		bool			dirListing(const std::string&);
@@ -37,14 +38,12 @@ class	Server
 		void	setHost(std::string);
 		void	setPort(std::string);
 		void	setRoot(std::string);
-		void	setDir(std::string);
+		//void	setDir(std::string);
 		void	setUploadDir(std::string);
-		void	setCgiDir(std::string);
+		//void	setCgiDir(std::string);
 		void	setClientMaxBody(std::string);
 		void	setMaxConnections(std::string);
-		void	setBacklog(std::string);
 		void	setDefaultDirListing(std::string input);
-		void	setMIMEtype();
 
 		int								_server_fd;
 		std::vector<std::string>		_names;
@@ -58,11 +57,11 @@ class	Server
 
 		pollfd *						_pollStructs;
 		sockaddr_in						_serverAddress;
-		int								_statuscode;
 		int								_clientfd;
 		clientVec_it					_clientIt;
 		std::vector<Client>				_clients;
-		ssize_t							_bytesReceived;
+		size_t							_index;
+		//ssize_t							_bytesReceived;
 		
 		std::string						_root;
 		std::string						_standardFileName;

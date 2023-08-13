@@ -30,6 +30,19 @@ Server::Server(const ServerConfig & config):
 	}
 }
 
+Server::~Server()
+{
+	while (!_clients.empty())
+	{
+		_clientIt = _clients.begin();
+		closeClient("Server::~Server()");
+	}
+	if (_server_fd != -1)
+		close(_server_fd);
+	if (_pollStructs)
+		delete [] _pollStructs;
+}
+
 void	Server::startListening()
 {
 	ANNOUNCEME
@@ -56,25 +69,9 @@ void	Server::startListening()
 		close(_server_fd);
 		throw listenFailureException();
 	}
-
 	_pollStructs[0].fd = _server_fd;
 	_pollStructs[0].events = POLLIN | POLLOUT | POLLHUP;
 	_pollStructs[0].revents = 0;
-
-	// init tables?
-}
-
-void Server::cleanup()
-{
-	for (clientVec_it it = _clients.begin(); it != _clients.end(); ++it)
-	{
-		_clientIt = it;
-		closeClient("Server::cleanup()");
-	}
-	if (_server_fd != -1)
-		close(_server_fd);
-	if (_pollStructs)
-		delete [] _pollStructs;
 }
 
 void Server::poll()
@@ -119,59 +116,54 @@ void Server::acceptConnections()
 
 void Server::receiveData()
 {
+	int		bytesReceived;
+	
 	ANNOUNCEMECL
 	if (_clientIt->requestBodyComplete)
 	{
-		//std::cout << "receiveData returning because reqeustbodyComplete" << std::endl;
-		std::cout << "receiveData not returning but reqeustbodyComplete" << std::endl;
-		//return;
+		std::cout << "receiveData returning because reqeustbodyComplete" << std::endl;
+		return;
 	}
 
 	char	buffer[RECV_CHUNK_SIZE];
 	
 	bzero(buffer, RECV_CHUNK_SIZE);
-	_bytesReceived = recv(_clientfd, buffer, RECV_CHUNK_SIZE, 0);
-	std::cout << _bytesReceived << " bytes received.\nContent:\n" << buffer << std::endl;
+	bytesReceived = recv(_clientfd, buffer, RECV_CHUNK_SIZE, 0);
+	std::cout << bytesReceived << " bytes received.\nContent:\n" << buffer << std::endl;
 	
-	if (_bytesReceived <= 0)
+	if (bytesReceived <= 0)
 	{
 		closeClient("Server::receiveData: 0 bytes received");
 		throw std::runtime_error(I_CLOSENODATA);
 	}
-	_clientIt->buffer.append(buffer);
+	_clientIt->buffer.append(buffer, bytesReceived);
 }
 
 void Server::handleConnections()
 {
 	ANNOUNCEME
-	for (clientVec_it clientIt = _clients.begin(); clientIt != _clients.end(); ++clientIt)
+	for (_index = 0; _index < _clients.size(); ++_index)
 	{
-		_clientfd = clientIt->fd;
-		_clientIt = clientIt;
-		_statuscode = 0;
+		_clientIt = _clients.begin() + _index;
+		_clientfd = _clientIt->fd;
 		ANNOUNCEMECL
-		if (_pollStructs[clientIt->pollStructIndex()].revents & POLLHUP)
+		if (_pollStructs[_clientIt->pollStructIndex()].revents & POLLHUP)
 		{
-			std::cout << "Hangup." << std::endl;
 			closeClient("Server::handleConnections: POLLHUP");
-			if (clientIt == _clients.end())
-				break;
 			continue;
 		}
-		if (clientIt->errorPending)
+		if (_clientIt->errorPending)
 		{
 			std::cout << "Error Pending." << std::endl;
-			if (_pollStructs[clientIt->pollStructIndex()].revents & POLLOUT)
+			if (_pollStructs[_clientIt->pollStructIndex()].revents & POLLOUT)
 			{
 				sendResponseHead();
 				sendResponseBody();
 				return;
 			}
-			if (clientIt == _clients.end())
-				break;
 			continue;
 		}
-		if (_pollStructs[clientIt->pollStructIndex()].revents & POLLIN)
+		if (_pollStructs[_clientIt->pollStructIndex()].revents & POLLIN)
 		{
 			std::cout << "POLLIN." << std::endl;
 			try
@@ -179,14 +171,14 @@ void Server::handleConnections()
 				receiveData();
 				handleRequestHead();
 				handleRequestBody();
+				selectResponseContent();
 			}
-			catch(const std::exception& e)
+			catch (const std::exception& e)
 			{
-				std::cerr << e.what() << std::endl << _statuscode << ": " << getHttpMsg(_statuscode) << std::endl;
+				std::cerr << "receiveblock catch: " << e.what() << std::endl;
 			}
 		}
-		selectResponseContent();
-		if (_pollStructs[clientIt->pollStructIndex()].revents & POLLOUT)
+		if (_pollStructs[_clientIt->pollStructIndex()].revents & POLLOUT)
 		{
 			std::cout << "POLLOUT." << std::endl;
 			try
@@ -194,50 +186,43 @@ void Server::handleConnections()
 				sendResponseHead();
 				sendResponseBody();
 			}
-			catch(const std::exception& e)
+			catch (const std::exception& e)
 			{
 				std::cerr << "sendblock catch: " << e.what() << std::endl;
 			}
 		}
-		 if (clientIt == _clients.end())
-			break;
 	}
-
 }
 
-bool Server::requestError()
+void Server::checkRequest()
 {
-	_statuscode = 0;
 	// wrong protocol
 	if (_clientIt->httpProtocol() != HTTPVERSION)
-		return (_statuscode = 505);
+		selectErrorPage(505);
+	
 	// method not supported by server
-	if (_clientIt->method() != GET
+	else if (_clientIt->method() != GET
 		&& _clientIt->method() != POST
 		&& _clientIt->method() != DELETE)
-		return (_statuscode = 501);
+		selectErrorPage(501);
+	
 	// body size too large
-	if (_clientIt->contentLength() > (int)_clientMaxBody)
-		return (_statuscode = 413);
-	// access forbidden (have to specifically allow access in config file)
-	strLocMap_it locIt = _locations.find(_clientIt->directory());
-	if (locIt == _locations.end())
-		return (_statuscode = 404); // only returning 404 (and not 403) to not leak file structure
-	// acces granted, but not for the requested method
-	if ((_clientIt->method() == GET && !locIt->second.get)
-		|| (_clientIt->method() == POST && !locIt->second.post)
-		|| (_clientIt->method() == DELETE && !locIt->second.delete_))
-		return (_statuscode = 405);
-	
-	
-	
-	if (_statuscode)
+	else if (_clientIt->contentLength() > (int)_clientMaxBody)
+		selectErrorPage(413);
+	else
 	{
-		// non bool strcutrue
-		// senderrormsg
-		// throw error
+		strLocMap_it	locIt = _locations.find(_clientIt->directory());
+		
+		// access forbidden (have to specifically allow each path in config file)
+		if (locIt == _locations.end())
+			selectErrorPage(404); // only returning 404 (and not 403) to not leak file structure
+	
+		// access granted, but not for the requested method
+		else if ((_clientIt->method() == GET && !locIt->second.get)
+			|| (_clientIt->method() == POST && !locIt->second.post)
+			|| (_clientIt->method() == DELETE && !locIt->second.delete_))
+			selectErrorPage(405);
 	}
-	return false;
 }
 
 void Server:: handleRequestHead()
@@ -253,8 +238,7 @@ void Server:: handleRequestHead()
 	_clientIt->buildRequest();
 	_clientIt->requestHeadComplete = true;
 	std::cout << "request path raw:'" << _clientIt->path() << "'" << std::endl;
-	if (requestError())
-		selectErrorPage(_statuscode);
+	checkRequest();
 }
 
 void Server::handleRequestBody()
@@ -294,7 +278,7 @@ void Server::sendResponseHead()
 	if (!_clientIt->requestBodyComplete)
 	{
 		closeClient("Server::sendResponseHead: !requestBodyComplete");
-		throw std::runtime_error("no data received, but POLLOUT. Why?");
+		throw std::runtime_error("Server::sendResponseHead: !requestBodyComplete");
 	}
 	ANNOUNCEMECL
 	if (_clientIt->sendPath == "")
@@ -304,7 +288,7 @@ void Server::sendResponseHead()
 
 	std::stringstream	ss_header;
 	
-	ss_header << HTTPVERSION << ' ' << _statuscode << ' ' << getHttpMsg(_statuscode) << "\r\n";
+	ss_header << HTTPVERSION << ' ' << _clientIt->statusCode << ' ' << getHttpMsg(_clientIt->statusCode) << "\r\n";
 	ss_header << "Server: " << SERVERVERSION << "\r\n";
 	ss_header << "content-type: " << mimeType(_clientIt->sendPath) << "\r\n";
 	ss_header << "content-length: " << fileSize(_clientIt->sendPath) << "\r\n";
@@ -331,13 +315,13 @@ void Server::selectResponseContent()
 		if (resourceExists(completePath + _standardFileName))
 		{
 			std::cout << "'" << completePath + _standardFileName << "' exists." << std::endl;
-			_statuscode = 200;
+			_clientIt->statusCode = 200;
 			_clientIt->sendPath = completePath + _standardFileName;
 		}
 		else if (dirListing(completePath))
 		{
 			std::cout << "no, '" << completePath + _standardFileName << "' does not exist, but dir listing is allowed. Show dir listing here" << std::endl;
-			_statuscode = 200;
+			_clientIt->statusCode = 200;
 			_clientIt->sendPath = "dirlisting"; // dunno how to handle this best yet. wait to implemnt dirlisting to decide
 		}
 		else
@@ -348,13 +332,18 @@ void Server::selectResponseContent()
 	}
 	else // is not directory
 	{
+		std::cout << "completePath is not a directory" << std::endl;
+
 		if (resourceExists(completePath))
 		{
-			_statuscode = 200;
+			std::cout << "resource exists" << std::endl;
+			
+			_clientIt->statusCode = 200;
 			_clientIt->sendPath = completePath;
 		}
 		else
 		{
+			std::cout << "resource does not exist" << std::endl;
 			selectErrorPage(404);
 		}
 	}
@@ -373,38 +362,35 @@ void Server::sendResponseBody()
 
 	if (_clientIt->method() == GET)
 	{
-		std::cout << "knudel1" << std::endl;
 		fileStream.open(_clientIt->sendPath.c_str(), std::ios::binary);
 		if (fileStream.fail())
 		{
 			fileStream.close();
-			closeClient("Server::sendResponseBody: ifstream failure");
+			closeClient("Server::sendResponseBody: ifstream failure.");
 			throw std::runtime_error("sendResponseBody: Could not open file to send. Client closed.");
 		}
 		std::cout << "fileposition: " << _clientIt->filePosition << std::endl;
 		fileStream.seekg(_clientIt->filePosition);
-		std::cout << "knudel2" << std::endl;
-		
+		std::cout << "kundel1" << std::endl;
 		char	buffer[SEND_CHUNK_SIZE];
 		bzero(buffer, SEND_CHUNK_SIZE);
 		fileStream.read(buffer, SEND_CHUNK_SIZE);
-		std::cout << "knudel2.5" << std::endl;
+		std::cout << "kundel2" << std::endl;
 
 		if (::send(_clientfd, buffer, fileStream.gcount(), 0) == -1)
 		{
-			std::cout << "knudel3" << std::endl;
+			std::cout << "kundel2.5" << std::endl;
 			
 			fileStream.close();
-			closeClient("Server::sendResponseBody: send failure");
+			closeClient("Server::sendResponseBody: send failure.");
 			throw std::runtime_error(E_SEND);
 		}
-		std::cout << "knudel4" << std::endl;
-
+		std::cout << "kundel3" << std::endl;
+		
 		if (fileStream.eof())
 		{
 			fileStream.close();
-			closeClient("Server::sendResponseBody: sending complete");
-			std::cout << "reset (but not close) client because file.eof()." << std::endl;
+			closeClient("Server::sendResponseBody: sending complete.");
 			return;
 		}
 		_clientIt->filePosition = fileStream.tellg();
@@ -477,6 +463,8 @@ void Server::closeClient(const char* msg)
 	_pollStructs[pollStructIndex].fd = -1;
 	_pollStructs[pollStructIndex].events = 0;
 	_pollStructs[pollStructIndex].revents = 0;
+	if (_index > 0)
+		--_index; // this is highly inelegant, but necessary for now. The i of the handleConnections loop has to be reduced, because we are now missing an entry in the vector and would skip one.
 	_clients.erase(_clientIt);
 }
 
@@ -614,20 +602,20 @@ std::string Server::getStatusPage(int code) const
 
 void Server::selectErrorPage(int code)
 {
-	_statuscode = code;
-	
 	_clientIt->requestHeadComplete = true;
 	_clientIt->requestBodyComplete = true;
 	_clientIt->responseFileSelected = true;
 	_clientIt->errorPending = true;
+	_clientIt->statusCode = code;
 	
-	if (_errorPagesPaths.find(code) != _errorPagesPaths.end()
-		&& resourceExists(_root + _errorPagesPaths[code]))
-	{
+	if (_errorPagesPaths.find(code) != _errorPagesPaths.end() && resourceExists(_root + _errorPagesPaths[code]))
 		_clientIt->sendPath = _root + _errorPagesPaths[code];
-		return;
-	}
-	
+	else
+		generateErrorPage(code);
+}
+
+void Server::generateErrorPage(int code)
+{
 	std::ofstream errorPage("temp/errorPage.html", std::ios::binary | std::ios::trunc);
 
 	if (errorPage.fail())

@@ -23,6 +23,7 @@ class	Client
 		
 		std::string				sendPath;
 		std::streampos			filePosition;
+		int						statusCode;
 		
 		int						fd;
 		std::string				buffer;
