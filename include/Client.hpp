@@ -11,16 +11,16 @@ class	Client
 
 		void					reset();
 		//sockaddr_in*			sockaddr();
-		const int&				pollStructIndex() const;
+		int						pollStructIndex();
 		
 		void					buildRequest();
 
-		const std::string&		httpProtocol() const;
-		const std::string& 		method() const;
-		const std::string& 		path() const;
-		const std::string&		directory() const;
-		const int& 				contentLength() const;
-		const std::string& 		contentType() const;
+		std::string			httpProtocol();
+		std::string 		method();
+		std::string 		path();
+		std::string			directory();
+		int					contentLength();
+		std::string 		contentType();
 		
 		std::string				sendPath;
 		std::streampos			filePosition;

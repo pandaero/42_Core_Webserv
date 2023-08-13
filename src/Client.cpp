@@ -20,8 +20,8 @@ Client::Client(int pollStructIndex)
 Client::~Client()
 {
 	std::cout << "client destructor fd " << fd << std::endl;
-	/* if (_request)
-		delete _request; */
+	if (_request)
+		delete _request;
 }
 
 void Client::reset()
@@ -39,32 +39,32 @@ void Client::reset()
 	responseHeadSent = false;
 }
 
-const std::string& Client::httpProtocol() const
+std::string Client::httpProtocol()
 {
 	return _request->httpProtocol();
 }
 
-const std::string& Client::method() const
+std::string Client::method()
 {
 	return _request->method();
 }
 
-const std::string& Client::path() const
+std::string Client::path()
 {
 	return _request->path();
 }
 
-const std::string& Client::directory() const
+std::string Client::directory()
 {
 	return _directory;
 }
 
-const int& Client::contentLength() const
+int Client::contentLength()
 {
 	return _request->contentLength();
 }
 
-const std::string& Client::contentType() const
+std::string Client::contentType()
 {
 	return _request->contentType();
 }
@@ -79,7 +79,7 @@ void Client::buildRequest()
 	requestHeadComplete = true;
 }
 
-const int& Client::pollStructIndex() const
+int Client::pollStructIndex()
 {
 	return _pollStructIndex;
 }

@@ -198,6 +198,10 @@ void Server::handleConnections()
 			{
 				std::cerr << "sendblock catch: " << msg << std::endl;
 			}
+			catch( const std::exception& e)
+			{
+				std::cerr << e.what() << "knudelcatch" << std::endl;
+			}
 			
 		}
 		 if (clientIt == _clients.end())
@@ -388,12 +392,18 @@ void Server::sendResponseBody()
 		char	buffer[SEND_CHUNK_SIZE];
 		bzero(buffer, SEND_CHUNK_SIZE);
 		fileStream.read(buffer, SEND_CHUNK_SIZE);
+		std::cout << "knudel2.5" << std::endl;
+
 		if (::send(_clientfd, buffer, fileStream.gcount(), 0) == -1)
 		{
+			std::cout << "knudel3" << std::endl;
+			
 			fileStream.close();
 			closeClient();
 			throw (E_SEND);
 		}
+		std::cout << "knudel4" << std::endl;
+
 		if (fileStream.eof())
 		{
 			fileStream.close();
