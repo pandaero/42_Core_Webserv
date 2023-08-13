@@ -69,7 +69,7 @@ void Server::cleanup()
 	for (clientVec_it it = _clients.begin(); it != _clients.end(); ++it)
 	{
 		_clientIt = it;
-		closeClient();
+		closeClient("Server::cleanup()");
 	}
 	if (_server_fd != -1)
 		close(_server_fd);
@@ -81,7 +81,7 @@ void Server::poll()
 {
 	ANNOUNCEME
 	if (::poll(_pollStructs, _clients.size() + 1, -1) == -1)
-		throw (E_POLL);
+		throw std::runtime_error(E_POLL);
 }
 
 void Server::acceptConnections()
@@ -135,8 +135,8 @@ void Server::receiveData()
 	
 	if (_bytesReceived <= 0)
 	{
-		closeClient();
-		throw (I_CLOSENODATA);
+		closeClient("Server::receiveData: 0 bytes received");
+		throw std::runtime_error(I_CLOSENODATA);
 	}
 	_clientIt->buffer.append(buffer);
 }
@@ -153,7 +153,7 @@ void Server::handleConnections()
 		if (_pollStructs[clientIt->pollStructIndex()].revents & POLLHUP)
 		{
 			std::cout << "Hangup." << std::endl;
-			closeClient();
+			closeClient("Server::handleConnections: POLLHUP");
 			if (clientIt == _clients.end())
 				break;
 			continue;
@@ -180,9 +180,9 @@ void Server::handleConnections()
 				handleRequestHead();
 				handleRequestBody();
 			}
-			catch(const char* msg)
+			catch(const std::exception& e)
 			{
-				std::cerr << msg << std::endl << _statuscode << ": " << getHttpMsg(_statuscode) << std::endl;
+				std::cerr << e.what() << std::endl << _statuscode << ": " << getHttpMsg(_statuscode) << std::endl;
 			}
 		}
 		selectResponseContent();
@@ -194,15 +194,10 @@ void Server::handleConnections()
 				sendResponseHead();
 				sendResponseBody();
 			}
-			catch(const char* msg/* const std::exception& e */)
+			catch(const std::exception& e)
 			{
-				std::cerr << "sendblock catch: " << msg << std::endl;
+				std::cerr << "sendblock catch: " << e.what() << std::endl;
 			}
-			catch( const std::exception& e)
-			{
-				std::cerr << e.what() << "knudelcatch" << std::endl;
-			}
-			
 		}
 		 if (clientIt == _clients.end())
 			break;
@@ -298,8 +293,8 @@ void Server::sendResponseHead()
 		return;
 	if (!_clientIt->requestBodyComplete)
 	{
-		closeClient();
-		throw ("no data received, but POLLOUT. Why?");
+		closeClient("Server::sendResponseHead: !requestBodyComplete");
+		throw std::runtime_error("no data received, but POLLOUT. Why?");
 	}
 	ANNOUNCEMECL
 	if (_clientIt->sendPath == "")
@@ -317,7 +312,7 @@ void Server::sendResponseHead()
 	ss_header << "\r\n";
 	
 	if (::send(_clientfd, ss_header.str().c_str(), ss_header.str().size(), 0) == -1)
-		throw (E_SEND);
+		throw std::runtime_error(E_SEND);
 	std::cout << "responseHead sent to fd: " << _clientfd << "\n" << ss_header.str() << std::endl;
 	_clientIt->responseHeadSent = true;
 }
@@ -370,9 +365,11 @@ void Server::sendResponseBody()
 {
 	ANNOUNCEMECL
 	std::cout << "sendPath:'" << _clientIt->sendPath << "'" << std::endl;
-	if (!_clientIt->responseFileSelected)
+	if (!_clientIt->responseFileSelected || !_clientIt->responseHeadSent)
 		return;
+	
 	std::ifstream	fileStream;
+	std::cout << "_clientmethod: " << _clientIt->method() << std::endl;
 
 	if (_clientIt->method() == GET)
 	{
@@ -380,10 +377,9 @@ void Server::sendResponseBody()
 		fileStream.open(_clientIt->sendPath.c_str(), std::ios::binary);
 		if (fileStream.fail())
 		{
-			// this should only happen in edge cases (system state changes, permissions, etc.), because we already ran resourceExists().
 			fileStream.close();
-			closeClient();
-			throw "sendResponseBody: Could not open file to send. Client closed.";
+			closeClient("Server::sendResponseBody: ifstream failure");
+			throw std::runtime_error("sendResponseBody: Could not open file to send. Client closed.");
 		}
 		std::cout << "fileposition: " << _clientIt->filePosition << std::endl;
 		fileStream.seekg(_clientIt->filePosition);
@@ -399,16 +395,15 @@ void Server::sendResponseBody()
 			std::cout << "knudel3" << std::endl;
 			
 			fileStream.close();
-			closeClient();
-			throw (E_SEND);
+			closeClient("Server::sendResponseBody: send failure");
+			throw std::runtime_error(E_SEND);
 		}
 		std::cout << "knudel4" << std::endl;
 
 		if (fileStream.eof())
 		{
 			fileStream.close();
-			_clientIt->reset();
-			//closeClient();
+			closeClient("Server::sendResponseBody: sending complete");
 			std::cout << "reset (but not close) client because file.eof()." << std::endl;
 			return;
 		}
@@ -471,16 +466,17 @@ int Server::freePollStructIndex()
 		throw (E_SEND);
 } */
 
-void Server::closeClient()
+void Server::closeClient(const char* msg)
 {
-	ANNOUNCEME
+	ANNOUNCEMECL
+	if (msg)
+		std::cout << "closeClient fd " << _clientIt->fd << ": " << msg << std::endl;
 	int	pollStructIndex = _clientIt->pollStructIndex();
 	
 	close(_clientfd);
 	_pollStructs[pollStructIndex].fd = -1;
 	_pollStructs[pollStructIndex].events = 0;
 	_pollStructs[pollStructIndex].revents = 0;
-	std::cout << "closeClient on fd " << _clientfd << std::endl;
 	_clients.erase(_clientIt);
 }
 
@@ -638,7 +634,7 @@ void Server::selectErrorPage(int code)
 	{
 		errorPage.close();
 		std::cerr << "Error opening temporary file." << std::endl;
-		throw (E_TEMPFILE);
+		throw std::runtime_error(E_TEMPFILE);
 	}
 
 	std::string			httpMsg(getHttpMsg(code));

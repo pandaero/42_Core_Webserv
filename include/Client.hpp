@@ -9,7 +9,6 @@ class	Client
 		Client(int);
 		~Client();
 
-		void					reset();
 		//sockaddr_in*			sockaddr();
 		int						pollStructIndex();
 		
@@ -33,12 +32,13 @@ class	Client
 		bool					requestBodyComplete;
 		bool					responseFileSelected;
 		bool					responseHeadSent;
+		bool					responseBodySent;
 		
 	private:
 		Request*				_request;
 		
 		int						_pollStructIndex;
-		//sockaddr_in				_clientAddress;
+		//sockaddr_in			_clientAddress;
 
 		std::string				_directory;
 };

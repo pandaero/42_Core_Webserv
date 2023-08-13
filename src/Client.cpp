@@ -5,7 +5,6 @@ Client::Client(int pollStructIndex)
 	fd = -42;
 	_pollStructIndex = pollStructIndex;
 
-	//state = receiveRequestHead;
 	filePosition = 0;
 	
 	_request = NULL;
@@ -15,6 +14,7 @@ Client::Client(int pollStructIndex)
 	requestBodyComplete = false;
 	responseFileSelected = false;
 	responseHeadSent = false;
+	responseBodySent = false;
 }
 
 Client::~Client()
@@ -22,21 +22,6 @@ Client::~Client()
 	std::cout << "client destructor fd " << fd << std::endl;
 	if (_request)
 		delete _request;
-}
-
-void Client::reset()
-{
-	if (_request)
-	{
-		delete _request;
-		 _request = NULL;
-	}
-	filePosition = 0;
-	errorPending = false;
-	requestHeadComplete = false;
-	requestBodyComplete = false;
-	responseFileSelected = false;
-	responseHeadSent = false;
 }
 
 std::string Client::httpProtocol()

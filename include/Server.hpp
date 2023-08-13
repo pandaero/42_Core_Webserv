@@ -24,7 +24,7 @@ class	Server
 		void	sendResponseBody();
 
 		int		freePollStructIndex();
-		void	closeClient();
+		void	closeClient(const char*);
 		
 		bool			requestError();
 		std::string		mimeType(std::string);
