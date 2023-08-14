@@ -23,7 +23,6 @@ class	Server
 		void	sendResponseHead();
 		void	sendResponseBody();
 
-		int		freePollStructIndex();
 		void	closeClient(const char*);
 		
 		std::string		mimeType(std::string);
@@ -55,13 +54,12 @@ class	Server
 		strMap							_cgiPaths;
 		strMap*							_mimeTypes;
 
-		pollfd *						_pollStructs;
 		sockaddr_in						_serverAddress;
 		int								_clientfd;
 		clientVec_it					_clientIt;
 		std::vector<Client>				_clients;
+		std::vector<pollfd>				_pollVector;
 		size_t							_index;
-		//ssize_t							_bytesReceived;
 		
 		std::string						_root;
 		std::string						_standardFileName;

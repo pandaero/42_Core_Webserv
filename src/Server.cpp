@@ -1,7 +1,6 @@
 #include "../include/Server.hpp"
 
-Server::Server(const ServerConfig & config):
-	_pollStructs(NULL)
+Server::Server(const ServerConfig & config)
 {	
 	// Set main values stored in configPairs
 	strMap		configPairs = config.getConfigPairs();
@@ -19,15 +18,6 @@ Server::Server(const ServerConfig & config):
 	_cgiPaths = config.getCgiPaths();
 	_standardFileName = configPairs[STDFILE];
 	_mimeTypes = config.getMIMETypes();
-
-	// Init polling structs
-	_pollStructs = new pollfd[_maxConns];
-	for (size_t i = 0; i < _maxConns; i++)
-	{
-		_pollStructs[i].fd = -1;
-		_pollStructs[i].events = 0;
-		_pollStructs[i].revents = 0;
-	}
 }
 
 Server::~Server()
@@ -35,22 +25,21 @@ Server::~Server()
 	while (!_clients.empty())
 	{
 		_clientIt = _clients.begin();
-		closeClient("Server::~Server()");
+		closeClient("Server::~Server(): Server Object shutting down");
 	}
 	if (_server_fd != -1)
 		close(_server_fd);
-	if (_pollStructs)
-		delete [] _pollStructs;
 }
 
 void	Server::startListening()
 {
 	ANNOUNCEME
-	int	options = 1;
+	int		options = 1;
+	pollfd	serverPollStruct;
 	
 	_server_fd = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP);
 	if (_server_fd == -1)
-		throw	socketCreationFailureException();
+		throw socketCreationFailureException();
 	
 	if (setsockopt(_server_fd, SOL_SOCKET, SO_REUSEADDR, (char*)&options, sizeof(options)) == -1)
 		throw std::runtime_error(E_SOCKOPT);
@@ -69,33 +58,35 @@ void	Server::startListening()
 		close(_server_fd);
 		throw listenFailureException();
 	}
-	_pollStructs[0].fd = _server_fd;
-	_pollStructs[0].events = POLLIN | POLLOUT | POLLHUP;
-	_pollStructs[0].revents = 0;
+	serverPollStruct.fd = _server_fd;
+	serverPollStruct.events = POLLIN;
+	serverPollStruct.revents = 0;
+	_pollVector.push_back(serverPollStruct);
 }
 
 void Server::poll()
 {
 	ANNOUNCEME
-	if (::poll(_pollStructs, _clients.size() + 1, -1) == -1)
+	if (::poll(&_pollVector[0], _pollVector.size(), -1) == -1)
 		throw std::runtime_error(E_POLL);
 }
 
 void Server::acceptConnections()
 {
-	if (_pollStructs[0].revents & POLLIN)
+	if (_pollVector[0].revents & POLLIN)
 	{
 		ANNOUNCEME
 		while (true)
 		{
-			int 	new_sock;
-			int		index = freePollStructIndex();
-			
-			if (index == -1)
+			if (_pollVector.size() > _maxConns)
 			{
 				std::cerr << I_CONNECTIONLIMIT << std::endl;
 				return;
 			}
+
+			int 	new_sock;
+			pollfd	new_pollStruct;
+
 			new_sock = accept(_server_fd, NULL, NULL); // don't need client info, so pass NULL
 			if (new_sock == -1)
 			{
@@ -103,12 +94,16 @@ void Server::acceptConnections()
 					std::cerr << E_ACCEPT << std::endl;
 				break;
 			}
-			_clients.push_back(Client(index)); //new this shit?
+			_clients.push_back(Client(0)); //new this shit?
 			_clients.back().fd = new_sock;
-			_pollStructs[index].fd = new_sock;
-			_pollStructs[index].events = POLLIN | POLLOUT | POLLHUP;
+			
+			new_pollStruct.fd = new_sock;
+			new_pollStruct.events = POLLIN | POLLOUT | POLLHUP;
+			new_pollStruct.revents = 0;
+			_pollVector.push_back(new_pollStruct);
 			std::cout << "New client accepted on fd " << new_sock << "." << std::endl;
-			std::cout << "Clients count: " << _clients.size() << std::endl;
+			std::cout << "Clients connected: " << _clients.size() << std::endl;
+			std::cout << "PollStructs in Vector: " << _pollVector.size() << std::endl;
 		}
 	}
 	std::cout << "leaving Acceptconnections" << std::endl;
@@ -142,14 +137,21 @@ void Server::receiveData()
 void Server::handleConnections()
 {
 	ANNOUNCEME
-	//for (_index = 0; _index < _clients.size(); ++_index)
 	for (_clientIt = _clients.begin(); _clientIt != _clients.end(); ++_clientIt)
 	{
-		//_clientIt = _clients.begin() + _index;
 		_clientfd = _clientIt->fd;
+		
+		
+		std::vector<pollfd>::iterator	pollStruct = _pollVector.begin();
+		while (pollStruct != _pollVector.end() && pollStruct->fd != _clientfd)
+			++pollStruct;
+		if (pollStruct == _pollVector.end())
+			throw std::runtime_error("Server::handleConnections: fd to handle not found in pollVector");
+
+
+
 		ANNOUNCEMECL
-		std::cout << "psi:" << _clientIt->pollStructIndex << std::endl;
-		if (_pollStructs[_clientIt->pollStructIndex].revents & POLLHUP)
+		if (pollStruct->revents & POLLHUP)
 		{
 			closeClient("Server::handleConnections: POLLHUP");
 			continue;
@@ -157,7 +159,7 @@ void Server::handleConnections()
 		if (_clientIt->errorPending)
 		{
 			std::cout << "Error Pending." << std::endl;
-			if (_pollStructs[_clientIt->pollStructIndex].revents & POLLOUT)
+			if (pollStruct->revents & POLLOUT)
 			{
 				sendResponseHead();
 				sendResponseBody();
@@ -167,7 +169,7 @@ void Server::handleConnections()
 		}
 		try
 		{
-			if (_pollStructs[_clientIt->pollStructIndex].revents & POLLIN)
+			if (pollStruct->revents & POLLIN)
 			{
 				std::cout << "POLLIN." << std::endl;
 				receiveData();
@@ -175,7 +177,7 @@ void Server::handleConnections()
 				handleRequestBody();
 				selectResponseContent();
 			}
-			if (_pollStructs[_clientIt->pollStructIndex].revents & POLLOUT)
+			if (pollStruct->revents & POLLOUT)
 			{
 				std::cout << "POLLOUT." << std::endl;
 				sendResponseHead();
@@ -435,17 +437,6 @@ bool Server::dirListing(const std::string& path)
 	return true;
 }
 
-int Server::freePollStructIndex()
-{
-	size_t i = 0;
-	
-	while (i < _maxConns && _pollStructs[i].fd != -1)
-		i++;
-	if (i == _maxConns)
-		i = -1;
-	return i;
-}
-
 /* void Server::sendStatusCodePage(int code)
 {
 	Response	response(code, _names);
@@ -458,15 +449,17 @@ int Server::freePollStructIndex()
 
 void Server::closeClient(const char* msg)
 {
-	int		pollStructIndex = _clientIt->pollStructIndex;
-	size_t	clientIndex;
+	std::vector<pollfd>::iterator	it = _pollVector.begin();
+	size_t							clientIndex;
 	
 	if (msg)
 		std::cout << "closeClient fd " << _clientIt->fd << ": " << msg << std::endl;
 	close(_clientfd);
-	_pollStructs[pollStructIndex].fd = -1;
-	_pollStructs[pollStructIndex].events = 0;
-	_pollStructs[pollStructIndex].revents = 0;
+	while (it != _pollVector.end() && it->fd != _clientfd)
+		++it;
+	if (it == _pollVector.end())
+		throw std::runtime_error("Server::closeClient: fd to close not found in pollVector");
+	_pollVector.erase(it);
 	clientIndex = std::distance(_clients.begin(), _clientIt);
 	_clients.erase(_clientIt);
 	_clientIt = _clients.begin() + clientIndex;

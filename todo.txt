@@ -3,6 +3,7 @@
 - alt location
 
 - A request to your server should never hang forever.
+actively tell clients wanting to connect on connection limit reached to fuck off
 
 - handle server names and servers listening on same port
 		The first server for a host:port will be the default for this host:port (that means
