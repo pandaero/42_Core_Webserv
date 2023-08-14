@@ -106,14 +106,13 @@ void Server::acceptConnections()
 			std::cout << "PollStructs in Vector: " << _pollVector.size() << std::endl;
 		}
 	}
-	std::cout << "leaving Acceptconnections" << std::endl;
 }
 
 void Server::receiveData()
 {
 	int		bytesReceived;
 	
-	ANNOUNCEMECL
+	ANNOUNCEME_FD
 	if (_clientIt->requestBodyComplete)
 	{
 		std::cout << "receiveData returning because reqeustbodyComplete" << std::endl;
@@ -136,21 +135,17 @@ void Server::receiveData()
 
 void Server::handleConnections()
 {
-	ANNOUNCEME
 	for (_clientIt = _clients.begin(); _clientIt != _clients.end(); ++_clientIt)
 	{
-		_clientfd = _clientIt->fd;
-		
-		
 		std::vector<pollfd>::iterator	pollStruct = _pollVector.begin();
+		
 		while (pollStruct != _pollVector.end() && pollStruct->fd != _clientfd)
 			++pollStruct;
 		if (pollStruct == _pollVector.end())
 			throw std::runtime_error("Server::handleConnections: fd to handle not found in pollVector");
+		_clientfd = _clientIt->fd;
 
-
-
-		ANNOUNCEMECL
+		ANNOUNCEME_FD
 		if (pollStruct->revents & POLLHUP)
 		{
 			closeClient("Server::handleConnections: POLLHUP");
@@ -229,7 +224,7 @@ void Server:: handleRequestHead()
 {
 	if (_clientIt->requestHeadComplete)
 		return;
-	ANNOUNCEMECL
+	ANNOUNCEME_FD
 	if (_clientIt->buffer.find("\r\n\r\n") == std::string::npos)
 	{
 		selectErrorPage(431);
@@ -280,7 +275,7 @@ void Server::sendResponseHead()
 		closeClient("Server::sendResponseHead: !requestBodyComplete");
 		throw std::runtime_error("Server::sendResponseHead: !requestBodyComplete");
 	}
-	ANNOUNCEMECL
+	ANNOUNCEME_FD
 	if (_clientIt->sendPath == "")
 	{
 		std::cout << "sendPath was empty. Right now dont think there are such cases outside of errors, but who knows" << std::endl;
@@ -305,7 +300,7 @@ void Server::selectResponseContent()
 {
 	if (_clientIt->responseFileSelected || !_clientIt->requestBodyComplete)
 		return;
-	ANNOUNCEMECL
+	ANNOUNCEME_FD
 	std::string	completePath(_root + _clientIt->path());
 
 	if (isDirectory(completePath))
@@ -352,8 +347,7 @@ void Server::selectResponseContent()
 
 void Server::sendResponseBody()
 {
-	try {
-	ANNOUNCEMECL
+	ANNOUNCEME_FD
 	std::cout << "sendPath:'" << _clientIt->sendPath << "'" << std::endl;
 	if (!_clientIt->responseFileSelected || !_clientIt->responseHeadSent)
 		return;
@@ -372,22 +366,16 @@ void Server::sendResponseBody()
 		}
 		std::cout << "fileposition: " << _clientIt->filePosition << std::endl;
 		fileStream.seekg(_clientIt->filePosition);
-		std::cout << "kundel1" << std::endl;
 		char	buffer[SEND_CHUNK_SIZE];
 		bzero(buffer, SEND_CHUNK_SIZE);
 		fileStream.read(buffer, SEND_CHUNK_SIZE);
-		std::cout << "kundel2" << std::endl;
 
 		if (::send(_clientfd, buffer, fileStream.gcount(), 0) == -1)
 		{
-			std::cout << "kundel2.5" << std::endl;
-			
 			fileStream.close();
 			closeClient("Server::sendResponseBody: send failure.");
 			throw std::runtime_error(E_SEND);
 		}
-		std::cout << "kundel3" << std::endl;
-		
 		if (fileStream.eof())
 		{
 			fileStream.close();
@@ -400,11 +388,6 @@ void Server::sendResponseBody()
 	}
 	else
 		std::cout << "Post and delete are unhandled as of now." << std::endl;
-		}
-		catch (const std::exception& e)
-		{
-			std::cerr << "sendmsgcatch" << e.what() << std::endl;
-		}
 }	 
 	
 /*
@@ -436,16 +419,6 @@ bool Server::dirListing(const std::string& path)
 		return false;
 	return true;
 }
-
-/* void Server::sendStatusCodePage(int code)
-{
-	Response	response(code, _names);
-		
-	//gotta check for client supplied error page and try to send that. only if not supplied or fail, send this
-	//use getStatusPage in server for this, also rename shit, too ambiguous
-	if (::send(_currentClientfd, response.getStatusPage(), response.getSize(), 0) == -1)
-		throw (E_SEND);
-} */
 
 void Server::closeClient(const char* msg)
 {

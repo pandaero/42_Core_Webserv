@@ -8,7 +8,7 @@
 # define HTTPVERSION	"HTTP/1.1"
 # define NOTFOUND		"_____TARGETSTRINGNOTFOUND_____"
 # define ANNOUNCEME		std::cout << "Announcer: " << __FUNCTION__ << std::endl;
-# define ANNOUNCEMECL	std::cout << "Announcer: " << __FUNCTION__ << " on fd " << _clientIt->fd << std::endl;
+# define ANNOUNCEME_FD	std::cout << "Announcer: " << __FUNCTION__ << " on fd " << _clientIt->fd << std::endl;
 
 // ===== ===== ===== ===== SIZE Descriptions ===== ===== ===== =====
 # define RECV_CHUNK_SIZE		4096

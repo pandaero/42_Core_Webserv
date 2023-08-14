@@ -69,12 +69,6 @@ class	Server
 		void	checkWriteAccess(std::string);
 		void	checkExecAccess(std::string); */
 
-	class	errorCodeResponse: public std::exception
-	{};
-	
-	
-	
-	
 	class	invalidAddressException: public std::exception
 	{
 		const char *	what() const throw();
@@ -92,10 +86,6 @@ class	Server
 		const char *	what() const throw();
 	};
 	class	listenFailureException: public std::exception
-	{
-		const char *	what() const throw();
-	};
-	class	pollFailureException: public std::exception
 	{
 		const char *	what() const throw();
 	};
