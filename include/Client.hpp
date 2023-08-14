@@ -9,39 +9,31 @@ class	Client
 		Client(int);
 		~Client();
 
-		//sockaddr_in*			sockaddr();
-		int						pollStructIndex();
-		
-		void					buildRequest();
+		void			buildRequest();
+		std::string		httpProtocol();
+		std::string 	method();
+		std::string 	path();
+		int				contentLength();
+		std::string 	contentType();
+	
+		std::string		sendPath;
+		std::streampos	filePosition;
+		int				statusCode;
 
-		std::string			httpProtocol();
-		std::string 		method();
-		std::string 		path();
-		std::string			directory();
-		int					contentLength();
-		std::string 		contentType();
-		
-		std::string				sendPath;
-		std::streampos			filePosition;
-		int						statusCode;
-		
-		int						fd;
-		std::string				buffer;
-		
-		bool					errorPending;
-		bool					requestHeadComplete;
-		bool					requestBodyComplete;
-		bool					responseFileSelected;
-		bool					responseHeadSent;
-		bool					responseBodySent;
-		
+		int				fd;
+		int				pollStructIndex;
+		std::string		buffer;
+		std::string		directory;
+
+		bool			errorPending;
+		bool			requestHeadComplete;
+		bool			requestBodyComplete;
+		bool			responseFileSelected;
+		bool			responseHeadSent;
+		bool			responseBodySent;
+	
 	private:
-		Request*				_request;
-		
-		int						_pollStructIndex;
-		//sockaddr_in			_clientAddress;
-
-		std::string				_directory;
+		Request*		_request;
 };
 
 #endif

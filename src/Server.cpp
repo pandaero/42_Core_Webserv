@@ -83,9 +83,9 @@ void Server::poll()
 
 void Server::acceptConnections()
 {
-	ANNOUNCEME
 	if (_pollStructs[0].revents & POLLIN)
 	{
+		ANNOUNCEME
 		while (true)
 		{
 			int 	new_sock;
@@ -148,7 +148,8 @@ void Server::handleConnections()
 		//_clientIt = _clients.begin() + _index;
 		_clientfd = _clientIt->fd;
 		ANNOUNCEMECL
-		if (_pollStructs[_clientIt->pollStructIndex()].revents & POLLHUP)
+		std::cout << "psi:" << _clientIt->pollStructIndex << std::endl;
+		if (_pollStructs[_clientIt->pollStructIndex].revents & POLLHUP)
 		{
 			closeClient("Server::handleConnections: POLLHUP");
 			continue;
@@ -156,7 +157,7 @@ void Server::handleConnections()
 		if (_clientIt->errorPending)
 		{
 			std::cout << "Error Pending." << std::endl;
-			if (_pollStructs[_clientIt->pollStructIndex()].revents & POLLOUT)
+			if (_pollStructs[_clientIt->pollStructIndex].revents & POLLOUT)
 			{
 				sendResponseHead();
 				sendResponseBody();
@@ -166,7 +167,7 @@ void Server::handleConnections()
 		}
 		try
 		{
-			if (_pollStructs[_clientIt->pollStructIndex()].revents & POLLIN)
+			if (_pollStructs[_clientIt->pollStructIndex].revents & POLLIN)
 			{
 				std::cout << "POLLIN." << std::endl;
 				receiveData();
@@ -174,7 +175,7 @@ void Server::handleConnections()
 				handleRequestBody();
 				selectResponseContent();
 			}
-			if (_pollStructs[_clientIt->pollStructIndex()].revents & POLLOUT)
+			if (_pollStructs[_clientIt->pollStructIndex].revents & POLLOUT)
 			{
 				std::cout << "POLLOUT." << std::endl;
 				sendResponseHead();
@@ -184,9 +185,10 @@ void Server::handleConnections()
 		catch (const std::exception& e)
 		{
 			std::cerr << "sendblock catch: " << e.what() << std::endl;
-			if (_clientIt == _clients.end())
-				break;
+			
 		}
+		if (_clientIt == _clients.end())
+				break;
 	}
 }
 
@@ -207,7 +209,7 @@ void Server::checkRequest()
 		selectErrorPage(413);
 	else
 	{
-		strLocMap_it	locIt = _locations.find(_clientIt->directory());
+		strLocMap_it	locIt = _locations.find(_clientIt->directory);
 		
 		// access forbidden (have to specifically allow each path in config file)
 		if (locIt == _locations.end())
@@ -348,6 +350,7 @@ void Server::selectResponseContent()
 
 void Server::sendResponseBody()
 {
+	try {
 	ANNOUNCEMECL
 	std::cout << "sendPath:'" << _clientIt->sendPath << "'" << std::endl;
 	if (!_clientIt->responseFileSelected || !_clientIt->responseHeadSent)
@@ -395,6 +398,11 @@ void Server::sendResponseBody()
 	}
 	else
 		std::cout << "Post and delete are unhandled as of now." << std::endl;
+		}
+		catch (const std::exception& e)
+		{
+			std::cerr << "sendmsgcatch" << e.what() << std::endl;
+		}
 }	 
 	
 /*
@@ -450,7 +458,7 @@ int Server::freePollStructIndex()
 
 void Server::closeClient(const char* msg)
 {
-	int		pollStructIndex = _clientIt->pollStructIndex();
+	int		pollStructIndex = _clientIt->pollStructIndex;
 	size_t	clientIndex;
 	
 	if (msg)

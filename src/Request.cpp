@@ -27,27 +27,27 @@ std::string Request::headerValue(std::string header)
 	return (NOTFOUND);
 }
 
-const std::string& Request::method() const
+std::string Request::method()
 {
 	return _method;
 }
 
-const std::string& Request::httpProtocol() const
+std::string Request::httpProtocol()
 {
 	return _protocol;
 }
 
-const std::string& Request::path() const
+std::string Request::path()
 {
 	return _path;
 }
 
-const int& Request::contentLength() const
+int Request::contentLength()
 {
 	return _contentLength;
 }
 
-const std::string& Request::contentType() const
+std::string Request::contentType()
 {
 	return _contentType;
 }

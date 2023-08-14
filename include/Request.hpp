@@ -11,11 +11,11 @@ class	Request
 		
 		std::string			headerValue(std::string);
 		
-		const std::string&	method() const;
-		const std::string&	path() const;
-		const std::string&	httpProtocol() const;
-		const int&			contentLength() const;
-		const std::string&	contentType() const;
+		std::string	path();
+		std::string	httpProtocol();
+		int			contentLength();
+		std::string	contentType();
+		std::string	method();
 
 	private:
 		strMap		createHeaderMap(std::string&, std::string, std::string, std::string);
