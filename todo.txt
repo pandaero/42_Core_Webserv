@@ -3,6 +3,8 @@
 - alt location
 - post and delete requests
 
+test catch of server handling (shutting down servers on running main, keeping the rest)
+
 - A request to your server should never hang forever.
 actively tell clients wanting to connect on connection limit reached to fuck off
 
