@@ -60,7 +60,6 @@ class	Server
 		clientVec_it					_clientIt;
 		std::vector<Client>				_clients;
 		std::vector<pollfd>				_pollVector;
-		size_t							_index;
 		
 		std::string						_root;
 		std::string						_standardFileName;

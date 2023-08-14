@@ -41,7 +41,7 @@
 // location
 # define LOCATIONTITLE	"location"
 # define DIRLISTING		"dir_listing"
-# define ALTLOC			"alt_location"
+# define REDIRECTION	"http_redirect"
 # define METHODS		"methods"
 # define GET			"GET"
 # define POST			"POST"

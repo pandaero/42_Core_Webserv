@@ -11,23 +11,13 @@ class	Server;
 class	ServerConfig;
 class	ConfigFile;
 
-//delete soon
-enum clientState
-{
-	receiveRequestHead,
-	receiveRequestBody,
-	selectResponseFile,
-	sendResponseHead_,
-	sendResponseBody_
-};
-
 typedef struct
 {
 	bool			get;
 	bool			post;
 	bool			delete_;
 	std::string		dir_listing;
-	std::string		alt_location;
+	std::string		http_redir;
 	std::string		upload_dir;
 }	s_locInfo;
 

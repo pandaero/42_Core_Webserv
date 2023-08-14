@@ -84,7 +84,7 @@ void ServerConfig::whoIsI()
 
 	std::cout << "*****_locations*****\n";
 	for (strLocMap_it it = _locations.begin(); it != _locations.end(); it++)
-		std::cout << it->first << "\t\t" << "methods: " << (it->second.get == true ? "get" : "") << (it->second.post == true ? " post" : "") << (it->second.delete_ == true ? " delete" : "") << ". alt_location: " << it->second.alt_location << ". dir_listing: " << it->second.dir_listing << std::endl;
+		std::cout << it->first << "\t\t" << "methods: " << (it->second.get == true ? "get" : "") << (it->second.post == true ? " post" : "") << (it->second.delete_ == true ? " delete" : "") << ". alt_location: " << it->second.http_redir << ". dir_listing: " << it->second.dir_listing << std::endl;
 	
 	std::cout << "*****_cgiPaths*****\n";
 	for (strMap_it it = _cgiPaths.begin(); it != _cgiPaths.end(); it++)
@@ -194,13 +194,13 @@ void ServerConfig::parseLocation(std::string& locationElement)
 		}
 		else if (key == DIRLISTING)
 		{
-			if (instruction == "yes" || instruction == "no" || instruction == "NOTSET")
+			if (instruction == "yes" || instruction == "no")
 				locInfo.dir_listing = instruction;
 			else
 				std::cerr << I_INVALIDVALUE << instruction << std::endl;
 		}
-		else if (key == ALTLOC)
-			locInfo.alt_location = instruction;
+		else if (key == REDIRECTION)
+			locInfo.http_redir = instruction;
 		else if (key == UPLOADDIR)
 			locInfo.upload_dir = instruction;
 		else

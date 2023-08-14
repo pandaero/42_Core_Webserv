@@ -239,6 +239,7 @@ void Server:: handleRequestHead()
 	_clientIt->buildRequest();
 	_clientIt->requestHeadComplete = true;
 	std::cout << "request path raw:'" << _clientIt->path() << "'" << std::endl;
+	std::cout << "completePath:'" << _root + _clientIt->path() << "'" << std::endl;
 	checkRequest();
 }
 
