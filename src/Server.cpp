@@ -133,18 +133,24 @@ void Server::receiveData()
 	_clientIt->buffer.append(buffer, bytesReceived);
 }
 
+pollfd* Server::getPollStruct(int fd)
+{
+	std::vector<pollfd>::iterator	it = _pollVector.begin();
+		
+		while (it != _pollVector.end() && it->fd != fd)
+			++it;
+		if (it == _pollVector.end())
+			throw std::runtime_error("Server::handleConnections: fd to handle not found in pollVector");
+		return &*it;
+}
+
 void Server::handleConnections()
 {
 	for (_clientIt = _clients.begin(); _clientIt != _clients.end(); ++_clientIt)
 	{
-		std::vector<pollfd>::iterator	pollStruct = _pollVector.begin();
-		
-		while (pollStruct != _pollVector.end() && pollStruct->fd != _clientfd)
-			++pollStruct;
-		if (pollStruct == _pollVector.end())
-			throw std::runtime_error("Server::handleConnections: fd to handle not found in pollVector");
 		_clientfd = _clientIt->fd;
-
+		pollfd*	pollStruct = getPollStruct(_clientfd);
+		
 		ANNOUNCEME_FD
 		if (pollStruct->revents & POLLHUP)
 		{
@@ -405,7 +411,7 @@ void Server::sendResponseBody()
 */
 
 // change other functions also to take const string &
-bool Server::dirListing(const std::string& path)
+bool Server::dirListing(std::string path)
 {
 	strLocMap_it	locIt =_locations.find(path);
 	
@@ -563,14 +569,6 @@ std::string	Server::mimeType(std::string filepath)
 	if (it != _mimeTypes->end())
 		return it->second;
 	return defaultType;
-}
-
-std::string Server::getStatusPage(int code) const
-{
-	if (_errorPagesPaths.find(code) != _errorPagesPaths.end())
-		return _errorPagesPaths.find(code)->second;
-	else
-		return _errorPagesPaths.find(-1)->second;
 }
 
 void Server::selectErrorPage(int code)

@@ -16,23 +16,24 @@ class	Server
 		void	handleConnections();
 	
 	private:
+		// main handlers
 		void	receiveData();
 		void	handleRequestHead();
 		void	handleRequestBody();
 		void	selectResponseContent();
+		void	selectErrorPage(int);
+		void	generateErrorPage(int);
 		void	sendResponseHead();
 		void	sendResponseBody();
-
 		void	closeClient(const char*);
 		
+		// utils
+		pollfd*			getPollStruct(int);
 		std::string		mimeType(std::string);
 		void			checkRequest();
-		void			selectErrorPage(int);
-		void			generateErrorPage(int);
+		bool			dirListing(std::string);
 
-		std::string		getStatusPage(int) const;
-		bool			dirListing(const std::string&);
-
+		// setters
 		void	setNames(std::string);
 		void	setHost(std::string);
 		void	setPort(std::string);
@@ -42,7 +43,7 @@ class	Server
 		//void	setCgiDir(std::string);
 		void	setClientMaxBody(std::string);
 		void	setMaxConnections(std::string);
-		void	setDefaultDirListing(std::string input);
+		void	setDefaultDirListing(std::string);
 
 		int								_server_fd;
 		std::vector<std::string>		_names;
