@@ -142,9 +142,10 @@ void Server::receiveData()
 void Server::handleConnections()
 {
 	ANNOUNCEME
-	for (_index = 0; _index < _clients.size(); ++_index)
+	//for (_index = 0; _index < _clients.size(); ++_index)
+	for (_clientIt = _clients.begin(); _clientIt != _clients.end(); ++_clientIt)
 	{
-		_clientIt = _clients.begin() + _index;
+		//_clientIt = _clients.begin() + _index;
 		_clientfd = _clientIt->fd;
 		ANNOUNCEMECL
 		if (_pollStructs[_clientIt->pollStructIndex()].revents & POLLHUP)
@@ -163,33 +164,28 @@ void Server::handleConnections()
 			}
 			continue;
 		}
-		if (_pollStructs[_clientIt->pollStructIndex()].revents & POLLIN)
+		try
 		{
-			std::cout << "POLLIN." << std::endl;
-			try
+			if (_pollStructs[_clientIt->pollStructIndex()].revents & POLLIN)
 			{
+				std::cout << "POLLIN." << std::endl;
 				receiveData();
 				handleRequestHead();
 				handleRequestBody();
 				selectResponseContent();
 			}
-			catch (const std::exception& e)
+			if (_pollStructs[_clientIt->pollStructIndex()].revents & POLLOUT)
 			{
-				std::cerr << "receiveblock catch: " << e.what() << std::endl;
-			}
-		}
-		if (_pollStructs[_clientIt->pollStructIndex()].revents & POLLOUT)
-		{
-			std::cout << "POLLOUT." << std::endl;
-			try
-			{
+				std::cout << "POLLOUT." << std::endl;
 				sendResponseHead();
 				sendResponseBody();
 			}
-			catch (const std::exception& e)
-			{
-				std::cerr << "sendblock catch: " << e.what() << std::endl;
-			}
+		}
+		catch (const std::exception& e)
+		{
+			std::cerr << "sendblock catch: " << e.what() << std::endl;
+			if (_clientIt == _clients.end())
+				break;
 		}
 	}
 }
@@ -454,18 +450,21 @@ int Server::freePollStructIndex()
 
 void Server::closeClient(const char* msg)
 {
-	ANNOUNCEMECL
+	int		pollStructIndex = _clientIt->pollStructIndex();
+	size_t	clientIndex;
+	
 	if (msg)
 		std::cout << "closeClient fd " << _clientIt->fd << ": " << msg << std::endl;
-	int	pollStructIndex = _clientIt->pollStructIndex();
-	
 	close(_clientfd);
 	_pollStructs[pollStructIndex].fd = -1;
 	_pollStructs[pollStructIndex].events = 0;
 	_pollStructs[pollStructIndex].revents = 0;
-	if (_index > 0)
-		--_index; // this is highly inelegant, but necessary for now. The i of the handleConnections loop has to be reduced, because we are now missing an entry in the vector and would skip one.
+	clientIndex = std::distance(_clients.begin(), _clientIt);
 	_clients.erase(_clientIt);
+	_clientIt = _clients.begin() + clientIndex;
+	if (_clientIt == _clients.end())
+		throw std::runtime_error("Server::closeClient: new clientIt points to end after closeClient");
+	_clientfd = _clientIt->fd;
 }
 
 void Server::whoIsI()

@@ -7,3 +7,85 @@
 - handle server names and servers listening on same port
 		The first server for a host:port will be the default for this host:port (that means
 		it will answer to all the requests that don’t belong to an other server).
+
+
+
+-- Handling Server index 0 ---
+Announcer: poll
+Announcer: acceptConnections
+leaving Acceptconnections
+Announcer: handleConnections
+Announcer: handleConnections on fd 4
+--- Handling Server index 0 ---
+Announcer: poll
+Announcer: acceptConnections
+client destructor fd 4					********* calling fd 4 destructor why? its not our code. the vector?
+client destructor fd -42
+New client accepted on fd 5.
+Clients count: 2
+leaving Acceptconnections
+Announcer: handleConnections
+Announcer: handleConnections on fd 4	********* only now does fd 4 actually work. big loop before this copypaste segment
+Announcer: handleConnections on fd 5
+--- Handling Server index 0 ---
+Announcer: poll
+Announcer: acceptConnections
+leaving Acceptconnections
+Announcer: handleConnections
+Announcer: handleConnections on fd 4
+POLLIN.
+Announcer: receiveData on fd 4
+637 bytes received.
+Content:
+GET / HTTP/1.1
+Host: localhost:8080
+Connection: keep-alive
+Cache-Control: max-age=0
+sec-ch-ua: "Not/A)Brand";v="99", "Brave";v="115", "Chromium";v="115"
+sec-ch-ua-mobile: ?0
+sec-ch-ua-platform: "Windows"
+Upgrade-Insecure-Requests: 1
+User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/115.0.0.0 Safari/537.36
+Accept: text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8
+Sec-GPC: 1
+Accept-Language: en
+Sec-Fetch-Site: none
+Sec-Fetch-Mode: navigate
+Sec-Fetch-User: ?1
+Sec-Fetch-Dest: document
+Accept-Encoding: gzip, deflate, br
+
+
+Announcer: handleRequestHead on fd 4
+request path raw:'/'
+Announcer: selectResponseContent on fd 4
+completePath is a directory
+'/mnt/e/42/Projects/darealserv/default/site/index.html' exists.
+POLLOUT.
+Announcer: sendResponseHead on fd 4
+responseHead sent to fd: 4
+HTTP/1.1 200 OK
+Server: webserv v0.69
+content-type: text/html
+content-length: 1651
+connection: close
+
+
+Announcer: sendResponseBody on fd 4
+sendPath:'/mnt/e/42/Projects/darealserv/default/site/index.html'
+_clientmethod: GET
+fileposition: 0
+kundel1
+kundel2
+kundel3
+closeClient fd 4: Server::sendResponseBody: sending complete.		*******and then we call closeClient on fd4, but the actual fd getting deleted is 5.
+client destructor fd 5
+--- Handling Server index 0 ---
+Announcer: poll
+Announcer: acceptConnections
+leaving Acceptconnections
+Announcer: handleConnections
+Announcer: handleConnections on fd 5
+--- Handling Server index 0 ---
+Announcer: poll
+Announcer: acceptConnections
