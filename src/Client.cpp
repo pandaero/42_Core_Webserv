@@ -55,7 +55,10 @@ void Client::buildRequest()
 {
 	_request = new Request(buffer);
 	buffer.erase(0, buffer.find("\r\n\r\n") + 4);
+	if (_request->path().find("/") == std::string::npos)
+		throw std::runtime_error("invalid URL in request.");
 	directory = _request->path().substr(0, _request->path().find_last_of("/") + 1);
+	filename = _request->path().substr(_request->path().find_last_of("/"));
 	if (_request->contentLength() <= 0 || _request->method() != POST) // we don't process bodies of GET or DELETE requests
 		requestBodyComplete = true;
 	requestHeadComplete = true;

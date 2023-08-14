@@ -24,6 +24,7 @@ class	Client
 		int				pollStructIndex;
 		std::string		buffer;
 		std::string		directory;
+		std::string		filename;
 
 		bool			errorPending;
 		bool			requestHeadComplete;

@@ -305,10 +305,17 @@ void Server::sendResponseHead()
 
 void Server::selectResponseContent()
 {
+	std::string	completePath;
+	
 	if (_clientIt->responseFileSelected || !_clientIt->requestBodyComplete)
 		return;
 	ANNOUNCEME_FD
-	std::string	completePath(_root + _clientIt->path());
+	
+	// check for http redirection
+	if (_locations[_clientIt->directory].http_redir.empty())
+		completePath = _root + _clientIt->path();
+	else
+		completePath = _root + _locations[_clientIt->directory].http_redir + _clientIt->filename;
 
 	if (isDirectory(completePath))
 	{
