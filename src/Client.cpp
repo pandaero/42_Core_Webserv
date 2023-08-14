@@ -2,10 +2,11 @@
 
 Client::Client(int index)
 {
+	(void)index;
 	fd = -42;
-	pollStructIndex = index;
 
 	filePosition = 0;
+	bytesWritten = 0;
 	
 	_request = NULL;
 

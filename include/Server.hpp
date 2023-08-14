@@ -37,9 +37,7 @@ class	Server
 		void	setNames(std::string);
 		void	setHost(std::string);
 		void	setPort(std::string);
-		void	setRoot(std::string);
 		//void	setDir(std::string);
-		void	setUploadDir(std::string);
 		//void	setCgiDir(std::string);
 		void	setClientMaxBody(std::string);
 		void	setMaxConnections(std::string);
@@ -62,8 +60,6 @@ class	Server
 		std::vector<pollfd>				_pollVector;
 		
 		std::string						_root;
-		std::string						_standardFileName;
-		std::string						_uploadDir;
 		/* void	checkMethodAccess(std::string);
 		void	checkReadAccess(std::string);
 		void	checkWriteAccess(std::string);

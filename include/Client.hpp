@@ -18,10 +18,10 @@ class	Client
 	
 		std::string		sendPath;
 		std::streampos	filePosition;
+		size_t			bytesWritten;
 		int				statusCode;
 
 		int				fd;
-		int				pollStructIndex;
 		std::string		buffer;
 		std::string		directory;
 		std::string		filename;

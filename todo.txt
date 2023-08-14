@@ -1,15 +1,21 @@
 - dir listing
 - cgi
-- alt location
-- post and delete requests
+- delete requests
 
 - standardfile per loc
-
-test catch of server handling (shutting down servers on running main, keeping the rest)
+- siege test
+- test post request
+- capture SIGINT and clean up memory and fd (basically just call the server destructors)
 
 - A request to your server should never hang forever.
-actively tell clients wanting to connect on connection limit reached to fuck off
+actively tell clients wanting to connect on connection limit reached to fuck off? happens automatically?
 
 - handle server names and servers listening on same port
 		The first server for a host:port will be the default for this host:port (that means
 		it will answer to all the requests that don’t belong to an other server).
+
+
+testing:
+- catch of server handling (shutting down servers on running main, keeping the rest)
+- http redirection
+- correct serving of standard-serve files

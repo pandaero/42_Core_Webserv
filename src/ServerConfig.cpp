@@ -203,6 +203,8 @@ void ServerConfig::parseLocation(std::string& locationElement)
 			locInfo.http_redir = instruction;
 		else if (key == UPLOADDIR)
 			locInfo.upload_dir = instruction;
+		else if (key == STDFILE)
+			locInfo.std_file = instruction;
 		else
 			std::cerr << I_INVALIDKEY << key << std::endl;
 	}

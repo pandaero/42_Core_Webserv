@@ -7,16 +7,15 @@ Server::Server(const ServerConfig & config)
 	setNames(configPairs[SERVERNAME]);
 	setHost(configPairs[HOST]);
 	setPort(configPairs[PORT]);
-	setRoot(configPairs[ROOT]);
 	setClientMaxBody(configPairs[CLIMAXBODY]);
 	setMaxConnections(configPairs[MAXCONNS]);
 	setDefaultDirListing(configPairs[DIRLISTING]);
 	
 	// Copy remaining values directly to server variables 
+	_root = configPairs[ROOT];
 	_errorPagesPaths = config.getErrorPaths();
 	_locations = config.getLocations();
 	_cgiPaths = config.getCgiPaths();
-	_standardFileName = configPairs[STDFILE];
 	_mimeTypes = config.getMIMETypes();
 }
 
@@ -249,28 +248,29 @@ void Server::handleRequestBody()
 		return;
 	if (_clientIt->contentLength() < 0)
 	{
+		std::cout << "shouldnt ever get in here" << std::endl;
 		_clientIt->requestBodyComplete = true;
 		return;
 	}
-	// process body
-	_clientIt->requestBodyComplete = true;
-
-/* 	WRITETOFILE
-	// throw not yet caught
-	void Client::writeBodyToFile()
+	
+	// also need to check if CGI or not?
+	std::string writePath  = _root + _clientIt->path() + _locations[_clientIt->path()].upload_dir;
+	if (!resourceExists(writePath))
 	{
-		//now just taking request path, have to modify this with the config file given directory
-		std::string		writePath(_request.path());
-
-		std::ofstream	outputFile(writePath.c_str(), std::ios::binary | std::ios::app);
-		
-		if (!outputFile.is_open())
-			throw (E_REQUESTFILE);
-		outputFile.write(_buffer.c_str(), _buffer.size());
-		outputFile.close();
-		_request.addToBodyBytesWritten(_buffer.size()); // outputFile.tellp() delta prolly better but nah.
-		chunkhandler(TM).
-	} */
+		selectErrorPage(500);
+		return;		
+	}
+	std::ofstream outputFile(writePath.c_str(), std::ios::binary | std::ios::app);
+	if (!outputFile.is_open())
+		throw std::runtime_error(E_REQUESTFILE);
+	outputFile.write(_clientIt->buffer.c_str(), _clientIt->buffer.size());
+	_clientIt->bytesWritten += _clientIt->buffer.size(); // outputFile.tellp() delta prolly better but nah.
+	outputFile.close();
+	if (_clientIt->bytesWritten >= (size_t)_clientIt->contentLength())
+	{
+		_clientIt->requestBodyComplete = true;
+		selectResponseContent();
+	}
 }
 
 void Server::sendResponseHead()
@@ -283,17 +283,20 @@ void Server::sendResponseHead()
 		throw std::runtime_error("Server::sendResponseHead: !requestBodyComplete");
 	}
 	ANNOUNCEME_FD
-	if (_clientIt->sendPath == "")
-	{
-		std::cout << "sendPath was empty. Right now dont think there are such cases outside of errors, but who knows" << std::endl;
-	}
 
+	size_t	contentLength;
+
+	if (_clientIt->sendPath.empty())
+		contentLength = 0;
+	else
+		contentLength = fileSize(_clientIt->sendPath);
+	
 	std::stringstream	ss_header;
 	
 	ss_header << HTTPVERSION << ' ' << _clientIt->statusCode << ' ' << getHttpMsg(_clientIt->statusCode) << "\r\n";
 	ss_header << "Server: " << SERVERVERSION << "\r\n";
 	ss_header << "content-type: " << mimeType(_clientIt->sendPath) << "\r\n";
-	ss_header << "content-length: " << fileSize(_clientIt->sendPath) << "\r\n";
+	ss_header << "content-length: " << contentLength << "\r\n";
 	ss_header << "connection: close" << "\r\n";
 	ss_header << "\r\n";
 	
@@ -310,7 +313,13 @@ void Server::selectResponseContent()
 	if (_clientIt->responseFileSelected || !_clientIt->requestBodyComplete)
 		return;
 	ANNOUNCEME_FD
-	
+	if (_clientIt->method() == POST)
+	{
+		_clientIt->responseFileSelected = true;
+		_clientIt->statusCode = 201; //errors on post would have already been handled, so only reamining case is ok
+		//_clientIt->sendPath.clear(); //shoujlndt neede this, should be empty upon init
+		return;
+	}
 	// check for http redirection
 	if (_locations[_clientIt->directory].http_redir.empty())
 		completePath = _root + _clientIt->path();
@@ -320,22 +329,24 @@ void Server::selectResponseContent()
 	if (isDirectory(completePath))
 	{
 		std::cout << "completePath is a directory" << std::endl;
-
-		if (resourceExists(completePath + _standardFileName))
+		std::string standardFile = _locations[_clientIt->directory].std_file;
+		if (standardFile.empty())
+			standardFile = "index.html";
+		if (resourceExists(completePath + standardFile))
 		{
-			std::cout << "'" << completePath + _standardFileName << "' exists." << std::endl;
+			std::cout << "'" << completePath + standardFile << "' exists." << std::endl;
 			_clientIt->statusCode = 200;
-			_clientIt->sendPath = completePath + _standardFileName;
+			_clientIt->sendPath = completePath + standardFile;
 		}
 		else if (dirListing(completePath))
 		{
-			std::cout << "no, '" << completePath + _standardFileName << "' does not exist, but dir listing is allowed. Show dir listing here" << std::endl;
+			std::cout << "no, '" << completePath + standardFile << "' does not exist, but dir listing is allowed. Show dir listing here" << std::endl;
 			_clientIt->statusCode = 200;
 			_clientIt->sendPath = "dirlisting"; // dunno how to handle this best yet. wait to implemnt dirlisting to decide
 		}
 		else
 		{
-			std::cout << "'" << completePath + _standardFileName << "' does not exist, and dir listing is not allowed. Send 404." << std::endl;
+			std::cout << "'" << completePath + standardFile << "' does not exist, and dir listing is not allowed. Send 404." << std::endl;
 			selectErrorPage(404);
 		}
 	}
@@ -513,18 +524,6 @@ void Server::setPort(std::string input)
 	if (temp > (uint16_t) 65534)
 		throw std::runtime_error(E_PORTVAL + input + '\n');
 	_serverAddress.sin_port = htons(temp);
-}
-
-void Server:: setRoot(std::string input)
-{
-	// checkMethodAccess(input);
-	_root = input;
-}
-
-void Server::setUploadDir(std::string input)
-{
-	// checkWriteAccess(input);
-	_uploadDir = input;
 }
 
 void Server::setClientMaxBody(std::string input)

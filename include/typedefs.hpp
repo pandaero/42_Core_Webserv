@@ -19,6 +19,7 @@ typedef struct
 	std::string		dir_listing;
 	std::string		http_redir;
 	std::string		upload_dir;
+	std::string		std_file;
 }	s_locInfo;
 
 typedef std::map<std::string, std::string> 				strMap;
