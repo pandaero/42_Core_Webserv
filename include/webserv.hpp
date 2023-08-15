@@ -25,6 +25,7 @@
 # include <sys/socket.h>
 # include <sys/stat.h>
 # include <unistd.h>
+# include <dirent.h>
 
 // Internal headers
 # include "typedefs.hpp"
@@ -60,5 +61,7 @@ bool			isDirectory(const std::string&);
 size_t			fileSize(const std::string&);
 // Returns the message string associated with an HTTP status code
 std::string		getHttpMsg(int);
+// Create a directory listing HTML file for a given path.
+std::string		createDirList(const std::string &);
 
 #endif

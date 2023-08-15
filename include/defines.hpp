@@ -9,6 +9,9 @@
 # define ANNOUNCEME		std::cout << "Announcer: " << __FUNCTION__ << std::endl;
 # define ANNOUNCEME_FD	std::cout << "Announcer: " << __FUNCTION__ << " on fd " << _clientIt->fd << std::endl;
 
+// ===== ===== ===== ===== Directories ===== ===== ===== =====
+# define SYS_ROOT	"./system"
+
 // ===== ===== ===== ===== SIZE Descriptions ===== ===== ===== =====
 # define RECV_CHUNK_SIZE		4096
 # define SEND_CHUNK_SIZE		4096
