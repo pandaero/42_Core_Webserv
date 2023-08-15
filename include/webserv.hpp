@@ -29,11 +29,10 @@
 // Internal headers
 # include "typedefs.hpp"
 # include "defines.hpp"
-# include "Request.hpp"
 # include "Client.hpp"
 # include "ServerConfig.hpp"
-# include "ConfigFile.hpp"
 # include "Server.hpp"
+# include "ConfigFile.hpp"
 
 // ===== ===== ===== ===== GLOBAL FUNCTIONS ===== ===== ===== =====
 // Determines whether a string contains purely alphanumerical characters.

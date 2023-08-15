@@ -9,23 +9,26 @@ class	Client
 		Client(int);
 		~Client();
 
-		void			buildRequest();
-		std::string		httpProtocol();
-		std::string 	method();
-		std::string 	path();
-		int				contentLength();
-		std::string 	contentType();
-	
+		void			parseRequest();
+		
+		int				fd;
+		std::string		buffer;
+		int				statusCode;
+		std::string		directory;
+		std::string		filename;
 		std::string		sendPath;
 		std::streampos	filePosition;
 		size_t			bytesWritten;
-		int				statusCode;
 
-		int				fd;
-		std::string		buffer;
-		std::string		directory;
-		std::string		filename;
-
+		// request data
+		std::string		httpProtocol;
+		std::string		method;
+		std::string		path;
+		int				contentLength;
+		std::string		contentType;
+		strMap			headers;
+		
+		// status bools
 		bool			errorPending;
 		bool			requestHeadComplete;
 		bool			requestBodyComplete;
@@ -34,7 +37,8 @@ class	Client
 		bool			responseBodySent;
 	
 	private:
-		Request*		_request;
+		strMap			createHeaderMap(std::string&, std::string, std::string, std::string);
+		
 };
 
 #endif

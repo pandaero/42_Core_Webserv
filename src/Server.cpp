@@ -121,7 +121,6 @@ void Server::receiveData()
 	bzero(buffer, RECV_CHUNK_SIZE);
 	bytesReceived = recv(_clientfd, buffer, RECV_CHUNK_SIZE, 0);
 	std::cout << bytesReceived << " bytes received.\nContent:\n" << buffer << std::endl;
-	
 	if (bytesReceived <= 0)
 	{
 		closeClient("Server::receiveData: 0 bytes received");
@@ -134,11 +133,11 @@ pollfd* Server::getPollStruct(int fd)
 {
 	std::vector<pollfd>::iterator	it = _pollVector.begin();
 		
-		while (it != _pollVector.end() && it->fd != fd)
-			++it;
-		if (it == _pollVector.end())
-			throw std::runtime_error("Server::handleConnections: fd to handle not found in pollVector");
-		return &*it;
+	while (it != _pollVector.end() && it->fd != fd)
+		++it;
+	if (it == _pollVector.end())
+		throw std::runtime_error("Server::handleConnections: fd to handle not found in pollVector");
+	return &*it;
 }
 
 void Server::handleConnections()
@@ -195,17 +194,17 @@ void Server::handleConnections()
 void Server::checkRequest()
 {
 	// wrong protocol
-	if (_clientIt->httpProtocol() != HTTPVERSION)
+	if (_clientIt->httpProtocol != HTTPVERSION)
 		selectErrorPage(505);
 	
 	// method not supported by server
-	else if (_clientIt->method() != GET
-		&& _clientIt->method() != POST
-		&& _clientIt->method() != DELETE)
+	else if (_clientIt->method != GET
+		&& _clientIt->method != POST
+		&& _clientIt->method != DELETE)
 		selectErrorPage(501);
 	
 	// body size too large
-	else if (_clientIt->contentLength() > (int)_clientMaxBody)
+	else if (_clientIt->contentLength > (int)_clientMaxBody)
 		selectErrorPage(413);
 	else
 	{
@@ -216,9 +215,9 @@ void Server::checkRequest()
 			selectErrorPage(404); // only returning 404 (and not 403) to not leak file structure
 	
 		// access granted, but not for the requested method
-		else if ((_clientIt->method() == GET && !locIt->second.get)
-			|| (_clientIt->method() == POST && !locIt->second.post)
-			|| (_clientIt->method() == DELETE && !locIt->second.delete_))
+		else if ((_clientIt->method == GET && !locIt->second.get)
+			|| (_clientIt->method == POST && !locIt->second.post)
+			|| (_clientIt->method == DELETE && !locIt->second.delete_))
 			selectErrorPage(405);
 	}
 }
@@ -233,11 +232,11 @@ void Server:: handleRequestHead()
 		selectErrorPage(431);
 		return;
 	}
-	_clientIt->buildRequest();
+	_clientIt->parseRequest();
 	_clientIt->requestHeadComplete = true;
-	std::cout << "request method: " << _clientIt->method() << std::endl;
-	std::cout << "request path raw:'" << _clientIt->path() << "'" << std::endl;
-	std::cout << "completePath:'" << _root + _clientIt->path() << "'" << std::endl;
+	std::cout << "request method: " << _clientIt->method << std::endl;
+	std::cout << "request path raw:'" << _clientIt->path << "'" << std::endl;
+	std::cout << "completePath:'" << _root + _clientIt->path << "'" << std::endl;
 	checkRequest();
 }
 
@@ -245,7 +244,7 @@ void Server::handleRequestBody()
 {
 	if (_clientIt->requestBodyComplete)
 		return;
-	if (_clientIt->contentLength() < 0)
+	if (_clientIt->contentLength < 0)
 	{
 		std::cout << "shouldnt ever get in here" << std::endl;
 		_clientIt->requestBodyComplete = true;
@@ -253,7 +252,7 @@ void Server::handleRequestBody()
 	}
 	
 	// also need to check if CGI or not?
-	std::string writePath  = _root + _clientIt->path() + _locations[_clientIt->path()].upload_dir;
+	std::string writePath  = _root + _clientIt->path + _locations[_clientIt->path].upload_dir;
 	if (!resourceExists(writePath))
 	{
 		selectErrorPage(500);
@@ -265,7 +264,7 @@ void Server::handleRequestBody()
 	outputFile.write(_clientIt->buffer.c_str(), _clientIt->buffer.size());
 	_clientIt->bytesWritten += _clientIt->buffer.size(); // outputFile.tellp() delta prolly better but nah.
 	outputFile.close();
-	if (_clientIt->bytesWritten >= (size_t)_clientIt->contentLength())
+	if (_clientIt->bytesWritten >= (size_t)_clientIt->contentLength)
 	{
 		_clientIt->requestBodyComplete = true;
 		selectResponseContent();
@@ -312,7 +311,7 @@ void Server::selectResponseContent()
 	if (_clientIt->responseFileSelected || !_clientIt->requestBodyComplete)
 		return;
 	ANNOUNCEME_FD
-	if (_clientIt->method() == POST)
+	if (_clientIt->method == POST)
 	{
 		_clientIt->responseFileSelected = true;
 		_clientIt->statusCode = 201; //errors on post would have already been handled, so only reamining case is ok
@@ -321,7 +320,7 @@ void Server::selectResponseContent()
 	}
 	// check for http redirection
 	if (_locations[_clientIt->directory].http_redir.empty())
-		completePath = _root + _clientIt->path();
+		completePath = _root + _clientIt->path;
 	else
 		completePath = _root + _locations[_clientIt->directory].http_redir + _clientIt->filename;
 

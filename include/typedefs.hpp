@@ -1,12 +1,10 @@
 #ifndef TYPEDEFS_HPP
 # define TYPEDEFS_HPP
 
-# include "webserv.hpp"
+//# include "webserv.hpp"
 
 // forward declarations
-class	Request;
 class	Client;
-class	Response;
 class	Server;
 class	ServerConfig;
 class	ConfigFile;

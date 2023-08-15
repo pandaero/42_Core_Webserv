@@ -4,11 +4,10 @@ Client::Client(int index)
 {
 	(void)index;
 	fd = -42;
-
+	statusCode = 0;
 	filePosition = 0;
 	bytesWritten = 0;
-	
-	_request = NULL;
+	contentLength = -1;
 
 	errorPending = false;
 	requestHeadComplete = false;
@@ -17,54 +16,53 @@ Client::Client(int index)
 	responseHeadSent = false;
 	responseBodySent = false;
 
-	statusCode = 0;
 }
 
 Client::~Client()
 {
 	std::cout << "client destructor fd " << fd << std::endl;
-/* 	if (_request)
-	{
-		delete _request;
-		_request = NULL;
-	} */
-}
-
-std::string Client::httpProtocol()
-{
-	return _request->httpProtocol();
-}
-
-std::string Client::method()
-{
-	return _request->method();
-}
-
-std::string Client::path()
-{
-	return _request->path();
-}
-
-int Client::contentLength()
-{
-	return _request->contentLength();
-}
-
-std::string Client::contentType()
-{
-	return _request->contentType();
 }
 		
-void Client::buildRequest()
+void Client::parseRequest()
 {
-	_request = new Request(buffer);
-	buffer.erase(0, buffer.find("\r\n\r\n") + 4);
-	if (_request->path().find("/") == std::string::npos)
+	// parse request line
+	method = splitEraseStr(buffer, " ");
+	path = splitEraseStr(buffer, " ");
+	httpProtocol = splitEraseStr(buffer, "\r\n");
+	
+	// parse headers and populate specific headers for easy access
+	headers = createHeaderMap(buffer, ":", "\r\n", "\r\n");
+	if (headers.find("content-length") != headers.end())
+		contentLength = atoi(headers["content-length"].c_str());
+	if (headers.find("content-type") != headers.end())
+		contentType = headers["content-type"];
+
+	// parse URL for easy access
+	if (path.find("/") == std::string::npos)
 		throw std::runtime_error("invalid URL in request.");
-	directory = _request->path().substr(0, _request->path().find_last_of("/") + 1);
-	filename = _request->path().substr(_request->path().find_last_of("/"));
-	if (_request->contentLength() <= 0 || _request->method() != POST) // we don't process bodies of GET or DELETE requests
+	directory = path.substr(0, path.find_last_of("/") + 1);
+	filename = path.substr(path.find_last_of("/"));
+	std::cout << "request filnema: " << filename << std::endl;
+	if (contentLength <= 0 || method != POST) // we don't process bodies of GET or DELETE requests
 		requestBodyComplete = true;
 	requestHeadComplete = true;
 }
 
+strMap Client::createHeaderMap(std::string& input, std::string endOfKey, std::string endOfValue, std::string endOfMap)
+{
+	strMap 		stringMap;
+	std::string key, value;
+
+	while (!input.empty())
+	{
+		if (input.find(endOfMap) == 0)
+		{
+			input = input.substr(endOfMap.size());
+			return stringMap;
+		}
+		key = splitEraseStr(input, endOfKey);
+		value = splitEraseStr(input, endOfValue);
+		stringMap.insert(std::make_pair(strToLower(key), value));
+	}
+	return stringMap;
+}
