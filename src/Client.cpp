@@ -23,8 +23,11 @@ Client::Client(int index)
 Client::~Client()
 {
 	std::cout << "client destructor fd " << fd << std::endl;
-	if (_request)
+/* 	if (_request)
+	{
 		delete _request;
+		_request = NULL;
+	} */
 }
 
 std::string Client::httpProtocol()

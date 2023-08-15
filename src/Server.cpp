@@ -117,9 +117,7 @@ void Server::receiveData()
 		std::cout << "receiveData returning because reqeustbodyComplete" << std::endl;
 		return;
 	}
-
-	char	buffer[RECV_CHUNK_SIZE];
-	
+	char buffer[RECV_CHUNK_SIZE];
 	bzero(buffer, RECV_CHUNK_SIZE);
 	bytesReceived = recv(_clientfd, buffer, RECV_CHUNK_SIZE, 0);
 	std::cout << bytesReceived << " bytes received.\nContent:\n" << buffer << std::endl;
@@ -237,6 +235,7 @@ void Server:: handleRequestHead()
 	}
 	_clientIt->buildRequest();
 	_clientIt->requestHeadComplete = true;
+	std::cout << "request method: " << _clientIt->method() << std::endl;
 	std::cout << "request path raw:'" << _clientIt->path() << "'" << std::endl;
 	std::cout << "completePath:'" << _root + _clientIt->path() << "'" << std::endl;
 	checkRequest();
@@ -584,6 +583,8 @@ void Server::selectErrorPage(int code)
 	_clientIt->errorPending = true;
 	_clientIt->statusCode = code;
 	
+	std::cout << "errorpage troubleshoot: " << _root + _errorPagesPaths[code] << std::endl;
+
 	if (_errorPagesPaths.find(code) != _errorPagesPaths.end() && resourceExists(_root + _errorPagesPaths[code]))
 		_clientIt->sendPath = _root + _errorPagesPaths[code];
 	else

@@ -1,8 +1,9 @@
 - dir listing
 - cgi
 - delete requests
+- delete request class nad integrate into client class
 
-- standardfile per loc
+- test standardfile per loc
 - siege test
 - test post request
 - capture SIGINT and clean up memory and fd (basically just call the server destructors)
