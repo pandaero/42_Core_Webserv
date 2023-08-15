@@ -3,15 +3,16 @@
 ConfigFile::ConfigFile(const char* userConfigPath)
 {
 	std::string	configData;
+	std::string defaultFile = "system/default.conf";
 	
 	// init mimeTypes
 	setMIMEtypes();
 	
 	// parse default ServerConfig object from internal default config file
 	_defaultServerConfig = NULL;
-	configData = loadFile(PATH_DEFAULTCONFIG);
+	configData = loadFile(defaultFile.c_str());
 	_defaultServerConfig = new ServerConfig(getServerConfigElement(configData), &_mimeTypes);
-	std::cout << I_DEFAULTIMPORT << PATH_DEFAULTCONFIG << std::endl;
+	std::cout << I_DEFAULTIMPORT << defaultFile << std::endl;
 	
 	// parse intended ServerConfig objects from client supplied config file
 	configData = loadFile(userConfigPath);

@@ -372,47 +372,45 @@ void Server::selectResponseContent()
 
 void Server::sendResponseBody()
 {
+	if (!_clientIt->requestHeadComplete || !_clientIt->responseFileSelected || !_clientIt->responseHeadSent)
+		return;
 	ANNOUNCEME_FD
 	std::cout << "sendPath:'" << _clientIt->sendPath << "'" << std::endl;
-	if (!_clientIt->responseFileSelected || !_clientIt->responseHeadSent)
-		return;
 	
-	std::ifstream	fileStream;
-	std::cout << "_clientmethod: " << _clientIt->method() << std::endl;
-
-	if (_clientIt->method() == GET)
+	if (_clientIt->sendPath.empty())
 	{
-		fileStream.open(_clientIt->sendPath.c_str(), std::ios::binary);
-		if (fileStream.fail())
-		{
-			fileStream.close();
-			closeClient("Server::sendResponseBody: ifstream failure.");
-			throw std::runtime_error("sendResponseBody: Could not open file to send. Client closed.");
-		}
-		std::cout << "fileposition: " << _clientIt->filePosition << std::endl;
-		fileStream.seekg(_clientIt->filePosition);
-		char	buffer[SEND_CHUNK_SIZE];
-		bzero(buffer, SEND_CHUNK_SIZE);
-		fileStream.read(buffer, SEND_CHUNK_SIZE);
-
-		if (::send(_clientfd, buffer, fileStream.gcount(), 0) == -1)
-		{
-			fileStream.close();
-			closeClient("Server::sendResponseBody: send failure.");
-			throw std::runtime_error(E_SEND);
-		}
-		if (fileStream.eof())
-		{
-			fileStream.close();
-			closeClient("Server::sendResponseBody: sending complete.");
-			return;
-		}
-		_clientIt->filePosition = fileStream.tellg();
-		fileStream.close();
-		std::cout << "sendFile.gcount to fd " << _clientfd << ": " << fileStream.gcount() << std::endl;
+		closeClient("Server::sendResponseBody: sendPath empty.");
+		return;
 	}
-	else
-		std::cout << "Post and delete are unhandled as of now." << std::endl;
+	std::ifstream fileStream(_clientIt->sendPath.c_str(), std::ios::binary);
+	if (fileStream.fail())
+	{
+		fileStream.close();
+		closeClient("Server::sendResponseBody: ifstream failure.");
+		throw std::runtime_error("sendResponseBody: Could not open file to send. Client closed.");
+	}
+	std::cout << "fileposition: " << _clientIt->filePosition << std::endl;
+	fileStream.seekg(_clientIt->filePosition);
+	char	buffer[SEND_CHUNK_SIZE];
+	bzero(buffer, SEND_CHUNK_SIZE);
+	fileStream.read(buffer, SEND_CHUNK_SIZE);
+
+	if (::send(_clientfd, buffer, fileStream.gcount(), 0) == -1)
+	{
+		fileStream.close();
+		closeClient("Server::sendResponseBody: send failure.");
+		throw std::runtime_error(E_SEND);
+	}
+	if (fileStream.eof())
+	{
+		fileStream.close();
+		closeClient("Server::sendResponseBody: sending complete.");
+		return;
+	}
+	_clientIt->filePosition = fileStream.tellg();
+	fileStream.close();
+	std::cout << "sendFile.gcount to fd " << _clientfd << ": " << fileStream.gcount() << std::endl;
+	
 }	 
 	
 /*
@@ -594,7 +592,7 @@ void Server::selectErrorPage(int code)
 
 void Server::generateErrorPage(int code)
 {
-	std::ofstream errorPage("temp/errorPage.html", std::ios::binary | std::ios::trunc);
+	std::ofstream errorPage("system/errorPage.html", std::ios::binary | std::ios::trunc);
 
 	if (errorPage.fail())
 	{
@@ -625,7 +623,7 @@ void Server::generateErrorPage(int code)
 	errorPage.write(ss_body.str().c_str(), ss_body.str().size());
 	errorPage.close();
 	
-	_clientIt->sendPath = "temp/errorPage.html";
+	_clientIt->sendPath = "system/errorPage.html";
 }
 
 /* void Server::checkMethodAccess(std::string path)

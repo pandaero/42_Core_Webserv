@@ -4,7 +4,6 @@
 // Macros
 # define SERVERVERSION	"webserv v0.69"
 # define WHITESPACE		" \t\v\r\n"
-# define TERMINATION	"\r\n\r\n"
 # define HTTPVERSION	"HTTP/1.1"
 # define NOTFOUND		"_____TARGETSTRINGNOTFOUND_____"
 # define ANNOUNCEME		std::cout << "Announcer: " << __FUNCTION__ << std::endl;
@@ -17,10 +16,6 @@
 # define MAX_MAXCONNECTIONS		1000
 # define MAX_BACKLOG			100
 # define MAX_HEADERSIZE			8192
-
-// ===== ===== ===== ===== DEFAULT CONFIG PATHS ===== ===== ===== =====
-# define PATH_DEFAULTCONFIG		"default/config/default.conf"
-# define PATH_DEFAULTERRPAGE	"default/error/default.html"
 
 // ===== ===== ===== ===== CONFIGURATION ELEMENT IDENTIFIERS ===== ===== ===== =====
 # define SERVER		"server"
