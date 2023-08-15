@@ -22,12 +22,13 @@ class	Server
 		void	handleRequestBody();
 		void	selectResponseContent();
 		void	selectErrorPage(int);
-		void	generateErrorPage(int);
 		void	sendResponseHead();
 		void	sendResponseBody();
 		void	closeClient(const char*);
 		
 		// utils
+		std::string		buildResponseHead();
+		void			generateErrorPage(int);
 		pollfd*			getPollStruct(int);
 		std::string		mimeType(std::string);
 		void			checkRequest();

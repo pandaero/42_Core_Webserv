@@ -15,6 +15,7 @@ Client::Client(int index)
 	responseFileSelected = false;
 	responseHeadSent = false;
 	responseBodySent = false;
+	append = false;
 
 }
 
@@ -41,8 +42,7 @@ void Client::parseRequest()
 	if (path.find("/") == std::string::npos)
 		throw std::runtime_error("invalid URL in request.");
 	directory = path.substr(0, path.find_last_of("/") + 1);
-	filename = path.substr(path.find_last_of("/"));
-	std::cout << "request filnema: " << filename << std::endl;
+	filename = path.substr(path.find_last_of("/") + 1);
 	if (contentLength <= 0 || method != POST) // we don't process bodies of GET or DELETE requests
 		requestBodyComplete = true;
 	requestHeadComplete = true;

@@ -12,7 +12,7 @@
 // ===== ===== ===== ===== SIZE Descriptions ===== ===== ===== =====
 # define RECV_CHUNK_SIZE		4096
 # define SEND_CHUNK_SIZE		4096
-# define MAX_MAXCLIENTBODY		10000
+# define MAX_MAXCLIENTBODY		1e6
 # define MAX_MAXCONNECTIONS		1000
 # define MAX_BACKLOG			100
 # define MAX_HEADERSIZE			8192

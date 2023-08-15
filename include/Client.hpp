@@ -35,10 +35,10 @@ class	Client
 		bool			responseFileSelected;
 		bool			responseHeadSent;
 		bool			responseBodySent;
+		bool			append;
 	
 	private:
 		strMap			createHeaderMap(std::string&, std::string, std::string, std::string);
-		
 };
 
 #endif
