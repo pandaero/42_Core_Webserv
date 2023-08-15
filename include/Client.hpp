@@ -6,7 +6,7 @@
 class	Client
 {
 	public:
-		Client(int);
+		Client();
 		~Client();
 
 		void			parseRequest();

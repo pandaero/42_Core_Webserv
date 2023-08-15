@@ -1,8 +1,7 @@
 #include "../include/Client.hpp"
 
-Client::Client(int index)
+Client::Client()
 {
-	(void)index;
 	fd = -42;
 	statusCode = 0;
 	filePosition = 0;

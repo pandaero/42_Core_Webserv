@@ -1,11 +1,7 @@
-- dir listing
+- merge dir listing
 - cgi
 - delete requests
-- delete request class nad integrate into client class
 
-- test standardfile per loc
-- siege test
-- test post request
 - capture SIGINT and clean up memory and fd (basically just call the server destructors)
 
 - A request to your server should never hang forever.
@@ -17,6 +13,7 @@ actively tell clients wanting to connect on connection limit reached to fuck off
 
 
 testing:
+- siege test
 - catch of server handling (shutting down servers on running main, keeping the rest)
 - http redirection
 - correct serving of standard-serve files

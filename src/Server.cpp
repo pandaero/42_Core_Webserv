@@ -82,20 +82,17 @@ void Server::acceptConnections()
 				std::cerr << I_CONNECTIONLIMIT << std::endl;
 				return;
 			}
-
-			int 	new_sock;
-			pollfd	new_pollStruct;
-
-			new_sock = accept(_server_fd, NULL, NULL); // don't need client info, so pass NULL
+			int new_sock = accept(_server_fd, NULL, NULL); // don't need client info, so pass NULL
 			if (new_sock == -1)
 			{
 				if (errno != EWOULDBLOCK)
 					std::cerr << E_ACCEPT << std::endl;
 				break;
 			}
-			_clients.push_back(Client(0)); //new this shit?
+			_clients.push_back(Client()); //new this shit?
 			_clients.back().fd = new_sock;
 			
+			pollfd	new_pollStruct;
 			new_pollStruct.fd = new_sock;
 			new_pollStruct.events = POLLIN | POLLOUT | POLLHUP;
 			new_pollStruct.revents = 0;
