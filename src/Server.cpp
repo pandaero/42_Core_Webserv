@@ -340,7 +340,7 @@ void Server::selectResponseContent()
 		{
 			std::cout << "no, '" << completePath + standardFile << "' does not exist, but dir listing is allowed. Show dir listing here" << std::endl;
 			_clientIt->statusCode = 200;
-			_clientIt->sendPath = "dirlisting"; // dunno how to handle this best yet. wait to implemnt dirlisting to decide
+			_clientIt->sendPath = createDirList(completePath);
 		}
 		else
 		{
