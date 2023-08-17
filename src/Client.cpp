@@ -34,7 +34,7 @@ void Client::initDefaults()
 
 Client::~Client()
 {
-	std::cout << "client destructor fd " << fd << std::endl;
+	std::cout << "Client destructor on fd " << fd << std::endl;
 }
 		
 void Client::parseRequest()
@@ -44,7 +44,7 @@ void Client::parseRequest()
 	path = splitEraseStr(buffer, " ");
 	httpProtocol = splitEraseStr(buffer, "\r\n");
 	
-	// check for query string for CGI
+	// check for CGI query string
 	size_t questionMarkPos =  path.find("?");
 	if (questionMarkPos != std::string::npos)
 	{

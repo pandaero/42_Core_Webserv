@@ -92,32 +92,48 @@ pollfd* Server::getPollStruct(int fd)
 	return &*it;
 }
 
+bool Server::hangUp()
+{
+	if (_pollStruct->revents & POLLHUP)
+	{
+		closeClient("Server::handleConnections: POLLHUP");
+		return true;
+	}
+	return false;
+}
+
+bool Server::errorPending()
+{
+	if (_clientIt->errorPending)
+	{
+		std::cout << "Error Pending." << std::endl;
+		if (_pollStruct->revents & POLLOUT)
+		{
+			sendResponseHead();
+			sendResponseBody();
+		}
+		return true;
+	}
+	return false;
+}
+
 void Server::handleConnections()
 {
-	for (_clientIt = _clients.begin(); _clientIt != _clients.end(); ++_clientIt)
+	//for (_clientIt = _clients.begin(); _clientIt != _clients.end(); ++_clientIt)
+	for (_index = 0; _index < _clients.size(); ++_index)
 	{
+		_clientIt = _clients.begin() + _index;
 		_clientfd = _clientIt->fd;
-		pollfd*	pollStruct = getPollStruct(_clientfd);
+		_pollStruct = getPollStruct(_clientfd);
 		
 		ANNOUNCEME_FD
 		try
 		{
-			if (pollStruct->revents & POLLHUP)
-			{
-				closeClient("Server::handleConnections: POLLHUP");
+			if (hangUp())
 				continue;
-			}
-			if (_clientIt->errorPending)
-			{
-				std::cout << "Error Pending." << std::endl;
-				if (pollStruct->revents & POLLOUT)
-				{
-					sendResponseHead();
-					sendResponseBody();
-				}
+			if (errorPending())
 				continue;
-			}
-			if (pollStruct->revents & POLLIN)
+			if (_pollStruct->revents & POLLIN)
 			{
 				std::cout << "POLLIN." << std::endl;
 				receiveData();
@@ -125,7 +141,7 @@ void Server::handleConnections()
 				handleRequestBody();
 				selectResponseContent();
 			}
-			if (pollStruct->revents & POLLOUT)
+			if (_pollStruct->revents & POLLOUT)
 			{
 				std::cout << "POLLOUT." << std::endl;
 				if (!_clientIt->requestHeadComplete)
@@ -139,11 +155,8 @@ void Server::handleConnections()
 		}
 		catch (const std::exception& e)
 		{
-			std::cerr << "sendblock catch: " << e.what() << std::endl;
-			
+			std::cerr << "handleConnections catch: " << e.what() << std::endl;
 		}
-		if (_clientIt == _clients.end())
-			break;
 	}
 }
 
@@ -190,14 +203,6 @@ void Server:: handleRequestHead()
 	}
 	_clientIt->parseRequest();
 	_clientIt->requestHeadComplete = true;
-	std::cout << "request filename: " << _clientIt->filename << std::endl;
-	std::cout << "request method: " << _clientIt->method << std::endl;
-	std::cout << "request path raw:'" << _clientIt->path << "'" << std::endl;
-	std::cout << "completePath:'" << _root + _clientIt->path << "'" << std::endl;
-	std::cout << "requestbody complete: " << (_clientIt->requestBodyComplete ? "yes" : "no") << std::endl;
-	std::cout << "request directory: " << _clientIt->directory << std::endl;
-	if (isDirectory(_root + _clientIt->directory))
-		std::cout << _root + _clientIt->directory << " is a directory." << std::endl;
 	checkRequest();
 }
 
@@ -277,6 +282,29 @@ void Server::sendResponseHead()
 	_clientIt->responseHeadSent = true;
 }
 
+// nothing fancy, only handling absolute and relative URLs
+std::string Server::buildCompletePath()
+{
+	std::string	completePath;
+	std::string	http_redir = _locations[_clientIt->directory].http_redir;
+
+	if (!http_redir.empty())
+	{
+		// use prepend root here
+		
+		if (http_redir.find('/') == 0)
+			completePath = _root + http_redir.substr(1) + _clientIt->filename; // filename will be empty if request was for a directory, so can always add this
+		else
+			completePath = http_redir + _clientIt->filename;
+		return completePath;
+	}
+	if (_clientIt->path.find('/') == 0)
+		completePath = _root + _clientIt->path.substr(1);
+	else
+		completePath = _clientIt->path;
+	return completePath;
+}
+
 void Server::selectResponseContent()
 {
 	if (_clientIt->responseFileSelected || !_clientIt->requestBodyComplete)
@@ -298,9 +326,10 @@ void Server::selectResponseContent()
 	}
 	// only remaining method is GET
 	// check for http redirection
-	std::string	completePath = _root + _clientIt->path;
+	/* std::string	completePath = _root + _clientIt->path;
 	if (!_locations[_clientIt->directory].http_redir.empty())
-		completePath = _root + _locations[_clientIt->directory].http_redir + _clientIt->filename;
+		completePath = _root + _locations[_clientIt->directory].http_redir + _clientIt->filename; */
+	std::string	completePath = buildCompletePath();
 	std::cout << "completePath after HTTP redirection check: " << completePath << std::endl;
 	if (isDirectory(completePath))
 	{
@@ -406,21 +435,21 @@ bool Server::dirListing(std::string path)
 
 void Server::closeClient(const char* msg)
 {
-	std::vector<pollfd>::iterator it = _pollVector->begin();
 	if (msg)
 		std::cout << "closeClient fd " << _clientIt->fd << ": " << msg << std::endl;
 	close(_clientfd);
+	
+	// erase corresponding pollStruct
+	std::vector<pollfd>::iterator it = _pollVector->begin();
 	while (it != _pollVector->end() && it->fd != _clientfd)
 		++it;
 	if (it == _pollVector->end())
 		throw std::runtime_error("Server::closeClient: fd to close not found in pollVector");
 	_pollVector->erase(it);
-	size_t clientIndex = std::distance(_clients.begin(), _clientIt);
+	
+	// erase client and decrement _index to not skip the next one in the for loop
 	_clients.erase(_clientIt);
-	_clientIt = _clients.begin() + clientIndex;
-	if (_clientIt == _clients.end())
-		throw std::runtime_error("Server::closeClient: new clientIt points to end after closeClient");
-	_clientfd = _clientIt->fd;
+	--_index;
 }
 
 void Server::whoIsI()
@@ -535,10 +564,25 @@ void Server::selectErrorPage(int code)
 	_clientIt->errorPending = true;
 	_clientIt->statusCode = code;
 
-	if (_errorPagesPaths.find(code) != _errorPagesPaths.end() && resourceExists(_root + _errorPagesPaths[code]))
-		_clientIt->sendPath = _root + _errorPagesPaths[code];
+	if (_errorPagesPaths.find(code) == _errorPagesPaths.end())
+	{
+		generateErrorPage(code);
+		return;
+	}
+	
+	std::string path = prependRoot(_errorPagesPaths[code]);
+	if (resourceExists(path))
+		_clientIt->sendPath = path;
 	else
 		generateErrorPage(code);
+}
+
+std::string Server::prependRoot(const std::string& path)
+{
+	if (path.find('/') == 0)
+		return _root + path.substr(1);
+	else
+		return path;
 }
 
 void Server::generateErrorPage(int code)

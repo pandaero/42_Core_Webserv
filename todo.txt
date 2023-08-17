@@ -7,6 +7,11 @@
 
 - capture SIGINT and clean up memory and fd (basically just call the server destructors)
 
+
+check dir listing
+finish / shmisms
+
+
 - A request to your server should never hang forever.
 actively tell clients wanting to connect on connection limit reached to fuck off? happens automatically?
 

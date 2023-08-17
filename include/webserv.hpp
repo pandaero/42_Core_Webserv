@@ -34,10 +34,6 @@
 # include "Server.hpp"
 # include "ConfigFile.hpp"
 
-// Main functions
-void			poll_(std::vector<pollfd>&);
-void 			acceptConnections();
-
 // ===== ===== ===== ===== GLOBAL FUNCTIONS ===== ===== ===== =====
 // Determines whether a string contains purely alphanumerical characters.
 bool 			isAlnumStr(const std::string &);

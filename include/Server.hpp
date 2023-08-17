@@ -26,10 +26,15 @@ class	Server
 		void	sendResponseHead();
 		void	sendResponseBody();
 		void	closeClient(const char*);
+
+		bool	hangUp();
+		bool	errorPending();
 		
 		// utils
 		std::string		buildResponseHead();
+		std::string		buildCompletePath();		
 		void			generateErrorPage(int);
+		std::string 	prependRoot(const std::string&);
 		pollfd*			getPollStruct(int);
 		std::string		mimeType(std::string);
 		void			checkRequest();
@@ -45,6 +50,7 @@ class	Server
 
 		int								_server_fd;
 		std::vector<std::string>		_names;
+		std::string						_root;
 		strLocMap						_locations;
 		intStrMap						_errorPagesPaths;
 		size_t							_clientMaxBody;
@@ -53,14 +59,15 @@ class	Server
 		strMap							_cgiPaths;
 		strMap*							_mimeTypes;
 		bool							_sharedNetAddr;
-
 		sockaddr_in						_serverAddress;
+
 		int								_clientfd;
+		pollfd*							_pollStruct;
+		size_t							_index;
 		clientVec_it					_clientIt;
 		std::vector<Client>				_clients;
 		std::vector<pollfd>*			_pollVector;
 		
-		std::string						_root;
 
 	class	invalidAddressException: public std::exception
 	{

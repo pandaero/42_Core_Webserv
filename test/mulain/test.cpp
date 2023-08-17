@@ -10,7 +10,7 @@ int main()
 	std::string queryString;
 	std::string path = "knudel/shmang/index.html?hizzle=shmizzle";
 	
-	size_t questionMarkPos =  path.find("?");
+	size_t questionMarkPos = path.find("?");
 	if (questionMarkPos != std::string::npos)
 	{
 		queryString = path.substr(questionMarkPos + 1);
