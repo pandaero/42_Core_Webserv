@@ -2,6 +2,21 @@
 
 Client::Client()
 {
+	initDefaults();
+}
+
+/*
+Client::Client(int socketfd): Client()
+-> not possible in cpp98, so have to use initDefaults()
+*/
+Client::Client(int socketfd)
+{
+	initDefaults();
+	fd  = socketfd;
+}
+
+void Client::initDefaults()
+{
 	fd = -42;
 	statusCode = 0;
 	filePosition = 0;
@@ -15,7 +30,6 @@ Client::Client()
 	responseHeadSent = false;
 	responseBodySent = false;
 	append = false;
-
 }
 
 Client::~Client()

@@ -47,6 +47,9 @@
 # define PHP			"php"
 
 // ===== ===== ===== ===== ERROR MESSAGES ===== ===== ===== =====
+// Main
+# define E_POLL				"Error: main: poll()"
+
 // Global functions
 # define E_INVALIDBRACE		"Error: webserv: getInstruction: Invalid use of curly brace: "
 # define E_INVALIDENDTOKEN	"Error: webserv: getInstruction: Missing end token ('{', '}' or ';'): "
@@ -89,7 +92,6 @@
 # define E_FCNTL				"Error: Server: fcntl()"
 # define E_ACCEPT				"Error: Server: accept()"
 # define E_LISTEN				"Error: Server: listen()"
-# define E_POLL					"Error: Server: poll()"
 # define E_SEND					"Error: Server: send()"
 # define E_TEMPFILE				"Error: Server: Could not create error page file."
 

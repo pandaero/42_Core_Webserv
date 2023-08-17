@@ -11,9 +11,10 @@ class	Server
 		
 		void	whoIsI();
 		void	startListening(std::vector<pollfd>&);
-		void	poll();
-		void	acceptConnections();
 		void	handleConnections();
+
+		int		fd();
+		void	addClient(int);
 	
 	private:
 		// main handlers
@@ -38,8 +39,6 @@ class	Server
 		void	setNames(std::string);
 		void	setHost(std::string);
 		void	setPort(std::string);
-		//void	setDir(std::string);
-		//void	setCgiDir(std::string);
 		void	setClientMaxBody(std::string);
 		void	setMaxConnections(std::string);
 		void	setDefaultDirListing(std::string);
@@ -59,7 +58,7 @@ class	Server
 		int								_clientfd;
 		clientVec_it					_clientIt;
 		std::vector<Client>				_clients;
-		std::vector<pollfd>				_pollVector;
+		std::vector<pollfd>*			_pollVector;
 		
 		std::string						_root;
 

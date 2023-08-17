@@ -7,6 +7,7 @@ class	Client
 {
 	public:
 		Client();
+		Client(int);
 		~Client();
 
 		void			parseRequest();
@@ -38,6 +39,7 @@ class	Client
 		bool			append;
 	
 	private:
+		void			initDefaults();
 		strMap			createHeaderMap(std::string&, std::string, std::string, std::string);
 };
 

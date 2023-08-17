@@ -3,7 +3,7 @@
 Server::Server(const ServerConfig & config)
 {	
 	// Set main values stored in configPairs
-	strMap		configPairs = config.getConfigPairs();
+	strMap configPairs = config.getConfigPairs();
 	setNames(configPairs[SERVERNAME]);
 	setHost(configPairs[HOST]);
 	setPort(configPairs[PORT]);
@@ -58,47 +58,7 @@ void	Server::startListening(std::vector<pollfd>& pollVector)
 	newPollStruct.events = POLLIN;
 	newPollStruct.revents = 0;
 	pollVector.push_back(newPollStruct);
-}
-
-void Server::poll()
-{
-	ANNOUNCEME
-	if (::poll(&_pollVector[0], _pollVector.size(), -1) == -1)
-		throw std::runtime_error(E_POLL);
-}
-
-void Server::acceptConnections()
-{
-	if (_pollVector[0].revents & POLLIN)
-	{
-		ANNOUNCEME
-		while (true)
-		{
-			if (_pollVector.size() > _maxConns)
-			{
-				std::cerr << I_CONNECTIONLIMIT << std::endl;
-				return;
-			}
-			int new_sock = accept(_server_fd, NULL, NULL); // don't need client info, so pass NULL
-			if (new_sock == -1)
-			{
-				if (errno != EWOULDBLOCK)
-					std::cerr << E_ACCEPT << std::endl;
-				break;
-			}
-			_clients.push_back(Client()); //new this shit?
-			_clients.back().fd = new_sock;
-			
-			pollfd	new_pollStruct;
-			new_pollStruct.fd = new_sock;
-			new_pollStruct.events = POLLIN | POLLOUT | POLLHUP;
-			new_pollStruct.revents = 0;
-			_pollVector.push_back(new_pollStruct);
-			std::cout << "New client accepted on fd " << new_sock << "." << std::endl;
-			std::cout << "Clients connected: " << _clients.size() << std::endl;
-			std::cout << "PollStructs in Vector: " << _pollVector.size() << std::endl;
-		}
-	}
+	_pollVector = &pollVector;
 }
 
 void Server::receiveData()
@@ -123,11 +83,11 @@ void Server::receiveData()
 
 pollfd* Server::getPollStruct(int fd)
 {
-	std::vector<pollfd>::iterator	it = _pollVector.begin();
+	std::vector<pollfd>::iterator	it = _pollVector->begin();
 		
-	while (it != _pollVector.end() && it->fd != fd)
+	while (it != _pollVector->end() && it->fd != fd)
 		++it;
-	if (it == _pollVector.end())
+	if (it == _pollVector->end())
 		throw std::runtime_error("Server::handleConnections: fd to handle not found in pollVector");
 	return &*it;
 }
@@ -341,6 +301,7 @@ void Server::selectResponseContent()
 	std::string	completePath = _root + _clientIt->path;
 	if (!_locations[_clientIt->directory].http_redir.empty())
 		completePath = _root + _locations[_clientIt->directory].http_redir + _clientIt->filename;
+	std::cout << "completePath after HTTP redirection check: " << completePath << std::endl;
 	if (isDirectory(completePath))
 	{
 		std::cout << "completePath is a directory" << std::endl;
@@ -428,21 +389,6 @@ void Server::sendResponseBody()
 	
 }	 
 	
-/*
-// CGI handling (for php and potentially python scripts)
-			// if (request.path() == ".php")
-			// {
-			// 	pid = fork ()
-			// 	if (pid == 0)
-			// 	{
-			// 		// run cgi with input file as argument or piped in
-			// 		// save file to temp directory
-			// 	}
-			// 	// attempt to serve file (html from cgi)
-			// }
-*/
-
-// change other functions also to take const string &
 bool Server::dirListing(std::string path)
 {
 	strLocMap_it	locIt =_locations.find(path);
@@ -460,18 +406,16 @@ bool Server::dirListing(std::string path)
 
 void Server::closeClient(const char* msg)
 {
-	std::vector<pollfd>::iterator	it = _pollVector.begin();
-	size_t							clientIndex;
-	
+	std::vector<pollfd>::iterator it = _pollVector->begin();
 	if (msg)
 		std::cout << "closeClient fd " << _clientIt->fd << ": " << msg << std::endl;
 	close(_clientfd);
-	while (it != _pollVector.end() && it->fd != _clientfd)
+	while (it != _pollVector->end() && it->fd != _clientfd)
 		++it;
-	if (it == _pollVector.end())
+	if (it == _pollVector->end())
 		throw std::runtime_error("Server::closeClient: fd to close not found in pollVector");
-	_pollVector.erase(it);
-	clientIndex = std::distance(_clients.begin(), _clientIt);
+	_pollVector->erase(it);
+	size_t clientIndex = std::distance(_clients.begin(), _clientIt);
 	_clients.erase(_clientIt);
 	_clientIt = _clients.begin() + clientIndex;
 	if (_clientIt == _clients.end())
@@ -629,6 +573,16 @@ void Server::generateErrorPage(int code)
 	errorPage.write(ss_body.str().c_str(), ss_body.str().size());
 	errorPage.close();
 	_clientIt->sendPath = "system/errorPage.html";
+}
+
+int Server::fd()
+{
+	return _server_fd;
+}
+
+void Server::addClient(int fd)
+{
+	_clients.push_back(Client(fd));
 }
 
 const char *	Server::invalidAddressException::what() const throw()
