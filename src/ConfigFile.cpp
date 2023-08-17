@@ -5,10 +5,13 @@ ConfigFile::ConfigFile(const char* userConfigPath)
 	std::string	configData;
 	std::string defaultFile = "system/default.conf";
 	
-	// init mimeTypes
+	// All "servers" receive a pointer to this string map to select MIME types.
 	setMIMEtypes();
 	
-	// parse default ServerConfig object from internal default config file
+	// Parse default ServerConfig object from internal default config file.
+	// This default config file is effectively part of the code:
+	// The key value pairs in it will all be accepted; they define the 
+	// framework for the parsing of the user supplied config files.
 	_defaultServerConfig = NULL;
 	configData = loadFile(defaultFile.c_str());
 	_defaultServerConfig = new ServerConfig(getServerConfigElement(configData), &_mimeTypes);
@@ -26,6 +29,13 @@ ConfigFile::ConfigFile(const char* userConfigPath)
 		throw std::runtime_error(E_NOSERVER);
 	if (_serverConfigs.size() > 10)
 		throw std::runtime_error(E_MANYSERVER);
+	
+	// check for multiple "servers" on the same host:port combination
+	for (size_t i = 0; i < _serverConfigs.size(); ++i)
+	{
+		if (sharesHostAndPort(_serverConfigs[i]))
+			_serverConfigs[i].setSharedNetAddr(true);
+	}
 	for (size_t i = 0; i < _serverConfigs.size(); ++i)
 		_servers.push_back(Server(_serverConfigs[i]));
 	std::cout << I_CONFIGIMPORT << std::endl;
@@ -37,7 +47,6 @@ ConfigFile::~ConfigFile()
 		delete _defaultServerConfig;
 }
 
-
 std::vector<ServerConfig> ConfigFile::getConfigs() const
 {
 	return _serverConfigs;
@@ -47,7 +56,6 @@ std::vector<Server>	ConfigFile::getServers() const
 {
 	return _servers;
 }
-
 
 std::string ConfigFile::loadFile(const char* path)
 {
@@ -80,6 +88,19 @@ std::string ConfigFile::getServerConfigElement(std::string& configData)
 	if (elementTitle != SERVER)
 		throw std::runtime_error(E_ELMNTDECL + elementTitle + '\n');
 	return getInstruction(configData);
+}
+
+bool ConfigFile::sharesHostAndPort(const ServerConfig& serverConfig)
+{
+	for (size_t i = 0; i < _serverConfigs.size(); ++i)
+	{
+		if (&_serverConfigs[i] == &serverConfig)
+			continue;
+		if (serverConfig.getConfigPairs()[HOST] == _serverConfigs[i].getConfigPairs()[HOST]
+			&& serverConfig.getConfigPairs()[PORT] == _serverConfigs[i].getConfigPairs()[PORT])
+			return true;
+	}
+	return false;
 }
 
 void ConfigFile::setMIMEtypes()

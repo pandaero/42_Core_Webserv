@@ -20,6 +20,9 @@ class ServerConfig
 		strLocMap	getLocations() const;
 		strMap		getCgiPaths() const;
 		strMap*		getMIMETypes() const;
+		bool		getSharedNetAddr() const;
+
+		void		setSharedNetAddr(bool);
 
 	private:
 		void		parseDefaultErrorPages(std::string&);
@@ -33,6 +36,7 @@ class ServerConfig
 		strLocMap	_locations;
 		strMap		_cgiPaths;
 		strMap*		_mimeTypes;
+		bool		_sharedNetAddr;
 };
 
 #endif

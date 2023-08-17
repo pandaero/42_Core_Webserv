@@ -17,6 +17,7 @@ Server::Server(const ServerConfig & config)
 	_locations = config.getLocations();
 	_cgiPaths = config.getCgiPaths();
 	_mimeTypes = config.getMIMETypes();
+	_sharedNetAddr = config.getSharedNetAddr();
 }
 
 Server::~Server()
@@ -30,37 +31,33 @@ Server::~Server()
 		close(_server_fd);
 }
 
-void	Server::startListening()
+void	Server::startListening(std::vector<pollfd>& pollVector)
 {
 	ANNOUNCEME
 	int		options = 1;
-	pollfd	serverPollStruct;
+	pollfd	newPollStruct;
 	
 	_server_fd = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP);
 	if (_server_fd == -1)
-		throw socketCreationFailureException();
-	
+		throw std::runtime_error(E_SOCKET);
 	if (setsockopt(_server_fd, SOL_SOCKET, SO_REUSEADDR, (char*)&options, sizeof(options)) == -1)
 		throw std::runtime_error(E_SOCKOPT);
-	
 	if (fcntl(_server_fd, F_SETFL, O_NONBLOCK) == -1)
 		throw std::runtime_error(E_FCNTL);
-
 	if (bind(_server_fd, (struct sockaddr *) &_serverAddress, sizeof(_serverAddress)) == -1)
 	{
 		close(_server_fd);
-		throw bindFailureException();
+		throw std::runtime_error(E_BIND);
 	}
-	
 	if (listen(_server_fd, SOMAXCONN) == -1)
 	{
 		close(_server_fd);
-		throw listenFailureException();
+		throw std::runtime_error(E_LISTEN);
 	}
-	serverPollStruct.fd = _server_fd;
-	serverPollStruct.events = POLLIN;
-	serverPollStruct.revents = 0;
-	_pollVector.push_back(serverPollStruct);
+	newPollStruct.fd = _server_fd;
+	newPollStruct.events = POLLIN;
+	newPollStruct.revents = 0;
+	pollVector.push_back(newPollStruct);
 }
 
 void Server::poll()
@@ -211,7 +208,7 @@ void Server::checkRequest()
 		
 		// access forbidden (have to specifically allow each path in config file)
 		if (locIt == _locations.end())
-			selectErrorPage(404); // only returning 404 (and not 403) to not leak file structure
+			selectErrorPage(404); //  returning 404 (and not 403) to not leak file structure
 	
 		// access granted, but not for the requested method
 		else if ((_clientIt->method == GET && !locIt->second.get)
@@ -502,7 +499,8 @@ void Server::whoIsI()
 						std::cout << "\t\t" << it->first << '\n';
 	std::cout	<< "CGI Paths:\t" << _cgiPaths.begin()->first << '\t' << _cgiPaths.begin()->second << '\n';
 					for (strMap_it it = ++_cgiPaths.begin(); it != _cgiPaths.end(); it++)
-						std::cout << "\t\t" << it->first << '\t' << it->second << std::endl;		
+						std::cout << "\t\t" << it->first << '\t' << it->second << std::endl;
+	std::cout	<< "Shared netw addr: " << (_sharedNetAddr ? "yes" : "no") << std::endl;
 }
 
 void Server::setNames(std::string input)
@@ -637,25 +635,9 @@ const char *	Server::invalidAddressException::what() const throw()
 {
 	return ("invalid IP address supplied.");
 }
-
-const char *	Server::socketCreationFailureException::what() const throw()
-{
-	return ("error creating socket for server.");
-}
-
 const char *	Server::fileDescriptorControlFailureException::what() const throw()
 {
 	return ("error controlling file descriptor to non-blocking.");
-}
-
-const char *	Server::bindFailureException::what() const throw()
-{
-	return ("error using bind.");
-}
-
-const char *	Server::listenFailureException::what() const throw()
-{
-	return ("error using listen.");
 }
 const char *	Server::sendFailureException::what() const throw()
 {

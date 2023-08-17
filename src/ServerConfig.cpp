@@ -29,6 +29,7 @@ ServerConfig::ServerConfig(std::string defaultConfigStr, strMap* mimeTypes)
 			_configPairs.insert(make_pair(key, instruction));
 	}
 	_mimeTypes = mimeTypes;
+	_sharedNetAddr = false;
 }
 
 ServerConfig::ServerConfig(const ServerConfig& src)
@@ -43,6 +44,7 @@ ServerConfig& ServerConfig::operator=(const ServerConfig& src)
 	_locations = src._locations;
 	_cgiPaths = src._cgiPaths;
 	_mimeTypes = src._mimeTypes;
+	_sharedNetAddr = src._sharedNetAddr;
 	return *this;
 }
 
@@ -114,6 +116,16 @@ strMap ServerConfig::getCgiPaths() const
 strMap*	ServerConfig::getMIMETypes() const
 {
 	return _mimeTypes;
+}
+
+bool ServerConfig::getSharedNetAddr() const
+{
+	return _sharedNetAddr;
+}
+
+void ServerConfig::setSharedNetAddr(bool value)
+{
+	_sharedNetAddr = value;
 }
 
 void ServerConfig::parseDefaultErrorPages(std::string& defaultErrorPages)

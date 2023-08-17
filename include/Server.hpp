@@ -10,7 +10,7 @@ class	Server
 		~Server();
 		
 		void	whoIsI();
-		void	startListening();
+		void	startListening(std::vector<pollfd>&);
 		void	poll();
 		void	acceptConnections();
 		void	handleConnections();
@@ -53,6 +53,7 @@ class	Server
 		bool							_defaultDirListing;
 		strMap							_cgiPaths;
 		strMap*							_mimeTypes;
+		bool							_sharedNetAddr;
 
 		sockaddr_in						_serverAddress;
 		int								_clientfd;
@@ -61,28 +62,12 @@ class	Server
 		std::vector<pollfd>				_pollVector;
 		
 		std::string						_root;
-		/* void	checkMethodAccess(std::string);
-		void	checkReadAccess(std::string);
-		void	checkWriteAccess(std::string);
-		void	checkExecAccess(std::string); */
 
 	class	invalidAddressException: public std::exception
 	{
 		const char *	what() const throw();
 	};
-	class	socketCreationFailureException: public std::exception
-	{
-		const char *	what() const throw();
-	};
 	class	fileDescriptorControlFailureException: public std::exception
-	{
-		const char *	what() const throw();
-	};
-	class	bindFailureException: public std::exception
-	{
-		const char *	what() const throw();
-	};
-	class	listenFailureException: public std::exception
 	{
 		const char *	what() const throw();
 	};

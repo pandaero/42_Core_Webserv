@@ -16,6 +16,7 @@ class ConfigFile
 		std::string					loadFile(const char*);
 		void 						setMIMEtypes();
 		std::string					getServerConfigElement(std::string&);
+		bool						sharesHostAndPort(const ServerConfig&);
 		
 		ServerConfig*				_defaultServerConfig;
 		std::vector<ServerConfig>	_serverConfigs;
