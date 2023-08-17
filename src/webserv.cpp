@@ -140,6 +140,8 @@ bool isDirectory(const std::string& path)
 	
 	if (stat(path.c_str(), &fileInfo) == 0)
 		return S_ISDIR(fileInfo.st_mode);
+	if (path.find('/') == (unsigned int) *(path.end()))
+		return (true);
 	return false;
 }
 
