@@ -6,7 +6,7 @@
 /*   By: apielasz <apielasz@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/08/08 13:31:00 by apielasz          #+#    #+#             */
-/*   Updated: 2023/08/09 19:56:53 by apielasz         ###   ########.fr       */
+/*   Updated: 2023/08/17 15:15:48 by apielasz         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -20,6 +20,7 @@
 #include <sys/wait.h>
 #include <signal.h>
 #include <vector>
+#include <fstream>
 
 //here I just want to test functions, I don't want to create an object
 
@@ -39,9 +40,12 @@ int	timeoutKillChild(pid_t childPid, int timeoutSec) {
 }
 
 int	doTheThing() {
-	
-	std::string	pathToScript = "/Users/apielasz/Documents/projects_git/webserv/cgi-bin/script.py";
-	std::string pathToExec = "/usr/bin/python3";
+//PHP
+	std::string	pathToScript = "simplest.php";
+	std::string pathToExec = "/Users/apielasz/Documents/projects_git/webserv/default/cgi/php-8.2.5_MacOS-10.15";
+//PYTHON
+	// std::string	pathToScript = "simplest.py";
+	// std::string pathToExec = "/usr/bin/python3";
 
 	int		pipeFd[2];
 
@@ -66,7 +70,7 @@ int	doTheThing() {
 		// fillEnv();
 		std::vector<std::string>	tmpEnv;
 		std::string	tmpVar;
-		char	*_env[12];
+		char	*_env[14];
 
 	// env variables that are not request specific
 		//this one can be anything bc we have our own webserv
@@ -86,15 +90,19 @@ int	doTheThing() {
 		tmpEnv.push_back(tmpVar);
 		tmpVar = "REQUEST_METHOD=GET";
 		tmpEnv.push_back(tmpVar);
-		tmpVar = "PATH_INFO=cgi-bin/script.php";
+		tmpVar = "PATH_INFO=cgi-bin/simplest.php";
 		tmpEnv.push_back(tmpVar);
-		tmpVar = "SCRIPT_NAME=cgi-bin/script.php";
+		tmpVar = "SCRIPT_NAME=cgi-bin/simplest.php";
 		tmpEnv.push_back(tmpVar);
-		tmpVar = "QUERY_STRING=name=Alina&age=24";//🍏
+		tmpVar = "QUERY_STRING=name=alina";//🍏
 		tmpEnv.push_back(tmpVar);
-		tmpVar = "CONTENT_TYPE=";
+		tmpVar = "CONTENT_TYPE=application/x-www-form-urlencoded";
 		tmpEnv.push_back(tmpVar);
-		tmpVar = "CONTENT_LENGTH=";
+		tmpVar = "CONTENT_LENGTH=1024";
+		tmpEnv.push_back(tmpVar);
+		tmpVar = "REDIRECT_STATUS=CGI";
+		tmpEnv.push_back(tmpVar);
+		tmpVar = "FULL_URL=https://localhost:3000/simplest.php?name=alina";
 		tmpEnv.push_back(tmpVar);
 
 	//putting vector into char **
@@ -106,7 +114,7 @@ int	doTheThing() {
 		_env[i] = NULL;
 
 //creating argv for execve
-		const char	*argv[3];
+		const char	*argv[4];
 		argv[0] = pathToExec.c_str();
 		argv[1] = pathToScript.c_str();
 		argv[2] = NULL;
@@ -115,18 +123,19 @@ int	doTheThing() {
 		return (-1);
 	} else {
 		close(pipeFd[1]);
-		if (timeoutKillChild(pid, 10) == -1) {
-			close(pipeFd[0]);
-			return (-1);
-		}
+		// if (timeoutKillChild(pid, 10) == -1) {
+		// 	close(pipeFd[0]);
+		// 	return (-1);
+		// }
 //only if there wasnt timeout we get here
 		char	buffer[1024];
 		ssize_t	bytesRead;
-		std::string	cgiResponse;
+		std::ofstream	cgiHtml("cgi.html");
 		while ((bytesRead = read(pipeFd[0], buffer, 1023)) > 0) {
 			buffer[bytesRead] = '\0';
-			cgiResponse += buffer;
+			cgiHtml << buffer;
 		}
+		cgiHtml.close();
 		// std::cout << bytesRead << " and buffer:" << buffer << std::endl;
 		close(pipeFd[0]);
 		int	status;
@@ -134,7 +143,6 @@ int	doTheThing() {
 		// int	killSuccessful = kill(pid, SIGTERM);
 		
 		std::cout << "Child process exited with status: " << WEXITSTATUS(status) << std::endl;
-		std::cout << "SO THAT'S THE RESPONSE\n" << cgiResponse << std::endl;
 	}
 	return (0);
 //so here I have the cgiResponse string that needs to be sent to the client 🍏
