@@ -227,3 +227,39 @@ std::string getHttpMsg(int code)
 		default: return "Unknown Error";
 	}
 }
+
+std::string	createDirList(const std::string & path)
+{
+	DIR *				folder;
+	struct dirent *		directoryElement;
+	std::stringstream	dirListingStream;
+	
+	dirListingStream << "<html><body>Directory Listing:<ul>";
+	folder = opendir(path.c_str());
+	directoryElement = readdir(folder);
+	while (directoryElement != NULL)
+	{
+		std::string	compare(directoryElement->d_name);
+		if (compare == "..")
+		{
+			directoryElement = readdir(folder);
+			continue;
+		}
+		dirListingStream << "<li><a href=\">";
+		if (compare == ".")
+			dirListingStream << path << ".<\">." << path;
+		else
+			dirListingStream << compare << "<\">" << compare;
+		dirListingStream << "</a></li>";
+		directoryElement = readdir(folder);
+	}
+	closedir(folder);
+	dirListingStream << "</ul></body></html>";
+
+	std::string			fileName(path + "-list.html");
+	std::ofstream		dirListingFile(fileName.c_str());
+	dirListingFile << dirListingStream.rdbuf();
+	dirListingFile.close();
+	std::string			fullSysPath(SYS_ROOT + '/' + fileName);
+	return (fullSysPath);
+}
