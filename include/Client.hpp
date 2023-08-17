@@ -25,6 +25,7 @@ class	Client
 		std::string		httpProtocol;
 		std::string		method;
 		std::string		path;
+		std::string		queryString;
 		int				contentLength;
 		std::string		contentType;
 		strMap			headers;

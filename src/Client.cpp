@@ -44,6 +44,14 @@ void Client::parseRequest()
 	path = splitEraseStr(buffer, " ");
 	httpProtocol = splitEraseStr(buffer, "\r\n");
 	
+	// check for query string for CGI
+	size_t questionMarkPos =  path.find("?");
+	if (questionMarkPos != std::string::npos)
+	{
+		queryString = path.substr(questionMarkPos + 1);
+		path = path.substr(0, questionMarkPos);
+	}
+
 	// parse headers and populate specific headers for easy access
 	headers = createHeaderMap(buffer, ":", "\r\n", "\r\n");
 	if (headers.find("content-length") != headers.end())

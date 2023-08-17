@@ -2,9 +2,8 @@
 - cgi
 - delete requests
 - include parsing for query string
-- update main to handle ALL polls in one poll
 - update main to handle multiple host:port combos
-- fix http redirection
+- check throws. Probably should always result in client closing (file deletion also if post request)
 
 - capture SIGINT and clean up memory and fd (basically just call the server destructors)
 
