@@ -35,9 +35,10 @@ ConfigFile::ConfigFile(const char* userConfigPath)
 	{
 		if (combineSharedNetAddr(_serverConfigs[i], i))
 			_serverConfigs.erase(_serverConfigs.begin() + i--);
-		else
-			_servers.push_back(Server(_serverConfigs[i]));
 	}
+	// need another loop to add to _servers, because the ServerConfig has to be finalized first 
+	for (size_t i = 0; i < _serverConfigs.size(); ++i)
+		_servers.push_back(Server(_serverConfigs[i]));
 	std::cout << I_CONFIGIMPORT << std::endl;
 }
 
@@ -96,7 +97,8 @@ bool ConfigFile::combineSharedNetAddr(const ServerConfig& currentConfig, size_t 
 	{
 		if (sharedNetAddr(currentConfig, _serverConfigs[i]))
 		{
-			std::cout << "shared netAddr detected." << std::endl;
+			std::cout << "Shared netAddr detected." << std::endl;
+			std::cout << "Adding current ServerConfig to ServerConfig index " << i << std::endl;
 			_serverConfigs[i].addAltConfig(currentConfig);
 			return true;
 		}

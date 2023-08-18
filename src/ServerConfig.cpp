@@ -266,7 +266,6 @@ void ServerConfig::parseNames(std::string& input)
 			}
 		temp.push_back(name);
 	}
-	std::cout << "names0 in parseNames:" << _names[0] << std::endl;
 	if (!temp.empty())
 		_names = temp;
 }

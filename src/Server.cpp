@@ -21,7 +21,6 @@ void Server::applyConfig(const ServerConfig& config)
 	_root = configPairs[ROOT];
 	_standardFile = configPairs[STDFILE];
 	_names = config.getNames();
-	std::cout << "names0 in server constructor:'" << _names[0] << "'" << std::endl;
 	_errorPagesPaths = config.getErrorPaths();
 	_locations = config.getLocations();
 	_cgiPaths = config.getCgiPaths();
