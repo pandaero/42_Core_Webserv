@@ -6,7 +6,7 @@
 /*   By: apielasz <apielasz@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/08/08 13:31:00 by apielasz          #+#    #+#             */
-/*   Updated: 2023/08/17 15:15:48 by apielasz         ###   ########.fr       */
+/*   Updated: 2023/08/18 17:13:42 by apielasz         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -88,13 +88,13 @@ int	doTheThing() {
 		//port number to which request was sent
 		tmpVar = "SERVER_PORT=8080";//🍏
 		tmpEnv.push_back(tmpVar);
-		tmpVar = "REQUEST_METHOD=GET";
+		tmpVar = "REQUEST_METHOD=POST";
 		tmpEnv.push_back(tmpVar);
 		tmpVar = "PATH_INFO=cgi-bin/simplest.php";
 		tmpEnv.push_back(tmpVar);
 		tmpVar = "SCRIPT_NAME=cgi-bin/simplest.php";
 		tmpEnv.push_back(tmpVar);
-		tmpVar = "QUERY_STRING=name=alina";//🍏
+		tmpVar = "QUERY_STRING=name=alina&answer=ggg";//🍏
 		tmpEnv.push_back(tmpVar);
 		tmpVar = "CONTENT_TYPE=application/x-www-form-urlencoded";
 		tmpEnv.push_back(tmpVar);
@@ -102,7 +102,7 @@ int	doTheThing() {
 		tmpEnv.push_back(tmpVar);
 		tmpVar = "REDIRECT_STATUS=CGI";
 		tmpEnv.push_back(tmpVar);
-		tmpVar = "FULL_URL=https://localhost:3000/simplest.php?name=alina";
+		tmpVar = "POST_BODY=3";
 		tmpEnv.push_back(tmpVar);
 
 	//putting vector into char **

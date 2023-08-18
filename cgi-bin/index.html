@@ -1,25 +1,40 @@
 <!DOCTYPE html>
 <html>
   <head>
-    <title>Combined request example</title>
+    <title>CGI test</title>
   </head>
   <body>
     <h1>This is a php-cgi testing website!</h1>
 
+    <h2>This is for testing php cgi:</h2>
     <!-- GET Form -->
     <form action="simplest.php" method="get">
-      <label for="name">What's your name?:</label>
+      <label for="name">What's your name? :</label>
       <input type="text" name="name" id="name" />
+      <br />
+      <label for="answer">Do you like cats? :</label>
+      <input type="text" name="answer" id="answer" />
       <br />
       <input type="submit" value="GET your personalised, cgi-php generated website now!" />
     </form>
-
-    <!-- POST Form -->
-    <form action="#" method="post" enctype="multipart/form-data">
-      <label for="file">Upload Image:</label>
-      <input type="file" name="file" id="file" />
       <br />
-      <input type="submit" value="POST your image using cgi-php now!" />
+      <!-- POST Form -->
+    <form action="simplest.php" method="post">
+      <label for="age">How old are you? :</label>
+      <input type="text" name="age" id="age" />
+      <br />
+      <input type="submit" value="POST your age using cgi-php now!" />
+    </form>
+    <h2>This is for testing python cgi:</h2>
+    <form action="simplest.py" method="get">
+      <label>When were you born?</label>
+      <label for="day">Day: </label>
+      <input type="text" name="day" id="day" />
+      <br />
+      <label for="month">Month: </label>
+      <input type="text" name="month" id="month" />
+      <br />
+      <input type="submit" value="GET your personalised, cgi-python generated horoscope now!" />
     </form>
   </body>
 </html>
