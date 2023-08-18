@@ -33,11 +33,11 @@ ConfigFile::ConfigFile(const char* userConfigPath)
 	// check for multiple "servers" on the same host:port combination
 	for (size_t i = 0; i < _serverConfigs.size(); ++i)
 	{
-		if (sharedNetAddr(_serverConfigs[i]))
-			_serverConfigs[i].setSharedNetAddr(true);
+		if (combineSharedNetAddr(_serverConfigs[i], i))
+			_serverConfigs.erase(_serverConfigs.begin() + i--);
+		else
+			_servers.push_back(Server(_serverConfigs[i]));
 	}
-	for (size_t i = 0; i < _serverConfigs.size(); ++i)
-		_servers.push_back(Server(_serverConfigs[i]));
 	std::cout << I_CONFIGIMPORT << std::endl;
 }
 
@@ -90,18 +90,31 @@ std::string ConfigFile::getServerConfigElement(std::string& configData)
 	return getInstruction(configData);
 }
 
-bool ConfigFile::sharedNetAddr(const ServerConfig& serverConfig)
+bool ConfigFile::combineSharedNetAddr(const ServerConfig& currentConfig, size_t currentConfigIndex)
 {
-	for (size_t i = 0; i < _serverConfigs.size(); ++i)
+	for (size_t i = 0; i < currentConfigIndex; ++i)
 	{
-		if (&_serverConfigs[i] == &serverConfig)
-			continue;
-		if (serverConfig.getConfigPairs()[HOST] == _serverConfigs[i].getConfigPairs()[HOST]
-			&& serverConfig.getConfigPairs()[PORT] == _serverConfigs[i].getConfigPairs()[PORT])
+		if (sharedNetAddr(currentConfig, _serverConfigs[i]))
+		{
+			std::cout << "shared netAddr detected." << std::endl;
+			_serverConfigs[i].addAltConfig(currentConfig);
 			return true;
+		}
 	}
 	return false;
 }
+
+bool ConfigFile::sharedNetAddr(const ServerConfig& a, const ServerConfig& b)
+{
+	if (&a == &b)
+		return false;
+	if (a.getConfigPairs()[HOST] == b.getConfigPairs()[HOST]
+		&& a.getConfigPairs()[PORT] == b.getConfigPairs()[PORT])
+		return true;
+	return false;
+}
+
+
 
 void ConfigFile::setMIMEtypes()
 {

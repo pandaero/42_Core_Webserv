@@ -56,7 +56,7 @@
 
 // ConfigFile
 # define I_DEFAULTIMPORT	"Info: ConfigFile: Default ServerConfig successfully imported from "
-# define I_CONFIGIMPORT		"Info: ConfigFile: " << _serverConfigs.size() << (_serverConfigs.size() == 1 ? " ServerConfig object" : " ServerConfig objects") <<" imported from " << userConfigPath << "."
+# define I_CONFIGIMPORT		"Info: ConfigFile: " << _servers.size() << " distinct"<< (_serverConfigs.size() == 1 ? " Server object" : " Server objects") <<" created using " << userConfigPath << "."
 # define E_ELMNTDECL		"Error: ConfigFile: Invalid element declaration, (only \"server\" allowed): "
 
 // ServerConfig

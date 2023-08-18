@@ -4,8 +4,13 @@ Server::Server(const ServerConfig & config)
 {	
 	setHost(config.getConfigPairs()[HOST]);
 	setPort(config.getConfigPairs()[PORT]);
-	
+	applyConfig(config);	
+}
+
+void Server::applyConfig(const ServerConfig& config)
+{
 	strMap configPairs = config.getConfigPairs();
+	
 	// Set main values stored in configPairs
 	setNames(configPairs[SERVERNAME]);
 	setClientMaxBody(configPairs[CLIMAXBODY]);
@@ -19,13 +24,7 @@ Server::Server(const ServerConfig & config)
 	_locations = config.getLocations();
 	_cgiPaths = config.getCgiPaths();
 	_mimeTypes = config.getMIMETypes();
-	_sharedNetAddr = config.getSharedNetAddr();
 }
-
-/* void Server::applyConfig(const ServerConfig& config)
-{
-	void(config);
-} */
 
 Server::~Server()
 {
@@ -477,7 +476,7 @@ void Server::whoIsI()
 	std::cout	<< "CGI Paths:\t" << _cgiPaths.begin()->first << '\t' << _cgiPaths.begin()->second << '\n';
 					for (strMap_it it = ++_cgiPaths.begin(); it != _cgiPaths.end(); it++)
 						std::cout << "\t\t" << it->first << '\t' << it->second << std::endl;
-	std::cout	<< "Shared netw addr: " << (_sharedNetAddr ? "yes" : "no") << std::endl;
+	//std::cout	<< "Shared netw addr: " << (_sharedNetAddr ? "yes" : "no") << std::endl;
 }
 
 void Server::setNames(std::string input)

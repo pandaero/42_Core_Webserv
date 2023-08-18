@@ -23,6 +23,7 @@ class ServerConfig
 		bool		getSharedNetAddr() const;
 
 		void		setSharedNetAddr(bool);
+		void		addAltConfig(const ServerConfig&);
 
 	private:
 		void		parseDefaultErrorPages(std::string&);
@@ -31,12 +32,12 @@ class ServerConfig
 		void		parseDefaultCgi(std::string&);
 		void		parseUserCgi(std::string&);
 		
-		strMap		_configPairs;
-		intStrMap	_errorPages;
-		strLocMap	_locations;
-		strMap		_cgiPaths;
-		strMap*		_mimeTypes;
-		bool		_sharedNetAddr;
+		std::vector<ServerConfig>	_altConfigs;
+		strMap						_configPairs;
+		intStrMap					_errorPages;
+		strLocMap					_locations;
+		strMap						_cgiPaths;
+		strMap*						_mimeTypes;
 };
 
 #endif
