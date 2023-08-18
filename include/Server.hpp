@@ -33,6 +33,7 @@ class	Server
 
 		
 		// utils
+		void		 	applyConfig(const ServerConfig&);
 		std::string		buildResponseHead();
 		std::string		buildCompletePath();		
 		void			generateErrorPage(int);
@@ -53,6 +54,7 @@ class	Server
 		int								_server_fd;
 		std::vector<std::string>		_names;
 		std::string						_root;
+		std::string						_standardFile;
 		strLocMap						_locations;
 		intStrMap						_errorPagesPaths;
 		size_t							_clientMaxBody;

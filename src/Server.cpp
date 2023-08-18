@@ -2,23 +2,30 @@
 
 Server::Server(const ServerConfig & config)
 {	
-	// Set main values stored in configPairs
+	setHost(config.getConfigPairs()[HOST]);
+	setPort(config.getConfigPairs()[PORT]);
+	
 	strMap configPairs = config.getConfigPairs();
+	// Set main values stored in configPairs
 	setNames(configPairs[SERVERNAME]);
-	setHost(configPairs[HOST]);
-	setPort(configPairs[PORT]);
 	setClientMaxBody(configPairs[CLIMAXBODY]);
 	setMaxConnections(configPairs[MAXCONNS]);
 	setDefaultDirListing(configPairs[DIRLISTING]);
 	
 	// Copy remaining values directly to server variables 
 	_root = configPairs[ROOT];
+	_standardFile = configPairs[STDFILE];
 	_errorPagesPaths = config.getErrorPaths();
 	_locations = config.getLocations();
 	_cgiPaths = config.getCgiPaths();
 	_mimeTypes = config.getMIMETypes();
 	_sharedNetAddr = config.getSharedNetAddr();
 }
+
+/* void Server::applyConfig(const ServerConfig& config)
+{
+	void(config);
+} */
 
 Server::~Server()
 {
@@ -336,7 +343,7 @@ void Server::selectResponseContent()
 		std::cout << "completePath is a directory" << std::endl;
 		std::string standardFile = _locations[_clientIt->directory].std_file;
 		if (standardFile.empty())
-			standardFile = "index.html";
+			standardFile = _standardFile;
 		if (resourceExists(completePath + standardFile))
 		{
 			std::cout << "'" << completePath + standardFile << "' exists." << std::endl;
