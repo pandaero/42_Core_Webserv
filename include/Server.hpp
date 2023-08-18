@@ -29,6 +29,8 @@ class	Server
 
 		bool	hangUp();
 		bool	errorPending();
+		bool	noRequest();
+
 		
 		// utils
 		std::string		buildResponseHead();
@@ -61,7 +63,6 @@ class	Server
 		bool							_sharedNetAddr;
 		sockaddr_in						_serverAddress;
 
-		int								_clientfd;
 		pollfd*							_pollStruct;
 		size_t							_index;
 		clientVec_it					_clientIt;

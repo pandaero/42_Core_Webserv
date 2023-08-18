@@ -71,7 +71,7 @@ void Server::receiveData()
 	}
 	char buffer[RECV_CHUNK_SIZE];
 	bzero(buffer, RECV_CHUNK_SIZE);
-	int bytesReceived = recv(_clientfd, buffer, RECV_CHUNK_SIZE, 0);
+	int bytesReceived = recv(_clientIt->fd, buffer, RECV_CHUNK_SIZE, 0);
 	std::cout << bytesReceived << " bytes received.\nContent:\n" << buffer << std::endl;
 	if (bytesReceived <= 0)
 	{
@@ -104,14 +104,22 @@ bool Server::hangUp()
 
 bool Server::errorPending()
 {
-	if (_clientIt->errorPending)
+	if (!_clientIt->errorPending)
+		return false;
+	ANNOUNCEME_FD
+	if (_pollStruct->revents & POLLOUT)
 	{
-		std::cout << "Error Pending." << std::endl;
-		if (_pollStruct->revents & POLLOUT)
-		{
-			sendResponseHead();
-			sendResponseBody();
-		}
+		sendResponseHead();
+		sendResponseBody();
+	}
+	return true;
+}
+
+bool Server::noRequest()
+{
+	if (!_clientIt->requestHeadComplete)
+	{
+		closeClient("Server::handleConnections: POLLOUT but no request Head");
 		return true;
 	}
 	return false;
@@ -119,12 +127,10 @@ bool Server::errorPending()
 
 void Server::handleConnections()
 {
-	//for (_clientIt = _clients.begin(); _clientIt != _clients.end(); ++_clientIt)
 	for (_index = 0; _index < _clients.size(); ++_index)
 	{
 		_clientIt = _clients.begin() + _index;
-		_clientfd = _clientIt->fd;
-		_pollStruct = getPollStruct(_clientfd);
+		_pollStruct = getPollStruct(_clientIt->fd);
 		
 		ANNOUNCEME_FD
 		try
@@ -144,11 +150,8 @@ void Server::handleConnections()
 			if (_pollStruct->revents & POLLOUT)
 			{
 				std::cout << "POLLOUT." << std::endl;
-				if (!_clientIt->requestHeadComplete)
-				{
-					closeClient("Server::handleConnections: POLLOUT but no request Head");
+				if (noRequest())
 					continue;
-				}
 				sendResponseHead();
 				sendResponseBody();
 			}
@@ -276,9 +279,9 @@ void Server::sendResponseHead()
 
 	std::string header = buildResponseHead();
 	
-	if (::send(_clientfd, header.c_str(), header.size(), 0) == -1)
+	if (::send(_clientIt->fd, header.c_str(), header.size(), 0) == -1)
 		throw std::runtime_error(E_SEND);
-	std::cout << "responseHead sent to fd: " << _clientfd << "\n" << header << std::endl;
+	std::cout << "responseHead sent to fd: " << _clientIt->fd << "\n" << header << std::endl;
 	_clientIt->responseHeadSent = true;
 }
 
@@ -391,13 +394,12 @@ void Server::sendResponseBody()
 		closeClient("Server::sendResponseBody: ifstream failure.");
 		throw std::runtime_error("sendResponseBody: Could not open file to send. Client closed.");
 	}
-	std::cout << "fileposition: " << _clientIt->filePosition << std::endl;
+	
+	char buffer[SEND_CHUNK_SIZE];
 	fileStream.seekg(_clientIt->filePosition);
-	char	buffer[SEND_CHUNK_SIZE];
-	bzero(buffer, SEND_CHUNK_SIZE);
 	fileStream.read(buffer, SEND_CHUNK_SIZE);
 
-	if (::send(_clientfd, buffer, fileStream.gcount(), 0) == -1)
+	if (::send(_clientIt->fd, buffer, fileStream.gcount(), 0) == -1)
 	{
 		fileStream.close();
 		closeClient("Server::sendResponseBody: send failure.");
@@ -411,8 +413,6 @@ void Server::sendResponseBody()
 	}
 	_clientIt->filePosition = fileStream.tellg();
 	fileStream.close();
-	std::cout << "sendFile.gcount to fd " << _clientfd << ": " << fileStream.gcount() << std::endl;
-	
 }	 
 	
 bool Server::dirListing(std::string path)
@@ -434,17 +434,17 @@ void Server::closeClient(const char* msg)
 {
 	if (msg)
 		std::cout << "closeClient fd " << _clientIt->fd << ": " << msg << std::endl;
-	close(_clientfd);
+	close(_clientIt->fd);
 	
 	// erase corresponding pollStruct
 	std::vector<pollfd>::iterator it = _pollVector->begin();
-	while (it != _pollVector->end() && it->fd != _clientfd)
+	while (it != _pollVector->end() && it->fd != _clientIt->fd)
 		++it;
 	if (it == _pollVector->end())
 		throw std::runtime_error("Server::closeClient: fd to close not found in pollVector");
 	_pollVector->erase(it);
 	
-	// erase client and decrement _index to not skip the next one in the for loop
+	// erase client and decrement _index to not skip the next client in the for loop
 	_clients.erase(_clientIt);
 	--_index;
 }

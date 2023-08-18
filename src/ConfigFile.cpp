@@ -33,7 +33,7 @@ ConfigFile::ConfigFile(const char* userConfigPath)
 	// check for multiple "servers" on the same host:port combination
 	for (size_t i = 0; i < _serverConfigs.size(); ++i)
 	{
-		if (sharesHostAndPort(_serverConfigs[i]))
+		if (sharedNetAddr(_serverConfigs[i]))
 			_serverConfigs[i].setSharedNetAddr(true);
 	}
 	for (size_t i = 0; i < _serverConfigs.size(); ++i)
@@ -90,7 +90,7 @@ std::string ConfigFile::getServerConfigElement(std::string& configData)
 	return getInstruction(configData);
 }
 
-bool ConfigFile::sharesHostAndPort(const ServerConfig& serverConfig)
+bool ConfigFile::sharedNetAddr(const ServerConfig& serverConfig)
 {
 	for (size_t i = 0; i < _serverConfigs.size(); ++i)
 	{
