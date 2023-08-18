@@ -64,7 +64,7 @@ void acceptConnections(std::vector<Server>& servers, std::vector<pollfd>& pollVe
 	ANNOUNCEME
 	for (size_t i = 0; i < servers.size(); ++i)
 	{
-		if (!pollVector[i].revents & POLLIN)
+		if (!(pollVector[i].revents & POLLIN))
 			continue;
 		while (true)
 		{

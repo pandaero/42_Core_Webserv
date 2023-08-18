@@ -333,19 +333,9 @@ std::string Server::buildCompletePath()
 	std::string	http_redir = _locations[_clientIt->directory].http_redir;
 
 	if (!http_redir.empty())
-	{
-		// use prepend root here
-		
-		if (http_redir.find('/') == 0)
-			completePath = _root + http_redir.substr(1) + _clientIt->filename; // filename will be empty if request was for a directory, so can always add this
-		else
-			completePath = http_redir + _clientIt->filename;
-		return completePath;
-	}
-	if (_clientIt->path.find('/') == 0)
-		completePath = _root + _clientIt->path.substr(1);
+		completePath = prependRoot(http_redir + _clientIt->filename);
 	else
-		completePath = _clientIt->path;
+		completePath = prependRoot(_clientIt->path);
 	return completePath;
 }
 
@@ -364,6 +354,7 @@ void Server::selectResponseContent()
 	}
 	if (_clientIt->method == DELETE)
 	{
+		
 		_clientIt->responseFileSelected = true;
 		_clientIt->statusCode = 204;
 		return;

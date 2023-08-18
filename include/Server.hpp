@@ -64,7 +64,6 @@ class	Server
 		bool							_defaultDirListing;
 		strMap							_cgiPaths;
 		strMap*							_mimeTypes;
-		bool							_sharedNetAddr;
 		sockaddr_in						_serverAddress;
 
 		pollfd*							_pollStruct;
