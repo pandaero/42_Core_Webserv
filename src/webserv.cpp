@@ -258,10 +258,10 @@ std::string	createDirList(const std::string & path)
 	closedir(folder);
 	dirListingStream << "</ul></body></html>";
 
-	std::string			fileName(path + "-list.html");
-	std::ofstream		dirListingFile(fileName.c_str());
+	//std::string			fileName(path + "-list.html");
+	std::ofstream		dirListingFile("./system/current_dir_list.html");
 	dirListingFile << dirListingStream.rdbuf();
 	dirListingFile.close();
-	std::string			fullSysPath(SYS_ROOT + '/' + fileName);
-	return (fullSysPath);
+	//std::string			fullSysPath("./system/current_dir_list.html");
+	return ("./system/current_dir_list.html");
 }

@@ -336,7 +336,7 @@ void Server::selectResponseContent()
 			_clientIt->statusCode = 200;
 			_clientIt->sendPath = completePath + standardFile;
 		}
-		else if (dirListing(completePath))
+		else if (dirListing(_clientIt->path))
 		{
 			std::cout << "no, '" << completePath + standardFile << "' does not exist, but dir listing is allowed. Show dir listing here" << std::endl;
 			_clientIt->statusCode = 200;
