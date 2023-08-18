@@ -70,9 +70,9 @@
 # define I_INVALIDVALUE		"Info: ServerConfig: Unrecognized value in config file: "
 # define I_INVALERRPAGE		"Info: ServerConfig: Skipping invalid error page key-value pair."
 # define I_INVALIDHEADER	"Info: ServerConfig: Elements between valid subelement headers and beginning of subelement (opening curly brace) will be ignored: "
+# define I_INVALSERVERNAME	"Info: ServerConfig: Skipping invalid server name: "
 
 // Server
-# define E_SERVERNAME			"Error: Server: Invalid characters in server name input. Only alphanumerical, <<.>> and <<_>> allowed: "
 # define E_HOSTADDRINPUT		"Error: Server: Invalid characters in host address input. Only numerical and dot allowed: "
 # define E_HOSTADDRVAL			"Error: Server: Invalid address value. Cannot convert to IP address: "
 # define E_PORTINPUT			"Error: Server: Invalid characters in port input. Only numerical allowed: "

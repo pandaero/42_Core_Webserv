@@ -26,6 +26,7 @@ class	Client
 		std::string		method;
 		std::string		path;
 		std::string		queryString;
+		std::string		host;
 		int				contentLength;
 		std::string		contentType;
 		strMap			headers;

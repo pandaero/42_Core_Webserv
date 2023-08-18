@@ -33,6 +33,8 @@ class	Server
 
 		
 		// utils
+		void			checkHost();
+		bool			nameFound(const std::string&, const strVec&);
 		void		 	applyConfig(const ServerConfig&);
 		std::string		buildResponseHead();
 		std::string		buildCompletePath();		
@@ -40,11 +42,10 @@ class	Server
 		std::string 	prependRoot(const std::string&);
 		pollfd*			getPollStruct(int);
 		std::string		mimeType(std::string);
-		void			checkRequest();
+		bool			requestError();
 		bool			dirListing(std::string);
 
 		// setters
-		void	setNames(std::string);
 		void	setHost(std::string);
 		void	setPort(std::string);
 		void	setClientMaxBody(std::string);
@@ -53,6 +54,7 @@ class	Server
 
 		int								_server_fd;
 		std::vector<std::string>		_names;
+		std::vector<ServerConfig>		_altConfigs;
 		std::string						_root;
 		std::string						_standardFile;
 		strLocMap						_locations;

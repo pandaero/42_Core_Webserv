@@ -4,6 +4,7 @@ Server::Server(const ServerConfig & config)
 {	
 	setHost(config.getConfigPairs()[HOST]);
 	setPort(config.getConfigPairs()[PORT]);
+	_altConfigs = config.getAltConfigs();
 	applyConfig(config);	
 }
 
@@ -12,7 +13,6 @@ void Server::applyConfig(const ServerConfig& config)
 	strMap configPairs = config.getConfigPairs();
 	
 	// Set main values stored in configPairs
-	setNames(configPairs[SERVERNAME]);
 	setClientMaxBody(configPairs[CLIMAXBODY]);
 	setMaxConnections(configPairs[MAXCONNS]);
 	setDefaultDirListing(configPairs[DIRLISTING]);
@@ -20,6 +20,8 @@ void Server::applyConfig(const ServerConfig& config)
 	// Copy remaining values directly to server variables 
 	_root = configPairs[ROOT];
 	_standardFile = configPairs[STDFILE];
+	_names = config.getNames();
+	std::cout << "names0 in server constructor:'" << _names[0] << "'" << std::endl;
 	_errorPagesPaths = config.getErrorPaths();
 	_locations = config.getLocations();
 	_cgiPaths = config.getCgiPaths();
@@ -169,35 +171,36 @@ void Server::handleConnections()
 	}
 }
 
-void Server::checkRequest()
+bool Server::requestError()
 {
 	// wrong protocol
 	if (_clientIt->httpProtocol != HTTPVERSION)
-		selectErrorPage(505);
+		return (selectErrorPage(505), true);
 	
 	// method not supported by server
-	else if (_clientIt->method != GET
+	if (_clientIt->method != GET
 		&& _clientIt->method != POST
 		&& _clientIt->method != DELETE)
-		selectErrorPage(501);
+		return (selectErrorPage(501), true);
 	
 	// body size too large
-	else if (_clientIt->contentLength > (int)_clientMaxBody)
-		selectErrorPage(413);
+	if (_clientIt->contentLength > (int)_clientMaxBody)
+		return (selectErrorPage(413), true);
 	else
 	{
-		strLocMap_it	locIt = _locations.find(_clientIt->directory);
+		strLocMap_it locIt = _locations.find(_clientIt->directory);
 		
 		// access forbidden (have to specifically allow each path in config file)
 		if (locIt == _locations.end())
-			selectErrorPage(404); //  returning 404 (and not 403) to not leak file structure
+			return (selectErrorPage(404), true); //  returning 404 (and not 403) to not leak file structure
 	
 		// access granted, but not for the requested method
 		else if ((_clientIt->method == GET && !locIt->second.get)
 			|| (_clientIt->method == POST && !locIt->second.post)
 			|| (_clientIt->method == DELETE && !locIt->second.delete_))
-			selectErrorPage(405);
+			return (selectErrorPage(405), true);
 	}
+	return false;
 }
 
 void Server:: handleRequestHead()
@@ -211,8 +214,41 @@ void Server:: handleRequestHead()
 		return;
 	}
 	_clientIt->parseRequest();
-	_clientIt->requestHeadComplete = true;
-	checkRequest();
+	if (requestError())
+		return;
+	checkHost();
+}
+
+void Server::checkHost()
+{
+	std::vector<std::string>::iterator it = std::find(_names.begin(), _names.end(), _clientIt->host);
+	
+	std::cout << "Searching for host:'" << _clientIt->host << "'" << std::endl;
+	if (it != _names.end())
+	{
+		std::cout << "Hostname found in already running ServerConfig. (no changes)" << std::endl;
+		return;
+	}
+	std::cout << "altconfigsize " << _altConfigs.size() << std::endl;
+	size_t i;
+	for (i = 0; i < _altConfigs.size(); ++i)
+	{
+		std::cout << "altConfig #" << i << " has _names[0]:'" << _altConfigs[i].getNames()[0] << "'" <<std::endl;
+		if (nameFound(_clientIt->host, _altConfigs[i].getNames()))
+		{
+			applyConfig(_altConfigs[i]);
+			std::cout << "Hostname found in alternative ServerConfig #" << i << std::endl;
+			return;
+		}
+	}
+	std::cout << "Hostname not found. Running default ServerConfig. (no changes)" << std::endl;
+}
+
+bool Server::nameFound(const std::string& name, const strVec& vector)
+{
+	if (std::find(vector.begin(), vector.end(), name) != vector.end())
+		return true;
+	return false;
 }
 
 void Server::handleRequestBody()
@@ -476,21 +512,6 @@ void Server::whoIsI()
 	std::cout	<< "CGI Paths:\t" << _cgiPaths.begin()->first << '\t' << _cgiPaths.begin()->second << '\n';
 					for (strMap_it it = ++_cgiPaths.begin(); it != _cgiPaths.end(); it++)
 						std::cout << "\t\t" << it->first << '\t' << it->second << std::endl;
-	//std::cout	<< "Shared netw addr: " << (_sharedNetAddr ? "yes" : "no") << std::endl;
-}
-
-void Server::setNames(std::string input)
-{
-	std::string name;
-
-	while (!input.empty())
-	{
-		name = splitEraseTrimChars(input, WHITESPACE);
-		for (std::string::const_iterator it = name.begin(); it != name.end(); it++)
-			if (!isalnum(*it) && *it != '.' && *it != '_')
-				throw std::runtime_error(E_SERVERNAME + name + '\n');
-		_names.push_back(name);
-	}
 }
 
 void Server::setHost(std::string input)

@@ -54,6 +54,8 @@ void Client::parseRequest()
 
 	// parse headers and populate specific headers for easy access
 	headers = createHeaderMap(buffer, ":", "\r\n", "\r\n");
+	if (headers.find("host") != headers.end())
+		host = headers["host"].substr(0, headers["host"].find_first_of(':'));
 	if (headers.find("content-length") != headers.end())
 		contentLength = atoi(headers["content-length"].c_str());
 	if (headers.find("content-type") != headers.end())

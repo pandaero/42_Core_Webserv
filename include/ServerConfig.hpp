@@ -6,7 +6,6 @@
 class ServerConfig
 {
 	public:
-		ServerConfig();
 		ServerConfig(std::string, strMap*);
 		ServerConfig(const ServerConfig&);
 
@@ -20,10 +19,10 @@ class ServerConfig
 		strLocMap	getLocations() const;
 		strMap		getCgiPaths() const;
 		strMap*		getMIMETypes() const;
-		bool		getSharedNetAddr() const;
+		strVec		getNames() const;
 
-		void		setSharedNetAddr(bool);
-		void		addAltConfig(const ServerConfig&);
+		std::vector<ServerConfig>	getAltConfigs() const;
+		void						addAltConfig(const ServerConfig&);
 
 	private:
 		void		parseDefaultErrorPages(std::string&);
@@ -31,7 +30,9 @@ class ServerConfig
 		void		parseLocation(std::string&);
 		void		parseDefaultCgi(std::string&);
 		void		parseUserCgi(std::string&);
+		void		parseNames(std::string&);
 		
+		strVec						_names;
 		std::vector<ServerConfig>	_altConfigs;
 		strMap						_configPairs;
 		intStrMap					_errorPages;
