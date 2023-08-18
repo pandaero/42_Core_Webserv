@@ -352,17 +352,25 @@ void Server::selectResponseContent()
 		_clientIt->statusCode = 201;
 		return;
 	}
+	
+	std::string	completePath = buildCompletePath();
+	std::cout << "completePath after HTTP redirection check: " << completePath << std::endl;
 	if (_clientIt->method == DELETE)
 	{
-		
-		_clientIt->responseFileSelected = true;
-		_clientIt->statusCode = 204;
+		if (access(completePath.c_str(), F_OK) == 0)
+		{
+			if (remove(completePath.c_str()) == 0)
+			{
+				_clientIt->responseFileSelected = true;
+				_clientIt->statusCode = 204;
+			}
+			else
+				selectErrorPage(500);
+		}
 		return;
 	}
 	// only remaining method is GET
 	// check for http redirection
-	std::string	completePath = buildCompletePath();
-	std::cout << "completePath after HTTP redirection check: " << completePath << std::endl;
 	if (isDirectory(completePath))
 	{
 		std::cout << "completePath is a directory" << std::endl;
