@@ -5,13 +5,16 @@ ConfigFile::ConfigFile(const char* userConfigPath)
 	std::string	configData;
 	std::string defaultFile = "system/default.conf";
 	
-	// All "servers" receive a pointer to this string map to select MIME types.
+	// All Server objects receive a pointer to this string map to select MIME types.
 	setMIMEtypes();
 	
-	// Parse default ServerConfig object from internal default config file.
-	// This default config file is effectively part of the code:
-	// The key value pairs in it will all be accepted; they define the 
-	// framework for the parsing of the user supplied config files.
+	/*
+	Parse default ServerConfig object from internal default config file.
+	This default config file is effectively part of the code:
+	The key value pairs in it will all be accepted; they define the 
+	framework for the parsing of the user supplied config files.
+	Interesting idea, but wouldn't do it again.
+	*/
 	_defaultServerConfig = NULL;
 	configData = loadFile(defaultFile.c_str());
 	_defaultServerConfig = new ServerConfig(getServerConfigElement(configData), &_mimeTypes);
@@ -97,8 +100,6 @@ bool ConfigFile::combineSharedNetAddr(const ServerConfig& currentConfig, size_t 
 	{
 		if (sharedNetAddr(currentConfig, _serverConfigs[i]))
 		{
-			std::cout << "Shared netAddr detected." << std::endl;
-			std::cout << "Adding current ServerConfig to ServerConfig index " << i << std::endl;
 			_serverConfigs[i].addAltConfig(currentConfig);
 			return true;
 		}
@@ -115,8 +116,6 @@ bool ConfigFile::sharedNetAddr(const ServerConfig& a, const ServerConfig& b)
 		return true;
 	return false;
 }
-
-
 
 void ConfigFile::setMIMEtypes()
 {

@@ -1,8 +1,6 @@
 - merge dir listing
 - cgi
 - delete requests
-- update main to handle multiple host:port combos
-	- remove sharednetaddr var
 - check throws. Probably should always result in client closing (file deletion also if post request)
 - think about return from sendBody on sendpathempty in context of physiological emptiness.
 

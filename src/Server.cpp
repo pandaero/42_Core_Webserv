@@ -14,7 +14,7 @@ void Server::applyConfig(const ServerConfig& config)
 	
 	// Set main values stored in configPairs
 	setClientMaxBody(configPairs[CLIMAXBODY]);
-	setMaxConnections(configPairs[MAXCONNS]);
+	setMaxConnections(configPairs[MAXCONNS]); // not being used for now
 	setDefaultDirListing(configPairs[DIRLISTING]);
 	
 	// Copy remaining values directly to server variables 
