@@ -326,9 +326,6 @@ void Server::selectResponseContent()
 	}
 	// only remaining method is GET
 	// check for http redirection
-	/* std::string	completePath = _root + _clientIt->path;
-	if (!_locations[_clientIt->directory].http_redir.empty())
-		completePath = _root + _locations[_clientIt->directory].http_redir + _clientIt->filename; */
 	std::string	completePath = buildCompletePath();
 	std::cout << "completePath after HTTP redirection check: " << completePath << std::endl;
 	if (isDirectory(completePath))
@@ -343,7 +340,7 @@ void Server::selectResponseContent()
 			_clientIt->statusCode = 200;
 			_clientIt->sendPath = completePath + standardFile;
 		}
-		else if (dirListing(completePath))
+		else if (dirListing(_clientIt->path))
 		{
 			std::cout << "no, '" << completePath + standardFile << "' does not exist, but dir listing is allowed. Show dir listing here" << std::endl;
 			_clientIt->statusCode = 200;
