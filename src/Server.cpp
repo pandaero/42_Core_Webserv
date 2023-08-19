@@ -148,14 +148,18 @@ void Server::handleConnections()
 			{
 				receiveData();
 				handleRequestHead();
-				handleRequestBody();
-				selectResponseContent();
+				if (_clientIt->method == GET)
+					handleGet();
+				else if (_clientIt->method == POST)
+					handlePost();
+				else if (_clientIt->method == DELETE)
+					handleDelete();
 			}
 			if (_pollStruct->revents & POLLOUT)
 			{
 				if (noRequest())
 					continue;
-				sendResponseHead();
+				sendResponseHead(); // check conditions
 				sendResponseBody();
 			}
 		}
@@ -250,7 +254,67 @@ void Server::setHost()
 	std::cout << "Hostname not found. Running default ServerConfig. (no changes)" << std::endl;
 }
 
-void Server::handleRequestBody()
+void Server::processRequest()
+{
+	if (_clientIt->method == GET)
+		handleGet();
+	else if (_clientIt->method == POST)
+		handlePost();
+	else if (_clientIt->method == DELETE)
+		handleDelete();
+
+}
+
+void Server::handleDelete()
+{
+	if (isDirectory(_clientIt->path)) // deleting directories not allowed
+		selectErrorPage(405);
+	else if (access(_clientIt->path.c_str(), F_OK) == 0)
+	{
+		if (remove(_clientIt->path.c_str()) == 0)
+		{
+			_clientIt->statusCode = 204;
+			_clientIt->requestFinished = true;
+		}
+		else
+			selectErrorPage(500);
+	}
+}
+
+void Server::handleGet()
+{
+	if (isDirectory(_clientIt->path))
+	{
+		std::string standardFile = _locations[_clientIt->directory].std_file;
+		if (standardFile.empty())
+			standardFile = _standardFile;
+		if (resourceExists(_clientIt->path + standardFile))
+		{
+			_clientIt->statusCode = 200;
+			_clientIt->sendPath = _clientIt->path + standardFile;
+		}
+		else if (dirListing(_clientIt->path))
+		{
+			_clientIt->statusCode = 200;
+			// call dir listing
+			_clientIt->sendPath = "system/dirListing.html";
+		}
+		else
+			selectErrorPage(404);
+	}
+	else
+	{
+		if (resourceExists(_clientIt->path))
+		{
+			_clientIt->statusCode = 200;
+			_clientIt->sendPath = _clientIt->path;
+		}
+		else
+			selectErrorPage(404);
+	}
+	_clientIt->requestFinished = true;
+}
+void Server::handlePost()
 {
 	if (_clientIt->requestBodyComplete)
 		return;
@@ -269,12 +333,19 @@ void Server::handleRequestBody()
 		_clientIt->append = true;
 	}
 	if (!outputFile.is_open())
-		throw std::runtime_error(E_REQUESTFILE);
+	{
+		selectErrorPage(500);
+		return;		
+	}
 	outputFile.write(_clientIt->buffer.c_str(), _clientIt->buffer.size());
 	_clientIt->bytesWritten += _clientIt->buffer.size();
 	outputFile.close();
 	if (_clientIt->bytesWritten >= (size_t)_clientIt->contentLength)
+	{
 		_clientIt->requestBodyComplete = true;
+		_clientIt->requestFinished = true;
+		_clientIt->statusCode = 201;
+	}
 }
 
 std::string Server::buildResponseHead()
@@ -329,90 +400,9 @@ std::string Server::buildCompletePath()
 	return completePath;
 }
 
-void Server::selectResponseContent() // this functino is also not well named. prolly divide get, post, delete handlers and cgi handler?
-{
-	if (_clientIt->responseFileSelected || !_clientIt->requestBodyComplete)
-		return;
-	ANNOUNCEME_FD
-	// errors on post or delete already handled, so just have to set appropriate return code.
-	// by not setting sendPath it remains empty and no body will be sent later.
-	if (_clientIt->method == POST)
-	{
-		_clientIt->responseFileSelected = true;
-		_clientIt->statusCode = 201;
-		return;
-	}
-	
-	std::string	completePath = buildCompletePath();
-	std::cout << "completePath after HTTP redirection check: " << completePath << std::endl;
-	if (_clientIt->method == DELETE)
-	{
-		if (isDirectory(completePath)) // deleting directories not allowed
-		{
-			selectErrorPage(405);
-			return;
-		}
-		if (access(completePath.c_str(), F_OK) == 0)
-		{
-			if (remove(completePath.c_str()) == 0)
-			{
-				_clientIt->responseFileSelected = true;
-				_clientIt->statusCode = 204;
-			}
-			else
-				selectErrorPage(500);
-		}
-		return;
-	}
-	// only remaining method is GET
-	// check for http redirection
-	if (isDirectory(completePath))
-	{
-		std::cout << "completePath is a directory" << std::endl;
-		std::string standardFile = _locations[_clientIt->directory].std_file;
-		if (standardFile.empty())
-			standardFile = _standardFile;
-		if (resourceExists(completePath + standardFile))
-		{
-			std::cout << "'" << completePath + standardFile << "' exists." << std::endl;
-			_clientIt->statusCode = 200;
-			_clientIt->sendPath = completePath + standardFile;
-		}
-		else if (dirListing(_clientIt->path))
-		{
-			std::cout << "no, '" << completePath + standardFile << "' does not exist, but dir listing is allowed. Show dir listing here" << std::endl;
-			_clientIt->statusCode = 200;
-			_clientIt->sendPath = "dirlisting"; // dunno how to handle this best yet. wait to implemnt dirlisting to decide
-		}
-		else
-		{
-			std::cout << "'" << completePath + standardFile << "' does not exist, and dir listing is not allowed. Send 404." << std::endl;
-			selectErrorPage(404);
-		}
-	}
-	else // is not directory
-	{
-		std::cout << "completePath is not a directory" << std::endl;
-
-		if (resourceExists(completePath))
-		{
-			std::cout << "resource exists" << std::endl;
-			
-			_clientIt->statusCode = 200;
-			_clientIt->sendPath = completePath;
-		}
-		else
-		{
-			std::cout << "resource does not exist" << std::endl;
-			selectErrorPage(404);
-		}
-	}
-	_clientIt->responseFileSelected = true;
-}
-
 void Server::sendResponseBody() // this should actually be handleGet, prolly also need handleCGI
 {
-	if (!_clientIt->requestHeadComplete || !_clientIt->responseFileSelected || !_clientIt->responseHeadSent)
+	if (!_clientIt->requestHeadComplete || !_clientIt->requestFinished || !_clientIt->responseHeadSent)
 		return;
 	ANNOUNCEME_FD
 	std::cout << "sendPath:'" << _clientIt->sendPath << "'" << std::endl;
@@ -577,7 +567,7 @@ void Server::selectErrorPage(int code)
 {
 	_clientIt->requestHeadComplete = true;
 	_clientIt->requestBodyComplete = true;
-	_clientIt->responseFileSelected = true;
+	_clientIt->requestFinished = true;
 	_clientIt->errorPending = true;
 	_clientIt->statusCode = code;
 
@@ -586,7 +576,6 @@ void Server::selectErrorPage(int code)
 		generateErrorPage(code);
 		return;
 	}
-	
 	std::string path = prependRoot(_errorPagesPaths[code]);
 	if (resourceExists(path))
 		_clientIt->sendPath = path;

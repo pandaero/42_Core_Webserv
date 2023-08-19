@@ -35,7 +35,7 @@ class	Client
 		bool			errorPending;
 		bool			requestHeadComplete;
 		bool			requestBodyComplete;
-		bool			responseFileSelected;
+		bool			requestFinished;
 		bool			responseHeadSent;
 		bool			responseBodySent;
 		bool			append;

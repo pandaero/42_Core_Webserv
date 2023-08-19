@@ -20,7 +20,10 @@ class	Server
 		// main handlers
 		void	receiveData();
 		void	handleRequestHead();
-		void	handleRequestBody();
+		void	processRequest();
+		void	handleGet();
+		void	handlePost();
+		void	handleDelete();
 		void	selectResponseContent();
 		void	selectErrorPage(int);
 		void	sendResponseHead();
@@ -33,12 +36,15 @@ class	Server
 
 		// utils
 		void			setHost();
-		bool			nameFound(const std::string&, const strVec&);
 		void		 	applyConfig(const ServerConfig&);
 		std::string		buildResponseHead();
 		
 		void			updateClientPath();
+	
+	
 		std::string		buildCompletePath();		
+	
+	
 		std::string 	prependRoot(const std::string&);
 		
 		

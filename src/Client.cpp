@@ -26,7 +26,7 @@ void Client::initDefaults()
 	errorPending = false;
 	requestHeadComplete = false;
 	requestBodyComplete = false;
-	responseFileSelected = false;
+	requestFinished = false;
 	responseHeadSent = false;
 	responseBodySent = false;
 	append = false;
