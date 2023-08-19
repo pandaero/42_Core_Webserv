@@ -339,7 +339,7 @@ std::string Server::buildCompletePath()
 	return completePath;
 }
 
-void Server::selectResponseContent()
+void Server::selectResponseContent() // this functino is also not well named. prolly divide get, post, delete handlers and cgi handler?
 {
 	if (_clientIt->responseFileSelected || !_clientIt->requestBodyComplete)
 		return;
@@ -357,6 +357,11 @@ void Server::selectResponseContent()
 	std::cout << "completePath after HTTP redirection check: " << completePath << std::endl;
 	if (_clientIt->method == DELETE)
 	{
+		if (isDirectory(completePath)) // deleting directories not allowed
+		{
+			selectErrorPage(405);
+			return;
+		}
 		if (access(completePath.c_str(), F_OK) == 0)
 		{
 			if (remove(completePath.c_str()) == 0)
@@ -415,7 +420,7 @@ void Server::selectResponseContent()
 	_clientIt->responseFileSelected = true;
 }
 
-void Server::sendResponseBody()
+void Server::sendResponseBody() // this should actually be handleGet, prolly also need handleCGI
 {
 	if (!_clientIt->requestHeadComplete || !_clientIt->responseFileSelected || !_clientIt->responseHeadSent)
 		return;
