@@ -31,15 +31,18 @@ class	Server
 		bool	errorPending();
 		bool	noRequest();
 
-		
 		// utils
-		void			checkHost();
+		void			setHost();
 		bool			nameFound(const std::string&, const strVec&);
 		void		 	applyConfig(const ServerConfig&);
 		std::string		buildResponseHead();
+		
+		void			updateClientPath();
 		std::string		buildCompletePath();		
-		void			generateErrorPage(int);
 		std::string 	prependRoot(const std::string&);
+		
+		
+		void			generateErrorPage(int);
 		pollfd*			getPollStruct(int);
 		std::string		mimeType(std::string);
 		bool			requestError();

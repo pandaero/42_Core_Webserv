@@ -152,6 +152,13 @@ size_t	fileSize(const std::string& filePath)
 	return static_cast<size_t>(fileInfo.st_size);
 }
 
+bool stringInVec(const std::string& string, const strVec& vector)
+{
+	if (std::find(vector.begin(), vector.end(), string) != vector.end())
+		return true;
+	return false;
+}
+
 std::string getHttpMsg(int code)
 {
 	switch (code)

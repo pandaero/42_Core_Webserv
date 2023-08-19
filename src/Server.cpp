@@ -77,9 +77,7 @@ void Server::receiveData()
 		return;
 	}
 	char buffer[RECV_CHUNK_SIZE];
-	bzero(buffer, RECV_CHUNK_SIZE);
 	int bytesReceived = recv(_clientIt->fd, buffer, RECV_CHUNK_SIZE, 0);
-	std::cout << bytesReceived << " bytes received.\nContent:\n" << buffer << std::endl;
 	if (bytesReceived <= 0)
 	{
 		closeClient("Server::receiveData: 0 bytes received");
@@ -90,7 +88,7 @@ void Server::receiveData()
 
 pollfd* Server::getPollStruct(int fd)
 {
-	std::vector<pollfd>::iterator	it = _pollVector->begin();
+	std::vector<pollfd>::iterator it = _pollVector->begin();
 		
 	while (it != _pollVector->end() && it->fd != fd)
 		++it;
@@ -148,7 +146,6 @@ void Server::handleConnections()
 				continue;
 			if (_pollStruct->revents & POLLIN)
 			{
-				std::cout << "POLLIN." << std::endl;
 				receiveData();
 				handleRequestHead();
 				handleRequestBody();
@@ -156,7 +153,6 @@ void Server::handleConnections()
 			}
 			if (_pollStruct->revents & POLLOUT)
 			{
-				std::cout << "POLLOUT." << std::endl;
 				if (noRequest())
 					continue;
 				sendResponseHead();
@@ -191,7 +187,7 @@ bool Server::requestError()
 		
 		// access forbidden (have to specifically allow each path in config file)
 		if (locIt == _locations.end())
-			return (selectErrorPage(404), true); //  returning 404 (and not 403) to not leak file structure
+			return (selectErrorPage(404), true); // returning 404, not 403, to not leak file structure
 	
 		// access granted, but not for the requested method
 		else if ((_clientIt->method == GET && !locIt->second.get)
@@ -200,6 +196,18 @@ bool Server::requestError()
 			return (selectErrorPage(405), true);
 	}
 	return false;
+}
+
+void Server::updateClientPath()
+{
+	std::string	http_redir = _locations[_clientIt->directory].http_redir;
+	if (!http_redir.empty())
+		_clientIt->directory = http_redir;
+	if (_clientIt->method == POST)
+		_clientIt->directory += _locations[_clientIt->directory].upload_dir;
+	_clientIt->directory = prependRoot(_clientIt->directory);
+	_clientIt->path = _clientIt->directory + _clientIt->filename;
+	std::cout << "updateClientPath: " << _clientIt->path << std::endl;
 }
 
 void Server:: handleRequestHead()
@@ -215,25 +223,24 @@ void Server:: handleRequestHead()
 	_clientIt->parseRequest();
 	if (requestError())
 		return;
-	checkHost();
+	setHost();
+	updateClientPath();
 }
 
-void Server::checkHost()
+void Server::setHost()
 {
-	std::vector<std::string>::iterator it = std::find(_names.begin(), _names.end(), _clientIt->host);
-	
+	if (_clientIt->host.empty())
+		return;
 	std::cout << "Searching for host:'" << _clientIt->host << "'" << std::endl;
-	if (it != _names.end())
+	
+	if (stringInVec(_clientIt->host, _names))
 	{
 		std::cout << "Hostname found in already running ServerConfig. (no changes)" << std::endl;
 		return;
 	}
-	std::cout << "altconfigsize " << _altConfigs.size() << std::endl;
-	size_t i;
-	for (i = 0; i < _altConfigs.size(); ++i)
+	for (size_t i = 0; i < _altConfigs.size(); ++i)
 	{
-		std::cout << "altConfig #" << i << " has _names[0]:'" << _altConfigs[i].getNames()[0] << "'" <<std::endl;
-		if (nameFound(_clientIt->host, _altConfigs[i].getNames()))
+		if (stringInVec(_clientIt->host, _altConfigs[i].getNames()))
 		{
 			applyConfig(_altConfigs[i]);
 			std::cout << "Hostname found in alternative ServerConfig #" << i << std::endl;
@@ -243,36 +250,22 @@ void Server::checkHost()
 	std::cout << "Hostname not found. Running default ServerConfig. (no changes)" << std::endl;
 }
 
-bool Server::nameFound(const std::string& name, const strVec& vector)
-{
-	if (std::find(vector.begin(), vector.end(), name) != vector.end())
-		return true;
-	return false;
-}
-
 void Server::handleRequestBody()
 {
 	if (_clientIt->requestBodyComplete)
 		return;
 	ANNOUNCEME_FD
-	std::string uploadDir = _root + _clientIt->directory + _locations[_clientIt->directory].upload_dir;
-	std::cout << "extra upload_dir in locs: " << _locations[_clientIt->directory].upload_dir << std::endl;
-	std::cout << "uploadDir: " << uploadDir << std::endl;
-	std::cout << "buffer to write:\n" << _clientIt->buffer << std::endl;
-	if (!resourceExists(uploadDir))
+	if (!resourceExists(_clientIt->directory))
 	{
 		selectErrorPage(500);
 		return;		
 	}
-	std::string writePath = uploadDir + _clientIt->filename;
-	std::cout << "writePath:'" << writePath << "'" << std::endl;
 	std::ofstream outputFile;
-	
 	if (_clientIt->append)
-		outputFile.open(writePath.c_str(), std::ios::binary | std::ios::app);
+		outputFile.open(_clientIt->path.c_str(), std::ios::binary | std::ios::app);
 	else
 	{
-		outputFile.open(writePath.c_str(), std::ios::binary | std::ios::trunc);
+		outputFile.open(_clientIt->path.c_str(), std::ios::binary | std::ios::trunc);
 		_clientIt->append = true;
 	}
 	if (!outputFile.is_open())
@@ -281,10 +274,7 @@ void Server::handleRequestBody()
 	_clientIt->bytesWritten += _clientIt->buffer.size();
 	outputFile.close();
 	if (_clientIt->bytesWritten >= (size_t)_clientIt->contentLength)
-	{
 		_clientIt->requestBodyComplete = true;
-		selectResponseContent();
-	}
 }
 
 std::string Server::buildResponseHead()
