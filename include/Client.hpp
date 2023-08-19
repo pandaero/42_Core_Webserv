@@ -11,6 +11,7 @@ class	Client
 		~Client();
 
 		void			parseRequest();
+		void			whoIsI();
 		
 		int				fd;
 		std::string		buffer;
@@ -37,7 +38,6 @@ class	Client
 		bool			requestBodyComplete;
 		bool			requestFinished;
 		bool			responseHeadSent;
-		bool			responseBodySent;
 		bool			append;
 	
 	private:

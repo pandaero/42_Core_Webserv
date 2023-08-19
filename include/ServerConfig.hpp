@@ -6,6 +6,7 @@
 class ServerConfig
 {
 	public:
+		ServerConfig();
 		ServerConfig(std::string, strMap*);
 		ServerConfig(const ServerConfig&);
 

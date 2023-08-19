@@ -18,13 +18,11 @@ class	Server
 	
 	private:
 		// main handlers
-		void	receiveData();
+		bool	receiveData();
 		void	handleRequestHead();
-		void	processRequest();
 		void	handleGet();
 		void	handlePost();
 		void	handleDelete();
-		void	selectResponseContent();
 		void	selectErrorPage(int);
 		void	sendResponseHead();
 		void	sendResponseBody();
@@ -32,17 +30,16 @@ class	Server
 
 		bool	hangUp();
 		bool	errorPending();
-		bool	noRequest();
+		bool	sendData();
 
 		// utils
-		void			setHost();
+		void			setHostConfig();
 		void		 	applyConfig(const ServerConfig&);
 		std::string		buildResponseHead();
 		
 		void			updateClientPath();
 	
 	
-		std::string		buildCompletePath();		
 	
 	
 		std::string 	prependRoot(const std::string&);
@@ -63,7 +60,7 @@ class	Server
 
 		int								_server_fd;
 		std::vector<std::string>		_names;
-		std::vector<ServerConfig>		_altConfigs;
+		std::vector<ServerConfig>		_configs;
 		std::string						_root;
 		std::string						_standardFile;
 		strLocMap						_locations;

@@ -1,8 +1,6 @@
 #ifndef TYPEDEFS_HPP
 # define TYPEDEFS_HPP
 
-//# include "webserv.hpp"
-
 // forward declarations
 class	Client;
 class	Server;

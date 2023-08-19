@@ -28,7 +28,6 @@ void Client::initDefaults()
 	requestBodyComplete = false;
 	requestFinished = false;
 	responseHeadSent = false;
-	responseBodySent = false;
 	append = false;
 }
 
@@ -69,6 +68,15 @@ void Client::parseRequest()
 	if (contentLength <= 0 || method != POST) // we don't process bodies of GET or DELETE requests
 		requestBodyComplete = true;
 	requestHeadComplete = true;
+}
+
+void Client::whoIsI()
+{
+	std::cout << "Client on fd " << fd << std::endl;
+	std::cout << "method:'" << method << "'" << std::endl;
+	std::cout << "path:'" << path << "'" << std::endl;
+	std::cout << "dir:'" << directory << "'" << std::endl;
+	std::cout << "file:'" << filename << "'" << std::endl;
 }
 
 strMap Client::createHeaderMap(std::string& input, std::string endOfKey, std::string endOfValue, std::string endOfMap)

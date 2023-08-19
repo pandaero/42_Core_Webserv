@@ -1,5 +1,8 @@
 #include "../include/ServerConfig.hpp"
 
+ServerConfig::ServerConfig()
+{}
+
 /*
 This constructor is only called when reading the default config.
 The key values contained in the passed string will all be accepted,

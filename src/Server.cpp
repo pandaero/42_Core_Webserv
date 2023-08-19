@@ -1,10 +1,11 @@
 #include "../include/Server.hpp"
 
-Server::Server(const ServerConfig & config)
+Server::Server(const ServerConfig& config)
 {	
 	setHost(config.getConfigPairs()[HOST]);
 	setPort(config.getConfigPairs()[PORT]);
-	_altConfigs = config.getAltConfigs();
+	_configs = config.getAltConfigs();
+	_configs.insert(_configs.begin(), config);
 	applyConfig(config);	
 }
 
@@ -68,13 +69,15 @@ void	Server::startListening(std::vector<pollfd>& pollVector)
 	_pollVector = &pollVector;
 }
 
-void Server::receiveData()
+bool Server::receiveData()
 {
+	if (!(_pollStruct->revents & POLLIN))
+		return false;
 	ANNOUNCEME_FD
 	if (_clientIt->requestBodyComplete)
 	{
 		std::cout << "receiveData returning because reqeustbodyComplete" << std::endl;
-		return;
+		return true;
 	}
 	char buffer[RECV_CHUNK_SIZE];
 	int bytesReceived = recv(_clientIt->fd, buffer, RECV_CHUNK_SIZE, 0);
@@ -84,6 +87,19 @@ void Server::receiveData()
 		throw std::runtime_error(I_CLOSENODATA);
 	}
 	_clientIt->buffer.append(buffer, bytesReceived);
+	return true;
+}
+
+bool Server::sendData()
+{
+	if (!(_pollStruct->revents & POLLOUT))
+		return false;
+	if (!_clientIt->requestHeadComplete)
+	{
+		closeClient("Server::handleConnections: POLLOUT but no request Head");
+		return false;
+	}
+	return true;
 }
 
 pollfd* Server::getPollStruct(int fd)
@@ -120,16 +136,6 @@ bool Server::errorPending()
 	return true;
 }
 
-bool Server::noRequest()
-{
-	if (!_clientIt->requestHeadComplete)
-	{
-		closeClient("Server::handleConnections: POLLOUT but no request Head");
-		return true;
-	}
-	return false;
-}
-
 void Server::handleConnections()
 {
 	for (_index = 0; _index < _clients.size(); ++_index)
@@ -144,9 +150,8 @@ void Server::handleConnections()
 				continue;
 			if (errorPending())
 				continue;
-			if (_pollStruct->revents & POLLIN)
+			if (receiveData())
 			{
-				receiveData();
 				handleRequestHead();
 				if (_clientIt->method == GET)
 					handleGet();
@@ -155,12 +160,10 @@ void Server::handleConnections()
 				else if (_clientIt->method == DELETE)
 					handleDelete();
 			}
-			if (_pollStruct->revents & POLLOUT)
+			if (sendData())
 			{
-				if (noRequest())
-					continue;
-				sendResponseHead(); // check conditions
-				sendResponseBody();
+				sendResponseHead();
+				sendResponseBody(); // Check 
 			}
 		}
 		catch (const std::exception& e)
@@ -227,58 +230,51 @@ void Server:: handleRequestHead()
 	_clientIt->parseRequest();
 	if (requestError())
 		return;
-	setHost();
+	setHostConfig();
 	updateClientPath();
+	_clientIt->whoIsI();
 }
 
-void Server::setHost()
+void Server::setHostConfig()
 {
 	if (_clientIt->host.empty())
 		return;
 	std::cout << "Searching for host:'" << _clientIt->host << "'" << std::endl;
 	
-	if (stringInVec(_clientIt->host, _names))
+	for (size_t i = 0; i < _configs.size(); ++i)
 	{
-		std::cout << "Hostname found in already running ServerConfig. (no changes)" << std::endl;
-		return;
-	}
-	for (size_t i = 0; i < _altConfigs.size(); ++i)
-	{
-		if (stringInVec(_clientIt->host, _altConfigs[i].getNames()))
+		if (stringInVec(_clientIt->host, _configs[i].getNames()))
 		{
-			applyConfig(_altConfigs[i]);
-			std::cout << "Hostname found in alternative ServerConfig #" << i << std::endl;
+			applyConfig(_configs[i]);
+			std::cout << "Hostname found in ServerConfig #" << i << std::endl;
 			return;
 		}
 	}
-	std::cout << "Hostname not found. Running default ServerConfig. (no changes)" << std::endl;
-}
-
-void Server::processRequest()
-{
-	if (_clientIt->method == GET)
-		handleGet();
-	else if (_clientIt->method == POST)
-		handlePost();
-	else if (_clientIt->method == DELETE)
-		handleDelete();
-
+	std::cout << "Hostname not found. Running default ServerConfig." << std::endl;
+	applyConfig(_configs[0]);
 }
 
 void Server::handleDelete()
 {
+	ANNOUNCEME_FD
 	if (isDirectory(_clientIt->path)) // deleting directories not allowed
-		selectErrorPage(405);
-	else if (access(_clientIt->path.c_str(), F_OK) == 0)
 	{
+		selectErrorPage(405);
+		return;
+	}
+	std::cout << "cstr:'" << _clientIt->path.c_str() << "'" << std::endl;
+	if (resourceExists(_clientIt->path))
+	{
+		std::cout << "knudel 0" << std::endl;
 		if (remove(_clientIt->path.c_str()) == 0)
 		{
+			std::cout << "knudel 1" << std::endl;
 			_clientIt->statusCode = 204;
 			_clientIt->requestFinished = true;
 		}
-		else
-			selectErrorPage(500);
 	}
+	else
+		selectErrorPage(500);
 }
 
 void Server::handleGet()
@@ -314,6 +310,7 @@ void Server::handleGet()
 	}
 	_clientIt->requestFinished = true;
 }
+
 void Server::handlePost()
 {
 	if (_clientIt->requestBodyComplete)
@@ -350,19 +347,16 @@ void Server::handlePost()
 
 std::string Server::buildResponseHead()
 {
-	std::stringstream	ss_header;
-	
-	size_t contentLength = 0;
-	if (!_clientIt->sendPath.empty())
-		contentLength = fileSize(_clientIt->sendPath);
+	std::stringstream ss_header;
+	size_t contentLength = fileSize(_clientIt->sendPath);
 	
 	ss_header << HTTPVERSION << ' ' << _clientIt->statusCode << ' ' << getHttpMsg(_clientIt->statusCode) << "\r\n";
 	ss_header << "Server: " << SERVERVERSION << "\r\n";
-	ss_header << "content-type: " << mimeType(_clientIt->sendPath) << "\r\n";
+	if (contentLength != 0)
+		ss_header << "content-type: " << mimeType(_clientIt->sendPath) << "\r\n";
 	ss_header << "content-length: " << contentLength << "\r\n";
 	ss_header << "connection: close" << "\r\n";
 	ss_header << "\r\n";
-	
 	return ss_header.str();
 }
 
@@ -370,46 +364,27 @@ void Server::sendResponseHead()
 {
 	if (_clientIt->responseHeadSent)
 		return;
-	if (!_clientIt->requestBodyComplete)
+	if (!_clientIt->requestFinished)
 		return;
-	if (!_clientIt->requestHeadComplete)
-	{
-		closeClient("Server::sendResponseHead: !requestHeadComplete");
-		return;
-	}
 	ANNOUNCEME_FD
 
 	std::string header = buildResponseHead();
-	
 	if (::send(_clientIt->fd, header.c_str(), header.size(), 0) == -1)
 		throw std::runtime_error(E_SEND);
 	std::cout << "responseHead sent to fd: " << _clientIt->fd << "\n" << header << std::endl;
 	_clientIt->responseHeadSent = true;
 }
 
-// nothing fancy, only handling absolute and relative URLs
-std::string Server::buildCompletePath()
+void Server::sendResponseBody()
 {
-	std::string	completePath;
-	std::string	http_redir = _locations[_clientIt->directory].http_redir;
-
-	if (!http_redir.empty())
-		completePath = prependRoot(http_redir + _clientIt->filename);
-	else
-		completePath = prependRoot(_clientIt->path);
-	return completePath;
-}
-
-void Server::sendResponseBody() // this should actually be handleGet, prolly also need handleCGI
-{
-	if (!_clientIt->requestHeadComplete || !_clientIt->requestFinished || !_clientIt->responseHeadSent)
+	if (!_clientIt->responseHeadSent)
 		return;
 	ANNOUNCEME_FD
 	std::cout << "sendPath:'" << _clientIt->sendPath << "'" << std::endl;
 	
 	if (_clientIt->sendPath.empty())
 	{
-		closeClient("Server::sendResponseBody: sendPath empty.");
+		closeClient("Server::sendResponseBody: nothing to send.");
 		return;
 	}
 	std::ifstream fileStream(_clientIt->sendPath.c_str(), std::ios::binary);
