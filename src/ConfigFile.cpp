@@ -56,7 +56,7 @@ std::vector<ServerConfig> ConfigFile::getConfigs() const
 	return _serverConfigs;
 }
 
-std::vector<Server>	ConfigFile::getServers() const
+std::vector<Server>& ConfigFile::getServers()
 {
 	return _servers;
 }

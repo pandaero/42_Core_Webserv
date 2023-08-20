@@ -10,7 +10,7 @@ class ConfigFile
 		~ConfigFile();
 
 		std::vector<ServerConfig>	getConfigs() const;
-		std::vector<Server>			getServers() const;
+		std::vector<Server>&		getServers();
 
 	private:
 		std::string					loadFile(const char*);

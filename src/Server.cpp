@@ -2,6 +2,7 @@
 
 Server::Server(const ServerConfig& config)
 {	
+	_server_fd = -1;
 	setHost(config.getConfigPairs()[HOST]);
 	setPort(config.getConfigPairs()[PORT]);
 	_configs = config.getAltConfigs();
@@ -30,6 +31,7 @@ void Server::applyHostConfig(const ServerConfig& config)
 
 Server::~Server()
 {
+	std::cout << "Server destructor on listening fd " << _server_fd << "." << std::endl;
 	while (!_clients.empty())
 	{
 		_clientIt = _clients.begin();

@@ -1,7 +1,6 @@
 #include "../include/webserv.hpp"
 
 void acceptConnections(std::vector<Server>&, std::vector<pollfd>&);
-void poll_(std::vector<pollfd>&);
 
 volatile sig_atomic_t sigInt = 0;
 
@@ -14,9 +13,9 @@ void sigHandler(int sig)
 
 int main()
 {
-	ConfigFile			configfile("default/config/ideal.conf");
-	std::vector<Server>	servers(configfile.getServers());
-	std::vector<pollfd>	pollVector;
+	ConfigFile				configfile("default/config/ideal.conf");
+	std::vector<Server>&	servers = configfile.getServers();
+	std::vector<pollfd>		pollVector;
 	
 	std::signal(SIGINT, sigHandler);
 
@@ -38,11 +37,11 @@ int main()
 	{
 		if (poll(&pollVector[0], pollVector.size(), -1) == -1)
 			std::cerr << E_POLL;
+
 		acceptConnections(servers, pollVector);
-		
+
 		for (size_t i = 0; i < servers.size(); ++i)
 		{
-			std::cout << "--- Handling servlet #" << i << " ---" << std::endl;
 			try
 			{
 				servers[i].handleConnections();
@@ -55,13 +54,6 @@ int main()
 	}
 	std::cout << "Shutdown." << std::endl;
 }
-
-void poll_(std::vector<pollfd>& pollVector)
-{
-	if (poll(&pollVector[0], pollVector.size(), -1) == -1)
-			std::cerr << E_POLL;
-}
-
 
 /* 	
 currently not checking for a size restriction. Revisit this during testing.
