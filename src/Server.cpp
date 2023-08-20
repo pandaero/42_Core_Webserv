@@ -6,10 +6,10 @@ Server::Server(const ServerConfig& config)
 	setPort(config.getConfigPairs()[PORT]);
 	_configs = config.getAltConfigs();
 	_configs.insert(_configs.begin(), config);
-	applyConfig(config);	
+	applyHostConfig(config);	
 }
 
-void Server::applyConfig(const ServerConfig& config)
+void Server::applyHostConfig(const ServerConfig& config)
 {
 	strMap configPairs = config.getConfigPairs();
 	
@@ -164,7 +164,7 @@ void Server::handleConnections()
 			if (sendData())
 			{
 				sendResponseHead();
-				sendResponseBody(); // Check 
+				sendResponseBody();
 			}
 		}
 		catch (const std::exception& e)
@@ -234,34 +234,34 @@ bool Server::requestHead()
 	_clientIt->parseRequest();
 	if (requestError())
 		return false;
-	setHostConfig();
+	selectHostConfig();
 	updateClientPath();
 	_clientIt->whoIsI();
 	return true;
 }
 
-void Server::setHostConfig()
+void Server::selectHostConfig()
 {
 	if (_clientIt->host.empty())
+	{
+		applyHostConfig(_configs[0]);
 		return;
-	std::cout << "Searching for host:'" << _clientIt->host << "'" << std::endl;
-	
+	}
 	for (size_t i = 0; i < _configs.size(); ++i)
 	{
 		if (stringInVec(_clientIt->host, _configs[i].getNames()))
 		{
-			applyConfig(_configs[i]);
-			std::cout << "Hostname found in ServerConfig #" << i << std::endl;
+			applyHostConfig(_configs[i]);
+			std::cout << "Hostname '" << _clientIt->host << "' found in ServerConfig #" << i << std::endl;
 			return;
 		}
 	}
-	std::cout << "Hostname not found. Running default ServerConfig." << std::endl;
-	applyConfig(_configs[0]);
+	std::cout << "Hostname '" << _clientIt->host << "' not found. Running default ServerConfig." << std::endl;
+	applyHostConfig(_configs[0]);
 }
 
 void Server::handleDelete()
 {
-	ANNOUNCEME_FD
 	if (isDirectory(_clientIt->path)) // deleting directories not allowed
 	{
 		selectStatusPage(405);
@@ -316,7 +316,6 @@ void Server::handlePost()
 {
 	if (_clientIt->requestBodyComplete)
 		return;
-	ANNOUNCEME_FD
 	if (!resourceExists(_clientIt->directory))
 	{
 		selectStatusPage(500);
@@ -369,7 +368,10 @@ void Server::sendResponseHead()
 
 	std::string header = buildResponseHead();
 	if (::send(_clientIt->fd, header.c_str(), header.size(), 0) == -1)
+	{
+		closeClient("Server::sendResponseHead: send failure.");
 		throw std::runtime_error(E_SEND);
+	}
 	std::cout << "responseHead sent to fd: " << _clientIt->fd << "\n" << header << std::endl;
 	_clientIt->responseHeadSent = true;
 }
@@ -547,14 +549,14 @@ void Server::selectStatusPage(int code)
 
 	if (_errorPagesPaths.find(code) == _errorPagesPaths.end())
 	{
-		generateErrorPage(code);
+		generateStatusPage(code);
 		return;
 	}
 	std::string path = prependRoot(_errorPagesPaths[code]);
 	if (resourceExists(path))
 		_clientIt->sendPath = path;
 	else
-		generateErrorPage(code);
+		generateStatusPage(code);
 }
 
 std::string Server::prependRoot(const std::string& path)
@@ -565,7 +567,7 @@ std::string Server::prependRoot(const std::string& path)
 		return path;
 }
 
-void Server::generateErrorPage(int code)
+void Server::generateStatusPage(int code)
 {
 	std::ofstream errorPage("system/errorPage.html", std::ios::binary | std::ios::trunc);
 	if (errorPage.fail())
@@ -607,17 +609,4 @@ int Server::fd()
 void Server::addClient(int fd)
 {
 	_clients.push_back(Client(fd));
-}
-
-const char *	Server::invalidAddressException::what() const throw()
-{
-	return ("invalid IP address supplied.");
-}
-const char *	Server::fileDescriptorControlFailureException::what() const throw()
-{
-	return ("error controlling file descriptor to non-blocking.");
-}
-const char *	Server::sendFailureException::what() const throw()
-{
-	return ("error sending data to client.");
 }
