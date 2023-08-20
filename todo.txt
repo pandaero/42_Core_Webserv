@@ -1,7 +1,5 @@
 - fix dir listing
 - cgi
 
-
 testing:
-- siege test
-- catch of server handling (shutting down servers on running main, keeping the rest)
+- check eval sheet questions
