@@ -293,8 +293,7 @@ void Server::handleGet()
 		else if (_clientIt->dirListing)
 		{
 			_clientIt->statusCode = 200;
-			// call dir listing
-			_clientIt->sendPath = "system/dirListing.html";
+			_clientIt->sendPath = createDirList(_clientIt->path);
 		}
 		else
 			selectStatusPage(404);

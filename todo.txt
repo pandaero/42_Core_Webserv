@@ -1,6 +1,5 @@
-- merge dir listing
+- fix dir listing
 - cgi
-- check throws. Probably should always result in client closing (file deletion also if post request)
 
 
 - capture SIGINT and clean up memory and fd (basically just call the server destructors)
@@ -13,5 +12,3 @@ actively tell clients wanting to connect on connection limit reached to fuck off
 testing:
 - siege test
 - catch of server handling (shutting down servers on running main, keeping the rest)
-- http redirection
-- correct serving of standard-serve files
