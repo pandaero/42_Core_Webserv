@@ -1,5 +1,8 @@
 - fix dir listing
 - cgi
 
+- report single active hostname
+- remove CGI paths from config file
+
 testing:
 - check eval sheet questions

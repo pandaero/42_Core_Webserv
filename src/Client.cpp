@@ -78,6 +78,7 @@ void Client::whoIsI()
 	std::cout << "path:'" << path << "'" << std::endl;
 	std::cout << "dir:'" << directory << "'" << std::endl;
 	std::cout << "file:'" << filename << "'" << std::endl;
+	std::cout << "content-type:'" << contentType << "'" << std::endl;
 	std::cout << "standardfile:'" << standardFile << "'" << std::endl;
 	std::cout << "dirlisting: " << (dirListing ? "yes" : "no") << std::endl;
 }
