@@ -6,7 +6,7 @@
 /*   By: apielasz <apielasz@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/08/08 13:31:00 by apielasz          #+#    #+#             */
-/*   Updated: 2023/08/18 17:13:42 by apielasz         ###   ########.fr       */
+/*   Updated: 2023/08/20 16:40:35 by apielasz         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -41,11 +41,11 @@ int	timeoutKillChild(pid_t childPid, int timeoutSec) {
 
 int	doTheThing() {
 //PHP
-	std::string	pathToScript = "simplest.php";
-	std::string pathToExec = "/Users/apielasz/Documents/projects_git/webserv/default/cgi/php-8.2.5_MacOS-10.15";
+	// std::string	pathToScript = "simplest.php";
+	// std::string pathToExec = "/Users/apielasz/Documents/projects_git/webserv/default/cgi/php-8.2.5_MacOS-10.15";
 //PYTHON
-	// std::string	pathToScript = "simplest.py";
-	// std::string pathToExec = "/usr/bin/python3";
+	std::string	pathToScript = "simplest.py";
+	std::string pathToExec = "/usr/bin/python3";
 
 	int		pipeFd[2];
 
@@ -70,6 +70,7 @@ int	doTheThing() {
 		// fillEnv();
 		std::vector<std::string>	tmpEnv;
 		std::string	tmpVar;
+		// char	**_env = new char*[14];
 		char	*_env[14];
 
 	// env variables that are not request specific
@@ -94,7 +95,7 @@ int	doTheThing() {
 		tmpEnv.push_back(tmpVar);
 		tmpVar = "SCRIPT_NAME=cgi-bin/simplest.php";
 		tmpEnv.push_back(tmpVar);
-		tmpVar = "QUERY_STRING=name=alina&answer=ggg";//🍏
+		tmpVar = "QUERY_STRING=month=2&day=23";//🍏
 		tmpEnv.push_back(tmpVar);
 		tmpVar = "CONTENT_TYPE=application/x-www-form-urlencoded";
 		tmpEnv.push_back(tmpVar);
@@ -102,13 +103,14 @@ int	doTheThing() {
 		tmpEnv.push_back(tmpVar);
 		tmpVar = "REDIRECT_STATUS=CGI";
 		tmpEnv.push_back(tmpVar);
-		tmpVar = "POST_BODY=3";
+		tmpVar = "POST_BODY=message=blabla receiver=alkane"; //to improve when you know how POST and body work
 		tmpEnv.push_back(tmpVar);
 
 	//putting vector into char **
 		int	i = 0;
 		for (std::vector<std::string>::iterator it = tmpEnv.begin(); it != tmpEnv.end(); ++it) {
 			_env[i] = const_cast<char *>((*it).c_str());
+			// std::cerr << i << " - " << _env[i] << std::endl;
 			i++;
 		}
 		_env[i] = NULL;
@@ -123,11 +125,32 @@ int	doTheThing() {
 		return (-1);
 	} else {
 		close(pipeFd[1]);
-		// if (timeoutKillChild(pid, 10) == -1) {
-		// 	close(pipeFd[0]);
-		// 	return (-1);
-		// }
-//only if there wasnt timeout we get here
+	//timeout management
+		int status;
+        int timePassed = 0;
+        pid_t result;
+        // while (true) {
+        //     result = waitpid(pid, &status, WNOHANG);
+		// 	// std::cout << "this is result of waitpid:" << result << std::endl;
+        //     if (result == 0 && timePassed <= 2000000) { //child is still alive and timeout limit it not reached
+        //         usleep(100);
+        //         timePassed += 100;
+		// 		continue;
+        //     }
+        //     if (result == 0 && timePassed > 2000000) { //child is still alive but timeout limit is reached 
+        //         int killSuccessful = kill(pid, SIGTERM);
+        //         if (killSuccessful == 0) {
+        //             std::cerr << "CGI error: TIMEOUT" << std::endl;
+        //             break;
+        //         } else {
+        //             std::cerr << "CGI error: TIMEOUT, but failed to kill child" << std::endl;
+        //             break;
+        //         }
+        //     }
+        //     if (result == -1) // child exited
+        //         break;
+        // }
+//only if there wasnt timeout we should get here, so throw exceptions instead break higher
 		char	buffer[1024];
 		ssize_t	bytesRead;
 		std::ofstream	cgiHtml("cgi.html");
@@ -136,16 +159,11 @@ int	doTheThing() {
 			cgiHtml << buffer;
 		}
 		cgiHtml.close();
-		// std::cout << bytesRead << " and buffer:" << buffer << std::endl;
 		close(pipeFd[0]);
-		int	status;
-		waitpid(pid, &status, 0);
-		// int	killSuccessful = kill(pid, SIGTERM);
 		
 		std::cout << "Child process exited with status: " << WEXITSTATUS(status) << std::endl;
 	}
 	return (0);
-//so here I have the cgiResponse string that needs to be sent to the client 🍏
 }
 
 

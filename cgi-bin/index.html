@@ -26,8 +26,10 @@
       <input type="submit" value="POST your age using cgi-php now!" />
     </form>
     <h2>This is for testing python cgi:</h2>
+    <!-- GET Form -->
     <form action="simplest.py" method="get">
       <label>When were you born?</label>
+      <br />
       <label for="day">Day: </label>
       <input type="text" name="day" id="day" />
       <br />
@@ -35,6 +37,17 @@
       <input type="text" name="month" id="month" />
       <br />
       <input type="submit" value="GET your personalised, cgi-python generated horoscope now!" />
+    </form>
+    <!-- POST Form -->
+    <form action="simplest.py" method="get">
+      <br />
+      <label>Send a message:</label>
+      <input type="text" name="message" id="message" />
+      <br />
+      <label for="day">To: </label>
+      <input type="text" name="receiver" id="receiver" />
+      <br />
+      <input type="submit" value="POST your message, via cgi-python now!" />
     </form>
   </body>
 </html>

@@ -28,7 +28,7 @@ if ($method == 'GET') {
     echo "    <h4>Random fun fact...</h4>\n";
     echo "    <p>" . $facts[$age % 4]. "</p>\n";
 }
-
+// PROPER SCRIPT ENDS HERE
 foreach (getenv() as $key => $value) {
 	echo $key . ' - ' . $value . '
 	';
