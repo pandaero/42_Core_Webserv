@@ -7,7 +7,7 @@ Client::Client()
 
 /*
 Client::Client(int socketfd): Client()
--> not possible in cpp98, so have to use initDefaults()
+-> not possible in cpp98, so have to use extra function.
 */
 Client::Client(int socketfd)
 {

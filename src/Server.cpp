@@ -382,7 +382,7 @@ void Server::updateClientPath()
 	if (!http_redir.empty())
 		_clientIt->directory = http_redir;
 	if (_clientIt->method == POST)
-		_clientIt->directory += _locations[_clientIt->directory].upload_dir;
+		_clientIt->directory = _locations[_clientIt->directory].upload_dir;
 	_clientIt->directory = prependRoot(_clientIt->directory);
 	_clientIt->path = _clientIt->directory + _clientIt->filename;
 }
