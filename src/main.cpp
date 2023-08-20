@@ -3,12 +3,23 @@
 void acceptConnections(std::vector<Server>&, std::vector<pollfd>&);
 void poll_(std::vector<pollfd>&);
 
+volatile sig_atomic_t sigInt = 0;
+
+void sigHandler(int sig)
+{
+	if (sig == SIGINT)
+		sigInt = 1;
+}
+
+
 int main()
 {
 	ConfigFile			configfile("default/config/ideal.conf");
 	std::vector<Server>	servers(configfile.getServers());
 	std::vector<pollfd>	pollVector;
 	
+	std::signal(SIGINT, sigHandler);
+
 	for (size_t i = 0; i < servers.size(); ++i)
 	{
 		try
@@ -23,9 +34,10 @@ int main()
 		}
 	}
 	
-	while (true)
+	while (!sigInt)
 	{
-		poll_(pollVector);
+		if (poll(&pollVector[0], pollVector.size(), -1) == -1)
+			std::cerr << E_POLL;
 		acceptConnections(servers, pollVector);
 		
 		for (size_t i = 0; i < servers.size(); ++i)
@@ -37,10 +49,11 @@ int main()
 			}
 			catch (const std::exception& e)
 			{
-				std::cerr << "mainCatch: " << e.what() << std::endl;
+				std::cerr << e.what() << std::endl;
 			}
 		}
 	}
+	std::cout << "Shutdown." << std::endl;
 }
 
 void poll_(std::vector<pollfd>& pollVector)

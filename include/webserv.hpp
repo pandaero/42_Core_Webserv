@@ -8,6 +8,7 @@
 
 # include <cstdio>
 # include <cstdlib>
+# include <csignal>
 # include <cstring>
 
 # include <algorithm>

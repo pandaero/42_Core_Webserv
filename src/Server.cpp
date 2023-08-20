@@ -366,7 +366,7 @@ void Server::sendResponseHead()
 	ANNOUNCEME_FD
 
 	std::string header = buildResponseHead();
-	if (::send(_clientIt->fd, header.c_str(), header.size(), 0) == -1)
+	if (send(_clientIt->fd, header.c_str(), header.size(), 0) <= 0)
 	{
 		closeClient("Server::sendResponseHead: send failure.");
 		throw std::runtime_error(E_SEND);
@@ -399,7 +399,7 @@ void Server::sendResponseBody()
 	fileStream.seekg(_clientIt->filePosition);
 	fileStream.read(buffer, SEND_CHUNK_SIZE);
 
-	if (::send(_clientIt->fd, buffer, fileStream.gcount(), 0) == -1)
+	if (send(_clientIt->fd, buffer, fileStream.gcount(), 0) <= 0)
 	{
 		fileStream.close();
 		closeClient("Server::sendResponseBody: send failure.");
