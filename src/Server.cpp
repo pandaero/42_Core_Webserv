@@ -529,6 +529,125 @@ void Server::closeClient(const char* msg)
 	--_index;
 }
 
+void	Server::doTheCGI()
+{
+//PHP
+	// std::string	pathToScript = "simplest.php";
+	// std::string pathToExec = "/Users/apielasz/Documents/projects_git/webserv/default/cgi/php-8.2.5_MacOS-10.15";
+//PYTHON
+	std::string	pathToScript = "/cgi-bin/" + _clientIt->filename;
+	// differentiate here if php or python
+	std::string pathToExec = "/usr/bin/python3"; // find path to python3
+
+	int		pipeFd[2];
+
+	if (pipe(pipeFd) == -1)
+		throw std::runtime_error("CGI error: pipe() failed");
+
+	pid_t	pid = fork();
+
+	if (pid == -1)
+		throw std::runtime_error("CGI error: fork() failed");
+
+	if (pid == 0) {
+		close(pipeFd[0]);
+		if (dup2(pipeFd[1], STDOUT_FILENO) == -1)
+			throw std::runtime_error("CGI error: dup2() failed");
+// env filler - it's only needed in child process
+		std::vector<std::string>	tmpEnv;
+		std::string	tmpVar;
+		char	*_env[14];
+
+	// env variables that are not request specific
+		//this one can be anything bc we have our own webserv
+		tmpVar = "SERVER_SOFTWARE=webservInC++98BabyLetsGo/4.2";
+		tmpEnv.push_back(tmpVar);
+		//server's hostname or IP address
+		tmpVar = "SERVER_NAME=" + _names[0];//🍏
+		tmpEnv.push_back(tmpVar);
+		tmpVar = "GATEWAY_INTERFACE=CGI/1.2";
+		tmpEnv.push_back(tmpVar);
+
+	// env variables specific to the request
+		tmpVar = "SERVER_PROTOCOL=HTTP/1.1";
+		tmpEnv.push_back(tmpVar);
+		//port number to which request was sent
+		tmpVar = "SERVER_PORT=" + ntohs(_serverAddress.sin_port);
+		tmpEnv.push_back(tmpVar);
+		tmpVar = "REQUEST_METHOD=" + _clientIt->method;
+		tmpEnv.push_back(tmpVar);
+		tmpVar = "PATH_INFO=" + pathToScript;
+		tmpEnv.push_back(tmpVar);
+		tmpVar = "SCRIPT_NAME=cgi-bin/simplest.php";
+		tmpEnv.push_back(tmpVar);
+		tmpVar = "QUERY_STRING=" + _clientIt->queryString;
+		tmpEnv.push_back(tmpVar);
+		tmpVar = "CONTENT_TYPE=" + _clientIt->contentType;
+		tmpEnv.push_back(tmpVar);
+		tmpVar = "CONTENT_LENGTH=" + _clientIt->contentLength;
+		tmpEnv.push_back(tmpVar);
+		tmpVar = "REDIRECT_STATUS=CGI";
+		tmpEnv.push_back(tmpVar);
+		tmpVar = "POST_BODY=message=blabla receiver=alkane"; //to improve when you know how POST and body work
+		tmpEnv.push_back(tmpVar);
+
+	//putting vector into char **
+		int	i = 0;
+		for (std::vector<std::string>::iterator it = tmpEnv.begin(); it != tmpEnv.end(); ++it) {
+			_env[i] = const_cast<char *>((*it).c_str());
+			i++;
+		}
+		_env[i] = NULL;
+
+//creating argv for execve
+		const char	*argv[3];
+		argv[0] = pathToExec.c_str();
+		argv[1] = pathToScript.c_str();
+		argv[2] = NULL;
+		execve(argv[0], const_cast<char *const *>(argv), _env);
+		throw std::runtime_error("CGI error: execve() failed");
+
+	} else {
+		close(pipeFd[1]);
+	//timeout management
+		int status;
+        int timePassed = 0;
+        pid_t result;
+        while (true) {
+            result = waitpid(pid, &status, WNOHANG);
+            if (result == 0 && timePassed <= 2000000) { //child is still alive and timeout limit it not reached
+                usleep(100);
+                timePassed += 100;
+				continue;
+            }
+            if (result == 0 && timePassed > 2000000) { //child is still alive but timeout limit is reached 
+                int killSuccessful = kill(pid, SIGTERM);
+                if (killSuccessful == 0) {
+                    std::cerr << "CGI error: TIMEOUT" << std::endl;
+                    break;
+                } else {
+                    std::cerr << "CGI error: TIMEOUT, but failed to kill child" << std::endl;
+                    break;
+                }
+            }
+            if (result == -1) // child exited
+                break;
+        }
+//only if there wasnt timeout we should get here, so throw exceptions instead break higher
+		char	buffer[1024];
+		ssize_t	bytesRead;
+		std::ofstream	cgiHtml("cgi.html");
+		while ((bytesRead = read(pipeFd[0], buffer, 1023)) > 0) {
+			buffer[bytesRead] = '\0';
+			cgiHtml << buffer;
+		}
+		cgiHtml.close();
+		close(pipeFd[0]);
+		
+		std::cout << "Child process exited with status: " << WEXITSTATUS(status) << std::endl;
+	}
+}
+
 std::string Server::prependRoot(const std::string& path)
 {
 	if (path.find('/') == 0)

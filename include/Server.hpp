@@ -38,6 +38,7 @@ class	Server
 		void			selectHostConfig();
 		bool			requestError();
 		void			closeClient(const char*);
+		void			doTheCGI();
 
 		// utils
 		std::string 	prependRoot(const std::string&);
