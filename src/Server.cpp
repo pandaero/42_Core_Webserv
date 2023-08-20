@@ -29,6 +29,16 @@ void Server::applyHostConfig(const ServerConfig& config)
 	_mimeTypes = config.getMIMETypes();
 }
 
+int Server::fd()
+{
+	return _server_fd;
+}
+
+void Server::addClient(int fd)
+{
+	_clients.push_back(Client(fd));
+}
+
 Server::~Server()
 {
 	std::cout << "Server destructor on listening fd " << _server_fd << "." << std::endl;
@@ -41,7 +51,30 @@ Server::~Server()
 		close(_server_fd);
 }
 
-void	Server::startListening(std::vector<pollfd>& pollVector)
+void Server::whoIsI()
+{
+	std::cout	<< '\n'
+				<< "Name(s):\t" << *_names.begin() << '\n';
+					for (strVec_it it = ++_names.begin(); it != _names.end(); ++it)
+						std::cout << "\t\t" << *it << '\n';
+	std::cout	<< "Host:\t\t" << inet_ntoa(_serverAddress.sin_addr) << '\n'
+				<< "Port:\t\t" << ntohs(_serverAddress.sin_port) << '\n'
+				<< "Root:\t\t" << _root << '\n'
+				<< "Dflt. dir_list:\t" << (_defaultDirListing ? "yes" : "no") << '\n'
+				<< "Cl. max body:\t" << _clientMaxBody << '\n'
+				<< "Max Conns:\t" << _maxConns << '\n'
+				<< "Error Pages:\t" << _errorPagesPaths.begin()->first << '\t' << _errorPagesPaths.begin()->second << '\n';
+					for (intStrMap_it it = ++_errorPagesPaths.begin(); it != _errorPagesPaths.end(); it++)
+						std::cout << "\t\t" << it->first << '\t' << it->second << std::endl;
+	std::cout	<< "Known loctns:\t" << _locations.begin()->first << '\n';
+					for (strLocMap_it it = ++_locations.begin(); it != _locations.end(); it++)
+						std::cout << "\t\t" << it->first << '\n';
+	std::cout	<< "CGI Paths:\t" << _cgiPaths.begin()->first << '\t' << _cgiPaths.begin()->second << '\n';
+					for (strMap_it it = ++_cgiPaths.begin(); it != _cgiPaths.end(); it++)
+						std::cout << "\t\t" << it->first << '\t' << it->second << std::endl;
+}
+
+void Server::startListening(std::vector<pollfd>& pollVector)
 {
 	ANNOUNCEME
 	int		options = 1;
@@ -69,75 +102,6 @@ void	Server::startListening(std::vector<pollfd>& pollVector)
 	newPollStruct.revents = 0;
 	pollVector.push_back(newPollStruct);
 	_pollVector = &pollVector;
-}
-
-bool Server::receiveData()
-{
-	if (!(_pollStruct->revents & POLLIN))
-		return false;
-	ANNOUNCEME_FD
-	if (_clientIt->requestBodyComplete)
-	{
-		std::cout << "receiveData returning because reqeustbodyComplete" << std::endl;
-		return true;
-	}
-	char buffer[RECV_CHUNK_SIZE];
-	int bytesReceived = recv(_clientIt->fd, buffer, RECV_CHUNK_SIZE, 0);
-	if (bytesReceived <= 0)
-	{
-		closeClient("Server::receiveData: 0 bytes received");
-		throw std::runtime_error(I_CLOSENODATA);
-	}
-	_clientIt->buffer.append(buffer, bytesReceived);
-	return true;
-}
-
-bool Server::sendData()
-{
-	if (!(_pollStruct->revents & POLLOUT))
-		return false;
-	if (!_clientIt->requestHeadComplete)
-	{
-		closeClient("Server::handleConnections: POLLOUT but no request Head");
-		return false;
-	}
-	if (!_clientIt->requestFinished)
-		return false;
-	return true;
-}
-
-pollfd* Server::getPollStruct(int fd)
-{
-	std::vector<pollfd>::iterator it = _pollVector->begin();
-		
-	while (it != _pollVector->end() && it->fd != fd)
-		++it;
-	if (it == _pollVector->end())
-		throw std::runtime_error("Server::handleConnections: fd to handle not found in pollVector");
-	return &*it;
-}
-
-bool Server::hangUp()
-{
-	if (_pollStruct->revents & POLLHUP)
-	{
-		closeClient("Server::handleConnections: POLLHUP");
-		return true;
-	}
-	return false;
-}
-
-bool Server::errorPending()
-{
-	if (!_clientIt->errorPending)
-		return false;
-	ANNOUNCEME_FD
-	if (_pollStruct->revents & POLLOUT)
-	{
-		sendResponseHead();
-		sendResponseBody();
-	}
-	return true;
 }
 
 void Server::handleConnections()
@@ -176,51 +140,48 @@ void Server::handleConnections()
 	}
 }
 
-bool Server::requestError()
+bool Server::hangUp()
 {
-	// wrong protocol
-	if (_clientIt->httpProtocol != HTTPVERSION)
-		return (selectStatusPage(505), true);
-	
-	// method not supported by server
-	if (_clientIt->method != GET
-		&& _clientIt->method != POST
-		&& _clientIt->method != DELETE)
-		return (selectStatusPage(501), true);
-	
-	// body size too large
-	if (_clientIt->contentLength > (int)_clientMaxBody)
-		return (selectStatusPage(413), true);
-	else
+	if (_pollStruct->revents & POLLHUP)
 	{
-		strLocMap_it locIt = _locations.find(_clientIt->directory);
-		
-		// access forbidden (have to specifically allow each path in config file)
-		if (locIt == _locations.end())
-			return (selectStatusPage(404), true); // returning 404, not 403, to not leak file structure
-	
-		// access granted, but not for the requested method
-		else if ((_clientIt->method == GET && !locIt->second.get)
-			|| (_clientIt->method == POST && !locIt->second.post)
-			|| (_clientIt->method == DELETE && !locIt->second.delete_))
-			return (selectStatusPage(405), true);
+		closeClient("Server::handleConnections: POLLHUP");
+		return true;
 	}
 	return false;
 }
 
-void Server::updateClientPath()
+bool Server::errorPending()
 {
-	_clientIt->dirListing = dirListing(_clientIt->directory);
-	_clientIt->standardFile = _locations[_clientIt->directory].std_file;
-	if (_clientIt->standardFile.empty())
-		_clientIt->standardFile = _standardFile;
-	std::string	http_redir = _locations[_clientIt->directory].http_redir;
-	if (!http_redir.empty())
-		_clientIt->directory = http_redir;
-	if (_clientIt->method == POST)
-		_clientIt->directory += _locations[_clientIt->directory].upload_dir;
-	_clientIt->directory = prependRoot(_clientIt->directory);
-	_clientIt->path = _clientIt->directory + _clientIt->filename;
+	if (!_clientIt->errorPending)
+		return false;
+	ANNOUNCEME_FD
+	if (_pollStruct->revents & POLLOUT)
+	{
+		sendResponseHead();
+		sendResponseBody();
+	}
+	return true;
+}
+
+bool Server::receiveData()
+{
+	if (!(_pollStruct->revents & POLLIN))
+		return false;
+	ANNOUNCEME_FD
+	if (_clientIt->requestBodyComplete)
+	{
+		std::cout << "receiveData returning because reqeustbodyComplete" << std::endl;
+		return true;
+	}
+	char buffer[RECV_CHUNK_SIZE];
+	int bytesReceived = recv(_clientIt->fd, buffer, RECV_CHUNK_SIZE, 0);
+	if (bytesReceived <= 0)
+	{
+		closeClient("Server::receiveData: 0 bytes received");
+		throw std::runtime_error(I_CLOSENODATA);
+	}
+	_clientIt->buffer.append(buffer, bytesReceived);
+	return true;
 }
 
 bool Server::requestHead()
@@ -240,47 +201,6 @@ bool Server::requestHead()
 	updateClientPath();
 	_clientIt->whoIsI();
 	return true;
-}
-
-void Server::selectHostConfig()
-{
-	if (_clientIt->host.empty())
-	{
-		applyHostConfig(_configs[0]);
-		return;
-	}
-	for (size_t i = 0; i < _configs.size(); ++i)
-	{
-		if (stringInVec(_clientIt->host, _configs[i].getNames()))
-		{
-			applyHostConfig(_configs[i]);
-			std::cout << "Hostname '" << _clientIt->host << "' found in ServerConfig #" << i << std::endl;
-			return;
-		}
-	}
-	std::cout << "Hostname '" << _clientIt->host << "' not found. Running default ServerConfig." << std::endl;
-	applyHostConfig(_configs[0]);
-}
-
-void Server::handleDelete()
-{
-	if (isDirectory(_clientIt->path)) // deleting directories not allowed
-	{
-		selectStatusPage(405);
-		return;
-	}
-	if (!resourceExists(_clientIt->path))
-	{
-		selectStatusPage(404);
-		return;
-	}
-	if (remove(_clientIt->path.c_str()) == 0)
-	{
-		_clientIt->statusCode = 204;
-		_clientIt->requestFinished = true;
-	}
-	else
-		selectStatusPage(500);
 }
 
 void Server::handleGet()
@@ -346,19 +266,39 @@ void Server::handlePost()
 	}
 }
 
-std::string Server::buildResponseHead()
+void Server::handleDelete()
 {
-	std::stringstream ss_header;
-	size_t contentLength = fileSize(_clientIt->sendPath);
-	
-	ss_header << HTTPVERSION << ' ' << _clientIt->statusCode << ' ' << getHttpMsg(_clientIt->statusCode) << "\r\n";
-	ss_header << "Server: " << SERVERVERSION << "\r\n";
-	if (contentLength != 0)
-		ss_header << "content-type: " << mimeType(_clientIt->sendPath) << "\r\n";
-	ss_header << "content-length: " << contentLength << "\r\n";
-	ss_header << "connection: close" << "\r\n";
-	ss_header << "\r\n";
-	return ss_header.str();
+	if (isDirectory(_clientIt->path)) // deleting directories not allowed
+	{
+		selectStatusPage(405);
+		return;
+	}
+	if (!resourceExists(_clientIt->path))
+	{
+		selectStatusPage(404);
+		return;
+	}
+	if (remove(_clientIt->path.c_str()) == 0)
+	{
+		_clientIt->statusCode = 204;
+		_clientIt->requestFinished = true;
+	}
+	else
+		selectStatusPage(500);
+}
+
+bool Server::sendData()
+{
+	if (!(_pollStruct->revents & POLLOUT))
+		return false;
+	if (!_clientIt->requestHeadComplete)
+	{
+		closeClient("Server::handleConnections: POLLOUT but no request Head");
+		return false;
+	}
+	if (!_clientIt->requestFinished)
+		return false;
+	return true;
 }
 
 void Server::sendResponseHead()
@@ -415,21 +355,142 @@ void Server::sendResponseBody()
 	}
 	_clientIt->filePosition = fileStream.tellg();
 	fileStream.close();
-}	 
-	
-bool Server::dirListing(std::string path)
+}
+
+std::string Server::buildResponseHead()
 {
-	strLocMap_it	locIt =_locations.find(path);
+	std::stringstream ss_header;
+	size_t contentLength = fileSize(_clientIt->sendPath);
 	
-	if (locIt == _locations.end())
-		return false;
-	if (locIt->second.dir_listing == "yes")
-		return true;
-	if (locIt->second.dir_listing == "no")
-		return false;
-	if (!_defaultDirListing)
-		return false;
-	return true;
+	ss_header << HTTPVERSION << ' ' << _clientIt->statusCode << ' ' << getHttpMsg(_clientIt->statusCode) << "\r\n";
+	ss_header << "Server: " << SERVERVERSION << "\r\n";
+	if (contentLength != 0)
+		ss_header << "content-type: " << mimeType(_clientIt->sendPath) << "\r\n";
+	ss_header << "content-length: " << contentLength << "\r\n";
+	ss_header << "connection: close" << "\r\n";
+	ss_header << "\r\n";
+	return ss_header.str();
+}
+
+void Server::updateClientPath()
+{
+	_clientIt->dirListing = dirListing(_clientIt->directory);
+	_clientIt->standardFile = _locations[_clientIt->directory].std_file;
+	if (_clientIt->standardFile.empty())
+		_clientIt->standardFile = _standardFile;
+	std::string	http_redir = _locations[_clientIt->directory].http_redir;
+	if (!http_redir.empty())
+		_clientIt->directory = http_redir;
+	if (_clientIt->method == POST)
+		_clientIt->directory += _locations[_clientIt->directory].upload_dir;
+	_clientIt->directory = prependRoot(_clientIt->directory);
+	_clientIt->path = _clientIt->directory + _clientIt->filename;
+}
+
+void Server::selectStatusPage(int code)
+{
+	_clientIt->requestHeadComplete = true;
+	_clientIt->requestBodyComplete = true;
+	_clientIt->requestFinished = true;
+	_clientIt->errorPending = true;
+	_clientIt->statusCode = code;
+
+	if (_errorPagesPaths.find(code) == _errorPagesPaths.end())
+	{
+		generateStatusPage(code);
+		return;
+	}
+	std::string path = prependRoot(_errorPagesPaths[code]);
+	if (resourceExists(path))
+		_clientIt->sendPath = path;
+	else
+		generateStatusPage(code);
+}
+
+void Server::generateStatusPage(int code)
+{
+	std::ofstream errorPage("system/errorPage.html", std::ios::binary | std::ios::trunc);
+	if (errorPage.fail())
+	{
+		errorPage.close();
+		std::cerr << "Error opening temporary file." << std::endl;
+		throw std::runtime_error(E_TEMPFILE);
+	}
+
+	std::stringstream	ss_body;
+	std::string			httpMsg = getHttpMsg(code);
+
+	ss_body << "<!DOCTYPE html>";
+	ss_body << "<html>\n";
+	ss_body << "<head>\n";
+	ss_body << "<title>webserv - " << code << ": " << httpMsg << "</title>\n";
+	ss_body << "<style>\n";
+	ss_body << "body {background-color: black; color: white; font-family: Arial, sans-serif; margin: 0; padding: 5% 0 0 0; text-align: center;}\n";
+	ss_body << "h1 {font-size: 42px;}\n";
+	ss_body << "p {font-size: 16px; line-height: 1.5;}\n";
+	ss_body << "</style>\n";
+	ss_body << "</head>\n";
+	ss_body << "<body>\n";
+	ss_body << "<h1>" << code << ": " << httpMsg << "</h1>\n";
+	ss_body << "<img style=\"margin-left: auto;\" src=\"https://http.cat/" << code << "\" alt=\"" << httpMsg << "\">\n";
+	ss_body << "</body>\n";
+	ss_body << "</html>\n";
+	
+	errorPage.write(ss_body.str().c_str(), ss_body.str().size());
+	errorPage.close();
+	_clientIt->sendPath = "system/errorPage.html";
+}
+
+void Server::selectHostConfig()
+{
+	if (_clientIt->host.empty())
+	{
+		applyHostConfig(_configs[0]);
+		return;
+	}
+	for (size_t i = 0; i < _configs.size(); ++i)
+	{
+		if (stringInVec(_clientIt->host, _configs[i].getNames()))
+		{
+			applyHostConfig(_configs[i]);
+			std::cout << "Hostname '" << _clientIt->host << "' found in ServerConfig #" << i << std::endl;
+			return;
+		}
+	}
+	std::cout << "Hostname '" << _clientIt->host << "' not found. Running default ServerConfig." << std::endl;
+	applyHostConfig(_configs[0]);
+}
+
+bool Server::requestError()
+{
+	// wrong protocol
+	if (_clientIt->httpProtocol != HTTPVERSION)
+		return (selectStatusPage(505), true);
+	
+	// method not supported by server
+	if (_clientIt->method != GET
+		&& _clientIt->method != POST
+		&& _clientIt->method != DELETE)
+		return (selectStatusPage(501), true);
+	
+	// body size too large
+	if (_clientIt->contentLength > (int)_clientMaxBody)
+		return (selectStatusPage(413), true);
+	else
+	{
+		strLocMap_it locIt = _locations.find(_clientIt->directory);
+		
+		// access forbidden (have to specifically allow each path in config file)
+		if (locIt == _locations.end())
+			return (selectStatusPage(404), true); // returning 404, not 403, to not leak file structure
+	
+		// access granted, but not for the requested method
+		else if ((_clientIt->method == GET && !locIt->second.get)
+			|| (_clientIt->method == POST && !locIt->second.post)
+			|| (_clientIt->method == DELETE && !locIt->second.delete_))
+			return (selectStatusPage(405), true);
+	}
+	return false;
 }
 
 void Server::closeClient(const char* msg)
@@ -451,27 +512,55 @@ void Server::closeClient(const char* msg)
 	--_index;
 }
 
-void Server::whoIsI()
+std::string Server::prependRoot(const std::string& path)
 {
-	std::cout	<< '\n'
-				<< "Name(s):\t" << *_names.begin() << '\n';
-					for (strVec_it it = ++_names.begin(); it != _names.end(); ++it)
-						std::cout << "\t\t" << *it << '\n';
-	std::cout	<< "Host:\t\t" << inet_ntoa(_serverAddress.sin_addr) << '\n'
-				<< "Port:\t\t" << ntohs(_serverAddress.sin_port) << '\n'
-				<< "Root:\t\t" << _root << '\n'
-				<< "Dflt. dir_list:\t" << (_defaultDirListing ? "yes" : "no") << '\n'
-				<< "Cl. max body:\t" << _clientMaxBody << '\n'
-				<< "Max Conns:\t" << _maxConns << '\n'
-				<< "Error Pages:\t" << _errorPagesPaths.begin()->first << '\t' << _errorPagesPaths.begin()->second << '\n';
-					for (intStrMap_it it = ++_errorPagesPaths.begin(); it != _errorPagesPaths.end(); it++)
-						std::cout << "\t\t" << it->first << '\t' << it->second << std::endl;
-	std::cout	<< "Known loctns:\t" << _locations.begin()->first << '\n';
-					for (strLocMap_it it = ++_locations.begin(); it != _locations.end(); it++)
-						std::cout << "\t\t" << it->first << '\n';
-	std::cout	<< "CGI Paths:\t" << _cgiPaths.begin()->first << '\t' << _cgiPaths.begin()->second << '\n';
-					for (strMap_it it = ++_cgiPaths.begin(); it != _cgiPaths.end(); it++)
-						std::cout << "\t\t" << it->first << '\t' << it->second << std::endl;
+	if (path.find('/') == 0)
+		return _root + path.substr(1);
+	else
+		return path;
+}
+
+pollfd* Server::getPollStruct(int fd)
+{
+	std::vector<pollfd>::iterator it = _pollVector->begin();
+		
+	while (it != _pollVector->end() && it->fd != fd)
+		++it;
+	if (it == _pollVector->end())
+		throw std::runtime_error("Server::handleConnections: fd to handle not found in pollVector");
+	return &*it;
+}
+
+std::string	Server::mimeType(const std::string& filepath)
+{
+	size_t		dotPosition;
+	std::string extension;
+	strMap_it	it;
+	std::string defaultType = "application/octet-stream";
+
+	dotPosition = filepath.find_last_of(".");
+	if (dotPosition == std::string::npos)
+		return defaultType;
+	extension = filepath.substr(dotPosition);
+	it = _mimeTypes->find(extension);
+	if (it != _mimeTypes->end())
+		return it->second;
+	return defaultType;
+}
+	
+bool Server::dirListing(const std::string& path)
+{
+	strLocMap_it	locIt =_locations.find(path);
+	
+	if (locIt == _locations.end())
+		return false;
+	if (locIt->second.dir_listing == "yes")
+		return true;
+	if (locIt->second.dir_listing == "no")
+		return false;
+	if (!_defaultDirListing)
+		return false;
+	return true;
 }
 
 void Server::setHost(std::string input)
@@ -521,93 +610,4 @@ void Server::setDefaultDirListing(std::string input)
 		_defaultDirListing = true;
 	else
 		_defaultDirListing = false;
-}
-
-std::string	Server::mimeType(std::string filepath)
-{
-	size_t		dotPosition;
-	std::string extension;
-	strMap_it	it;
-	std::string defaultType = "application/octet-stream";
-
-	dotPosition = filepath.find_last_of(".");
-	if (dotPosition == std::string::npos)
-		return defaultType;
-	extension = filepath.substr(dotPosition);
-	it = _mimeTypes->find(extension);
-	if (it != _mimeTypes->end())
-		return it->second;
-	return defaultType;
-}
-
-void Server::selectStatusPage(int code)
-{
-	_clientIt->requestHeadComplete = true;
-	_clientIt->requestBodyComplete = true;
-	_clientIt->requestFinished = true;
-	_clientIt->errorPending = true;
-	_clientIt->statusCode = code;
-
-	if (_errorPagesPaths.find(code) == _errorPagesPaths.end())
-	{
-		generateStatusPage(code);
-		return;
-	}
-	std::string path = prependRoot(_errorPagesPaths[code]);
-	if (resourceExists(path))
-		_clientIt->sendPath = path;
-	else
-		generateStatusPage(code);
-}
-
-std::string Server::prependRoot(const std::string& path)
-{
-	if (path.find('/') == 0)
-		return _root + path.substr(1);
-	else
-		return path;
-}
-
-void Server::generateStatusPage(int code)
-{
-	std::ofstream errorPage("system/errorPage.html", std::ios::binary | std::ios::trunc);
-	if (errorPage.fail())
-	{
-		errorPage.close();
-		std::cerr << "Error opening temporary file." << std::endl;
-		throw std::runtime_error(E_TEMPFILE);
-	}
-
-	std::stringstream	ss_body;
-	std::string			httpMsg = getHttpMsg(code);
-
-	ss_body << "<!DOCTYPE html>";
-	ss_body << "<html>\n";
-	ss_body << "<head>\n";
-	ss_body << "<title>webserv - " << code << ": " << httpMsg << "</title>\n";
-	ss_body << "<style>\n";
-	ss_body << "body {background-color: black; color: white; font-family: Arial, sans-serif; margin: 0; padding: 5% 0 0 0; text-align: center;}\n";
-	ss_body << "h1 {font-size: 42px;}\n";
-	ss_body << "p {font-size: 16px; line-height: 1.5;}\n";
-	ss_body << "</style>\n";
-	ss_body << "</head>\n";
-	ss_body << "<body>\n";
-	ss_body << "<h1>" << code << ": " << httpMsg << "</h1>\n";
-	ss_body << "<img style=\"margin-left: auto;\" src=\"https://http.cat/" << code << "\" alt=\"" << httpMsg << "\">\n";
-	ss_body << "</body>\n";
-	ss_body << "</html>\n";
-	
-	errorPage.write(ss_body.str().c_str(), ss_body.str().size());
-	errorPage.close();
-	_clientIt->sendPath = "system/errorPage.html";
-}
-
-int Server::fd()
-{
-	return _server_fd;
-}
-
-void Server::addClient(int fd)
-{
-	_clients.push_back(Client(fd));
 }

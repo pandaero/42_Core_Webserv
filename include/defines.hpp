@@ -51,7 +51,7 @@
 
 // ===== ===== ===== ===== ERROR MESSAGES ===== ===== ===== =====
 // Main
-# define E_POLL				"Error: main: poll()"
+# define E_POLL				"Error: main: poll()\n"
 
 // Global functions
 # define E_INVALIDBRACE		"Error: webserv: getInstruction: Invalid use of curly brace: "

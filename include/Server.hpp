@@ -9,13 +9,14 @@ class	Server
 		Server(const ServerConfig &);
 		~Server();
 		
-		void	whoIsI();
-		void	startListening(std::vector<pollfd>&);
-		void	handleConnections();
+		void			applyHostConfig(const ServerConfig&);
+		int				fd();
+		void			addClient(int);
 
-		int		fd();
-		void	addClient(int);
-	
+		void			whoIsI();
+		void			startListening(std::vector<pollfd>&);
+		void			handleConnections();
+
 	private:
 		// main handlers
 		bool			hangUp();
@@ -34,15 +35,14 @@ class	Server
 		void			selectStatusPage(int);
 		void			generateStatusPage(int);
 		void			selectHostConfig();
-		void		 	applyHostConfig(const ServerConfig&);
 		bool			requestError();
 		void			closeClient(const char*);
 
 		// utils
 		std::string 	prependRoot(const std::string&);
 		pollfd*			getPollStruct(int);
-		std::string		mimeType(std::string);
-		bool			dirListing(std::string);
+		std::string		mimeType(const std::string&);
+		bool			dirListing(const std::string&);
 
 		// setters
 		void			setHost(std::string);

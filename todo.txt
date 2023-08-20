@@ -2,13 +2,6 @@
 - cgi
 
 
-- capture SIGINT and clean up memory and fd (basically just call the server destructors)
-
-
-
-- A request to your server should never hang forever.
-actively tell clients wanting to connect on connection limit reached to fuck off? happens automatically?
-
 testing:
 - siege test
 - catch of server handling (shutting down servers on running main, keeping the rest)

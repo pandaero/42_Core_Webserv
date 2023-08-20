@@ -1,24 +1,14 @@
 #include "../include/webserv.hpp"
 
-void acceptConnections(std::vector<Server>&, std::vector<pollfd>&);
-
 volatile sig_atomic_t sigInt = 0;
-
-void sigHandler(int sig)
-{
-	if (sig == SIGINT)
-		sigInt = 1;
-}
-
 
 int main()
 {
-	ConfigFile				configfile("default/config/ideal.conf");
-	std::vector<Server>&	servers = configfile.getServers();
-	std::vector<pollfd>		pollVector;
+	ConfigFile configfile("default/config/example.conf");
+	std::vector<Server>& servers = configfile.getServers();
+	std::vector<pollfd> pollVector;
 	
 	std::signal(SIGINT, sigHandler);
-
 	for (size_t i = 0; i < servers.size(); ++i)
 	{
 		try
@@ -33,13 +23,9 @@ int main()
 		}
 	}
 	
-	while (!sigInt)
+	while (poll_(pollVector))
 	{
-		if (poll(&pollVector[0], pollVector.size(), -1) == -1)
-			std::cerr << E_POLL;
-
 		acceptConnections(servers, pollVector);
-
 		for (size_t i = 0; i < servers.size(); ++i)
 		{
 			try
@@ -52,7 +38,15 @@ int main()
 			}
 		}
 	}
-	std::cout << "Shutdown." << std::endl;
+}
+
+bool poll_(std::vector<pollfd>& pollVector)
+{
+	if (poll(&pollVector[0], pollVector.size(), -1) == -1)
+		std::cerr << E_POLL;
+	if (sigInt)
+		return false;
+	return true;
 }
 
 /* 	
@@ -89,5 +83,14 @@ void acceptConnections(std::vector<Server>& servers, std::vector<pollfd>& pollVe
 			std::cout << "New client accepted for servlet #" << i << " on fd " << new_sock << "." << std::endl;
 			std::cout << "PollStructs in Vector: " << pollVector.size() << std::endl;
 		}
+	}
+}
+
+void sigHandler(int sig)
+{
+	if (sig == SIGINT)
+	{
+		std::cout << "\nShutdown." << std::endl;
+		sigInt = 1;
 	}
 }
