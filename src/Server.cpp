@@ -561,13 +561,13 @@ void	Server::doTheCGI()
 		tmpEnv.push_back(tmpVar);
 		tmpVar = "PATH_INFO=" + pathToScript;
 		tmpEnv.push_back(tmpVar);
-		tmpVar = "SCRIPT_NAME=cgi-bin/simplest.php";
+		tmpVar = "SCRIPT_NAME=" + _clientIt->filename;
 		tmpEnv.push_back(tmpVar);
 		tmpVar = "QUERY_STRING=" + _clientIt->queryString;
 		tmpEnv.push_back(tmpVar);
 		tmpVar = "CONTENT_TYPE=" + _clientIt->contentType;
 		tmpEnv.push_back(tmpVar);
-		tmpVar = "CONTENT_LENGTH=" + _clientIt->contentLength;
+		tmpVar = "CONTENT_LENGTH=" + _clientIt->contentLength; //maybe cast is needed
 		tmpEnv.push_back(tmpVar);
 		tmpVar = "REDIRECT_STATUS=CGI";
 		tmpEnv.push_back(tmpVar);
