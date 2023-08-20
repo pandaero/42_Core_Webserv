@@ -60,12 +60,9 @@ bool			isDirectory(const std::string&);
 size_t			fileSize(const std::string&);
 // Returns the message string associated with an HTTP status code.
 std::string		getHttpMsg(int);
-<<<<<<< HEAD
 // Create a directory listing HTML file for a given path.
 std::string		createDirList(const std::string &);
-=======
 // Checks whether a string is present in a string vector.
 bool			stringInVec(const std::string&, const strVec&);
->>>>>>> save_branch
 
 #endif
