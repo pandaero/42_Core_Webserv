@@ -19,11 +19,11 @@ class	Server
 	private:
 		// main handlers
 		bool	receiveData();
-		void	handleRequestHead();
+		bool	requestHead();
 		void	handleGet();
 		void	handlePost();
 		void	handleDelete();
-		void	selectErrorPage(int);
+		void	selectStatusPage(int);
 		void	sendResponseHead();
 		void	sendResponseBody();
 		void	closeClient(const char*);

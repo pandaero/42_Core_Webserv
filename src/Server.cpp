@@ -99,6 +99,8 @@ bool Server::sendData()
 		closeClient("Server::handleConnections: POLLOUT but no request Head");
 		return false;
 	}
+	if (!_clientIt->requestFinished)
+		return false;
 	return true;
 }
 
@@ -150,9 +152,8 @@ void Server::handleConnections()
 				continue;
 			if (errorPending())
 				continue;
-			if (receiveData())
+			if (receiveData() && requestHead())
 			{
-				handleRequestHead();
 				if (_clientIt->method == GET)
 					handleGet();
 				else if (_clientIt->method == POST)
@@ -177,30 +178,30 @@ bool Server::requestError()
 {
 	// wrong protocol
 	if (_clientIt->httpProtocol != HTTPVERSION)
-		return (selectErrorPage(505), true);
+		return (selectStatusPage(505), true);
 	
 	// method not supported by server
 	if (_clientIt->method != GET
 		&& _clientIt->method != POST
 		&& _clientIt->method != DELETE)
-		return (selectErrorPage(501), true);
+		return (selectStatusPage(501), true);
 	
 	// body size too large
 	if (_clientIt->contentLength > (int)_clientMaxBody)
-		return (selectErrorPage(413), true);
+		return (selectStatusPage(413), true);
 	else
 	{
 		strLocMap_it locIt = _locations.find(_clientIt->directory);
 		
 		// access forbidden (have to specifically allow each path in config file)
 		if (locIt == _locations.end())
-			return (selectErrorPage(404), true); // returning 404, not 403, to not leak file structure
+			return (selectStatusPage(404), true); // returning 404, not 403, to not leak file structure
 	
 		// access granted, but not for the requested method
 		else if ((_clientIt->method == GET && !locIt->second.get)
 			|| (_clientIt->method == POST && !locIt->second.post)
 			|| (_clientIt->method == DELETE && !locIt->second.delete_))
-			return (selectErrorPage(405), true);
+			return (selectStatusPage(405), true);
 	}
 	return false;
 }
@@ -217,22 +218,23 @@ void Server::updateClientPath()
 	std::cout << "updateClientPath: " << _clientIt->path << std::endl;
 }
 
-void Server:: handleRequestHead()
+bool Server::requestHead()
 {
 	if (_clientIt->requestHeadComplete)
-		return;
+		return true;
 	ANNOUNCEME_FD
 	if (_clientIt->buffer.find("\r\n\r\n") == std::string::npos)
 	{
-		selectErrorPage(431);
-		return;
+		selectStatusPage(431);
+		return false;
 	}
 	_clientIt->parseRequest();
 	if (requestError())
-		return;
+		return false;
 	setHostConfig();
 	updateClientPath();
 	_clientIt->whoIsI();
+	return true;
 }
 
 void Server::setHostConfig()
@@ -259,22 +261,21 @@ void Server::handleDelete()
 	ANNOUNCEME_FD
 	if (isDirectory(_clientIt->path)) // deleting directories not allowed
 	{
-		selectErrorPage(405);
+		selectStatusPage(405);
 		return;
 	}
-	std::cout << "cstr:'" << _clientIt->path.c_str() << "'" << std::endl;
-	if (resourceExists(_clientIt->path))
+	if (!resourceExists(_clientIt->path))
 	{
-		std::cout << "knudel 0" << std::endl;
-		if (remove(_clientIt->path.c_str()) == 0)
-		{
-			std::cout << "knudel 1" << std::endl;
-			_clientIt->statusCode = 204;
-			_clientIt->requestFinished = true;
-		}
+		selectStatusPage(404);
+		return;
+	}
+	if (remove(_clientIt->path.c_str()) == 0)
+	{
+		_clientIt->statusCode = 204;
+		_clientIt->requestFinished = true;
 	}
 	else
-		selectErrorPage(500);
+		selectStatusPage(500);
 }
 
 void Server::handleGet()
@@ -296,7 +297,7 @@ void Server::handleGet()
 			_clientIt->sendPath = "system/dirListing.html";
 		}
 		else
-			selectErrorPage(404);
+			selectStatusPage(404);
 	}
 	else
 	{
@@ -306,7 +307,7 @@ void Server::handleGet()
 			_clientIt->sendPath = _clientIt->path;
 		}
 		else
-			selectErrorPage(404);
+			selectStatusPage(404);
 	}
 	_clientIt->requestFinished = true;
 }
@@ -318,7 +319,7 @@ void Server::handlePost()
 	ANNOUNCEME_FD
 	if (!resourceExists(_clientIt->directory))
 	{
-		selectErrorPage(500);
+		selectStatusPage(500);
 		return;		
 	}
 	std::ofstream outputFile;
@@ -331,7 +332,7 @@ void Server::handlePost()
 	}
 	if (!outputFile.is_open())
 	{
-		selectErrorPage(500);
+		selectStatusPage(500);
 		return;		
 	}
 	outputFile.write(_clientIt->buffer.c_str(), _clientIt->buffer.size());
@@ -363,8 +364,6 @@ std::string Server::buildResponseHead()
 void Server::sendResponseHead()
 {
 	if (_clientIt->responseHeadSent)
-		return;
-	if (!_clientIt->requestFinished)
 		return;
 	ANNOUNCEME_FD
 
@@ -433,7 +432,7 @@ bool Server::dirListing(std::string path)
 void Server::closeClient(const char* msg)
 {
 	if (msg)
-		std::cout << "closeClient fd " << _clientIt->fd << ": " << msg << std::endl;
+		std::cout << "closeClient on fd " << _clientIt->fd << ": " << msg << std::endl;
 	close(_clientIt->fd);
 	
 	// erase corresponding pollStruct
@@ -538,7 +537,7 @@ std::string	Server::mimeType(std::string filepath)
 	return defaultType;
 }
 
-void Server::selectErrorPage(int code)
+void Server::selectStatusPage(int code)
 {
 	_clientIt->requestHeadComplete = true;
 	_clientIt->requestBodyComplete = true;
