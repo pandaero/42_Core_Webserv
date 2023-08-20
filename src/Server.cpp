@@ -121,8 +121,7 @@ void Server::handleConnections()
 			if (receiveData() && requestHead())
 			{
 				if (cgiRequest())
-					std::cout << "do cgi" << std::endl;
-					//do CGI
+					doTheCGI();
 				else if (_clientIt->method == GET)
 					handleGet();
 				else if (_clientIt->method == POST)
