@@ -23,6 +23,7 @@ class	Server
 		bool			errorPending();
 		bool			receiveData();
 		bool			requestHead();
+		bool			cgiRequest();
 		void			handleGet();
 		void			handlePost();
 		void			handleDelete();
@@ -63,6 +64,7 @@ class	Server
 		size_t							_maxConns;
 		bool							_defaultDirListing;
 		strMap							_cgiPaths;
+		std::string						_cgiExtension;
 		strMap*							_mimeTypes;
 		sockaddr_in						_serverAddress;
 

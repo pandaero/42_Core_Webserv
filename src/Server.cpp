@@ -87,7 +87,7 @@ void Server::startListening(std::vector<pollfd>& pollVector)
 		throw std::runtime_error(E_SOCKOPT);
 	if (fcntl(_server_fd, F_SETFL, O_NONBLOCK) == -1)
 		throw std::runtime_error(E_FCNTL);
-	if (bind(_server_fd, (struct sockaddr *) &_serverAddress, sizeof(_serverAddress)) == -1)
+	if (bind(_server_fd, (struct sockaddr*) &_serverAddress, sizeof(_serverAddress)) == -1)
 	{
 		close(_server_fd);
 		throw std::runtime_error(E_BIND);
@@ -120,7 +120,10 @@ void Server::handleConnections()
 				continue;
 			if (receiveData() && requestHead())
 			{
-				if (_clientIt->method == GET)
+				if (cgiRequest())
+					std::cout << "do cgi" << std::endl;
+					//do CGI
+				else if (_clientIt->method == GET)
 					handleGet();
 				else if (_clientIt->method == POST)
 					handlePost();
@@ -201,6 +204,20 @@ bool Server::requestHead()
 	updateClientPath();
 	_clientIt->whoIsI();
 	return true;
+}
+
+bool Server::cgiRequest()
+{
+	size_t dotPosition = _clientIt->filename.find_last_of(".");
+	if (dotPosition == std::string::npos)
+		return false;
+	std::string extension = _clientIt->filename.substr(dotPosition);
+	if (extension == ".py" || extension == ".php")
+	{
+		_cgiExtension = extension;
+		return true;
+	}
+	return false;
 }
 
 void Server::handleGet()
