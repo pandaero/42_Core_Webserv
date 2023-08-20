@@ -23,6 +23,7 @@ void Client::initDefaults()
 	bytesWritten = 0;
 	contentLength = -1;
 
+	dirListing = false;
 	errorPending = false;
 	requestHeadComplete = false;
 	requestBodyComplete = false;
@@ -77,6 +78,8 @@ void Client::whoIsI()
 	std::cout << "path:'" << path << "'" << std::endl;
 	std::cout << "dir:'" << directory << "'" << std::endl;
 	std::cout << "file:'" << filename << "'" << std::endl;
+	std::cout << "standardfile:'" << standardFile << "'" << std::endl;
+	std::cout << "dirlisting: " << (dirListing ? "yes" : "no") << std::endl;
 }
 
 strMap Client::createHeaderMap(std::string& input, std::string endOfKey, std::string endOfValue, std::string endOfMap)

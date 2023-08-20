@@ -208,6 +208,10 @@ bool Server::requestError()
 
 void Server::updateClientPath()
 {
+	_clientIt->dirListing = dirListing(_clientIt->directory);
+	_clientIt->standardFile = _locations[_clientIt->directory].std_file;
+	if (_clientIt->standardFile.empty())
+		_clientIt->standardFile = _standardFile;
 	std::string	http_redir = _locations[_clientIt->directory].http_redir;
 	if (!http_redir.empty())
 		_clientIt->directory = http_redir;
@@ -215,7 +219,6 @@ void Server::updateClientPath()
 		_clientIt->directory += _locations[_clientIt->directory].upload_dir;
 	_clientIt->directory = prependRoot(_clientIt->directory);
 	_clientIt->path = _clientIt->directory + _clientIt->filename;
-	std::cout << "updateClientPath: " << _clientIt->path << std::endl;
 }
 
 bool Server::requestHead()
@@ -282,15 +285,12 @@ void Server::handleGet()
 {
 	if (isDirectory(_clientIt->path))
 	{
-		std::string standardFile = _locations[_clientIt->directory].std_file;
-		if (standardFile.empty())
-			standardFile = _standardFile;
-		if (resourceExists(_clientIt->path + standardFile))
+		if (resourceExists(_clientIt->path + _clientIt->standardFile))
 		{
 			_clientIt->statusCode = 200;
-			_clientIt->sendPath = _clientIt->path + standardFile;
+			_clientIt->sendPath = _clientIt->path + _clientIt->standardFile;
 		}
-		else if (dirListing(_clientIt->path))
+		else if (_clientIt->dirListing)
 		{
 			_clientIt->statusCode = 200;
 			// call dir listing

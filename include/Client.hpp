@@ -19,6 +19,8 @@ class	Client
 		std::string		directory;
 		std::string		filename;
 		std::string		sendPath;
+		bool			dirListing;
+		std::string		standardFile;
 		std::streampos	filePosition;
 		size_t			bytesWritten;
 
