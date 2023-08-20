@@ -1,18 +1,27 @@
 #include "../include/Server.hpp"
 
-Server::Server(const ServerConfig & config)
+Server::Server(const ServerConfig& config)
 {	
+	setHost(config.getConfigPairs()[HOST]);
+	setPort(config.getConfigPairs()[PORT]);
+	_configs = config.getAltConfigs();
+	_configs.insert(_configs.begin(), config);
+	applyHostConfig(config);	
+}
+
+void Server::applyHostConfig(const ServerConfig& config)
+{
+	strMap configPairs = config.getConfigPairs();
+	
 	// Set main values stored in configPairs
-	strMap		configPairs = config.getConfigPairs();
-	setNames(configPairs[SERVERNAME]);
-	setHost(configPairs[HOST]);
-	setPort(configPairs[PORT]);
 	setClientMaxBody(configPairs[CLIMAXBODY]);
-	setMaxConnections(configPairs[MAXCONNS]);
+	setMaxConnections(configPairs[MAXCONNS]); // not being used for now
 	setDefaultDirListing(configPairs[DIRLISTING]);
 	
 	// Copy remaining values directly to server variables 
 	_root = configPairs[ROOT];
+	_standardFile = configPairs[STDFILE];
+	_names = config.getNames();
 	_errorPagesPaths = config.getErrorPaths();
 	_locations = config.getLocations();
 	_cgiPaths = config.getCgiPaths();
@@ -30,354 +39,353 @@ Server::~Server()
 		close(_server_fd);
 }
 
-void	Server::startListening()
+void	Server::startListening(std::vector<pollfd>& pollVector)
 {
 	ANNOUNCEME
 	int		options = 1;
-	pollfd	serverPollStruct;
+	pollfd	newPollStruct;
 	
 	_server_fd = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP);
 	if (_server_fd == -1)
-		throw socketCreationFailureException();
-	
+		throw std::runtime_error(E_SOCKET);
 	if (setsockopt(_server_fd, SOL_SOCKET, SO_REUSEADDR, (char*)&options, sizeof(options)) == -1)
 		throw std::runtime_error(E_SOCKOPT);
-	
 	if (fcntl(_server_fd, F_SETFL, O_NONBLOCK) == -1)
 		throw std::runtime_error(E_FCNTL);
-
 	if (bind(_server_fd, (struct sockaddr *) &_serverAddress, sizeof(_serverAddress)) == -1)
 	{
 		close(_server_fd);
-		throw bindFailureException();
+		throw std::runtime_error(E_BIND);
 	}
-	
 	if (listen(_server_fd, SOMAXCONN) == -1)
 	{
 		close(_server_fd);
-		throw listenFailureException();
+		throw std::runtime_error(E_LISTEN);
 	}
-	serverPollStruct.fd = _server_fd;
-	serverPollStruct.events = POLLIN;
-	serverPollStruct.revents = 0;
-	_pollVector.push_back(serverPollStruct);
+	newPollStruct.fd = _server_fd;
+	newPollStruct.events = POLLIN;
+	newPollStruct.revents = 0;
+	pollVector.push_back(newPollStruct);
+	_pollVector = &pollVector;
 }
 
-void Server::poll()
+bool Server::receiveData()
 {
-	ANNOUNCEME
-	if (::poll(&_pollVector[0], _pollVector.size(), -1) == -1)
-		throw std::runtime_error(E_POLL);
-}
-
-void Server::acceptConnections()
-{
-	if (_pollVector[0].revents & POLLIN)
-	{
-		ANNOUNCEME
-		while (true)
-		{
-			if (_pollVector.size() > _maxConns)
-			{
-				std::cerr << I_CONNECTIONLIMIT << std::endl;
-				return;
-			}
-
-			int 	new_sock;
-			pollfd	new_pollStruct;
-
-			new_sock = accept(_server_fd, NULL, NULL); // don't need client info, so pass NULL
-			if (new_sock == -1)
-			{
-				if (errno != EWOULDBLOCK)
-					std::cerr << E_ACCEPT << std::endl;
-				break;
-			}
-			_clients.push_back(Client(0)); //new this shit?
-			_clients.back().fd = new_sock;
-			
-			new_pollStruct.fd = new_sock;
-			new_pollStruct.events = POLLIN | POLLOUT | POLLHUP;
-			new_pollStruct.revents = 0;
-			_pollVector.push_back(new_pollStruct);
-			std::cout << "New client accepted on fd " << new_sock << "." << std::endl;
-			std::cout << "Clients connected: " << _clients.size() << std::endl;
-			std::cout << "PollStructs in Vector: " << _pollVector.size() << std::endl;
-		}
-	}
-}
-
-void Server::receiveData()
-{
-	int		bytesReceived;
-	
+	if (!(_pollStruct->revents & POLLIN))
+		return false;
 	ANNOUNCEME_FD
 	if (_clientIt->requestBodyComplete)
 	{
 		std::cout << "receiveData returning because reqeustbodyComplete" << std::endl;
-		return;
+		return true;
 	}
 	char buffer[RECV_CHUNK_SIZE];
-	bzero(buffer, RECV_CHUNK_SIZE);
-	bytesReceived = recv(_clientfd, buffer, RECV_CHUNK_SIZE, 0);
-	std::cout << bytesReceived << " bytes received.\nContent:\n" << buffer << std::endl;
+	int bytesReceived = recv(_clientIt->fd, buffer, RECV_CHUNK_SIZE, 0);
 	if (bytesReceived <= 0)
 	{
 		closeClient("Server::receiveData: 0 bytes received");
 		throw std::runtime_error(I_CLOSENODATA);
 	}
 	_clientIt->buffer.append(buffer, bytesReceived);
+	return true;
+}
+
+bool Server::sendData()
+{
+	if (!(_pollStruct->revents & POLLOUT))
+		return false;
+	if (!_clientIt->requestHeadComplete)
+	{
+		closeClient("Server::handleConnections: POLLOUT but no request Head");
+		return false;
+	}
+	if (!_clientIt->requestFinished)
+		return false;
+	return true;
 }
 
 pollfd* Server::getPollStruct(int fd)
 {
-	std::vector<pollfd>::iterator	it = _pollVector.begin();
+	std::vector<pollfd>::iterator it = _pollVector->begin();
 		
-	while (it != _pollVector.end() && it->fd != fd)
+	while (it != _pollVector->end() && it->fd != fd)
 		++it;
-	if (it == _pollVector.end())
+	if (it == _pollVector->end())
 		throw std::runtime_error("Server::handleConnections: fd to handle not found in pollVector");
 	return &*it;
 }
 
+bool Server::hangUp()
+{
+	if (_pollStruct->revents & POLLHUP)
+	{
+		closeClient("Server::handleConnections: POLLHUP");
+		return true;
+	}
+	return false;
+}
+
+bool Server::errorPending()
+{
+	if (!_clientIt->errorPending)
+		return false;
+	ANNOUNCEME_FD
+	if (_pollStruct->revents & POLLOUT)
+	{
+		sendResponseHead();
+		sendResponseBody();
+	}
+	return true;
+}
+
 void Server::handleConnections()
 {
-	for (_clientIt = _clients.begin(); _clientIt != _clients.end(); ++_clientIt)
+	for (_index = 0; _index < _clients.size(); ++_index)
 	{
-		_clientfd = _clientIt->fd;
-		pollfd*	pollStruct = getPollStruct(_clientfd);
+		_clientIt = _clients.begin() + _index;
+		_pollStruct = getPollStruct(_clientIt->fd);
 		
 		ANNOUNCEME_FD
-		if (pollStruct->revents & POLLHUP)
-		{
-			closeClient("Server::handleConnections: POLLHUP");
-			continue;
-		}
-		if (_clientIt->errorPending)
-		{
-			std::cout << "Error Pending." << std::endl;
-			if (pollStruct->revents & POLLOUT)
-			{
-				sendResponseHead();
-				sendResponseBody();
-				return;
-			}
-			continue;
-		}
 		try
 		{
-			if (pollStruct->revents & POLLIN)
+			if (hangUp())
+				continue;
+			if (errorPending())
+				continue;
+			if (receiveData() && requestHead())
 			{
-				std::cout << "POLLIN." << std::endl;
-				receiveData();
-				handleRequestHead();
-				handleRequestBody();
-				selectResponseContent();
+				if (_clientIt->method == GET)
+					handleGet();
+				else if (_clientIt->method == POST)
+					handlePost();
+				else if (_clientIt->method == DELETE)
+					handleDelete();
 			}
-			if (pollStruct->revents & POLLOUT)
+			if (sendData())
 			{
-				std::cout << "POLLOUT." << std::endl;
 				sendResponseHead();
 				sendResponseBody();
 			}
 		}
 		catch (const std::exception& e)
 		{
-			std::cerr << "sendblock catch: " << e.what() << std::endl;
-			
+			std::cerr << "handleConnections catch: " << e.what() << std::endl;
 		}
-		if (_clientIt == _clients.end())
-				break;
 	}
 }
 
-void Server::checkRequest()
+bool Server::requestError()
 {
 	// wrong protocol
 	if (_clientIt->httpProtocol != HTTPVERSION)
-		selectErrorPage(505);
+		return (selectStatusPage(505), true);
 	
 	// method not supported by server
-	else if (_clientIt->method != GET
+	if (_clientIt->method != GET
 		&& _clientIt->method != POST
 		&& _clientIt->method != DELETE)
-		selectErrorPage(501);
+		return (selectStatusPage(501), true);
 	
 	// body size too large
-	else if (_clientIt->contentLength > (int)_clientMaxBody)
-		selectErrorPage(413);
+	if (_clientIt->contentLength > (int)_clientMaxBody)
+		return (selectStatusPage(413), true);
 	else
 	{
-		strLocMap_it	locIt = _locations.find(_clientIt->directory);
+		strLocMap_it locIt = _locations.find(_clientIt->directory);
 		
 		// access forbidden (have to specifically allow each path in config file)
 		if (locIt == _locations.end())
-			selectErrorPage(404); // only returning 404 (and not 403) to not leak file structure
+			return (selectStatusPage(404), true); // returning 404, not 403, to not leak file structure
 	
 		// access granted, but not for the requested method
 		else if ((_clientIt->method == GET && !locIt->second.get)
 			|| (_clientIt->method == POST && !locIt->second.post)
 			|| (_clientIt->method == DELETE && !locIt->second.delete_))
-			selectErrorPage(405);
+			return (selectStatusPage(405), true);
 	}
+	return false;
 }
 
-void Server:: handleRequestHead()
+void Server::updateClientPath()
+{
+	_clientIt->dirListing = dirListing(_clientIt->directory);
+	_clientIt->standardFile = _locations[_clientIt->directory].std_file;
+	if (_clientIt->standardFile.empty())
+		_clientIt->standardFile = _standardFile;
+	std::string	http_redir = _locations[_clientIt->directory].http_redir;
+	if (!http_redir.empty())
+		_clientIt->directory = http_redir;
+	if (_clientIt->method == POST)
+		_clientIt->directory += _locations[_clientIt->directory].upload_dir;
+	_clientIt->directory = prependRoot(_clientIt->directory);
+	_clientIt->path = _clientIt->directory + _clientIt->filename;
+}
+
+bool Server::requestHead()
 {
 	if (_clientIt->requestHeadComplete)
-		return;
+		return true;
 	ANNOUNCEME_FD
 	if (_clientIt->buffer.find("\r\n\r\n") == std::string::npos)
 	{
-		selectErrorPage(431);
-		return;
+		selectStatusPage(431);
+		return false;
 	}
 	_clientIt->parseRequest();
-	_clientIt->requestHeadComplete = true;
-	std::cout << "request method: " << _clientIt->method << std::endl;
-	std::cout << "request path raw:'" << _clientIt->path << "'" << std::endl;
-	std::cout << "completePath:'" << _root + _clientIt->path << "'" << std::endl;
-	checkRequest();
+	if (requestError())
+		return false;
+	selectHostConfig();
+	updateClientPath();
+	_clientIt->whoIsI();
+	return true;
 }
 
-void Server::handleRequestBody()
+void Server::selectHostConfig()
+{
+	if (_clientIt->host.empty())
+	{
+		applyHostConfig(_configs[0]);
+		return;
+	}
+	for (size_t i = 0; i < _configs.size(); ++i)
+	{
+		if (stringInVec(_clientIt->host, _configs[i].getNames()))
+		{
+			applyHostConfig(_configs[i]);
+			std::cout << "Hostname '" << _clientIt->host << "' found in ServerConfig #" << i << std::endl;
+			return;
+		}
+	}
+	std::cout << "Hostname '" << _clientIt->host << "' not found. Running default ServerConfig." << std::endl;
+	applyHostConfig(_configs[0]);
+}
+
+void Server::handleDelete()
+{
+	if (isDirectory(_clientIt->path)) // deleting directories not allowed
+	{
+		selectStatusPage(405);
+		return;
+	}
+	if (!resourceExists(_clientIt->path))
+	{
+		selectStatusPage(404);
+		return;
+	}
+	if (remove(_clientIt->path.c_str()) == 0)
+	{
+		_clientIt->statusCode = 204;
+		_clientIt->requestFinished = true;
+	}
+	else
+		selectStatusPage(500);
+}
+
+void Server::handleGet()
+{
+	if (isDirectory(_clientIt->path))
+	{
+		if (resourceExists(_clientIt->path + _clientIt->standardFile))
+		{
+			_clientIt->statusCode = 200;
+			_clientIt->sendPath = _clientIt->path + _clientIt->standardFile;
+		}
+		else if (_clientIt->dirListing)
+		{
+			_clientIt->statusCode = 200;
+			// call dir listing
+			_clientIt->sendPath = "system/dirListing.html";
+		}
+		else
+			selectStatusPage(404);
+	}
+	else
+	{
+		if (resourceExists(_clientIt->path))
+		{
+			_clientIt->statusCode = 200;
+			_clientIt->sendPath = _clientIt->path;
+		}
+		else
+			selectStatusPage(404);
+	}
+	_clientIt->requestFinished = true;
+}
+
+void Server::handlePost()
 {
 	if (_clientIt->requestBodyComplete)
 		return;
-	if (_clientIt->contentLength < 0)
+	if (!resourceExists(_clientIt->directory))
 	{
-		std::cout << "shouldnt ever get in here" << std::endl;
-		_clientIt->requestBodyComplete = true;
-		return;
-	}
-	
-	// also need to check if CGI or not?
-	std::string writePath  = _root + _clientIt->path + _locations[_clientIt->path].upload_dir;
-	if (!resourceExists(writePath))
-	{
-		selectErrorPage(500);
+		selectStatusPage(500);
 		return;		
 	}
-	std::ofstream outputFile(writePath.c_str(), std::ios::binary | std::ios::app);
+	std::ofstream outputFile;
+	if (_clientIt->append)
+		outputFile.open(_clientIt->path.c_str(), std::ios::binary | std::ios::app);
+	else
+	{
+		outputFile.open(_clientIt->path.c_str(), std::ios::binary | std::ios::trunc);
+		_clientIt->append = true;
+	}
 	if (!outputFile.is_open())
-		throw std::runtime_error(E_REQUESTFILE);
+	{
+		selectStatusPage(500);
+		return;		
+	}
 	outputFile.write(_clientIt->buffer.c_str(), _clientIt->buffer.size());
-	_clientIt->bytesWritten += _clientIt->buffer.size(); // outputFile.tellp() delta prolly better but nah.
+	_clientIt->bytesWritten += _clientIt->buffer.size();
 	outputFile.close();
 	if (_clientIt->bytesWritten >= (size_t)_clientIt->contentLength)
 	{
 		_clientIt->requestBodyComplete = true;
-		selectResponseContent();
+		_clientIt->requestFinished = true;
+		_clientIt->statusCode = 201;
 	}
+}
+
+std::string Server::buildResponseHead()
+{
+	std::stringstream ss_header;
+	size_t contentLength = fileSize(_clientIt->sendPath);
+	
+	ss_header << HTTPVERSION << ' ' << _clientIt->statusCode << ' ' << getHttpMsg(_clientIt->statusCode) << "\r\n";
+	ss_header << "Server: " << SERVERVERSION << "\r\n";
+	if (contentLength != 0)
+		ss_header << "content-type: " << mimeType(_clientIt->sendPath) << "\r\n";
+	ss_header << "content-length: " << contentLength << "\r\n";
+	ss_header << "connection: close" << "\r\n";
+	ss_header << "\r\n";
+	return ss_header.str();
 }
 
 void Server::sendResponseHead()
 {
 	if (_clientIt->responseHeadSent)
 		return;
-	if (!_clientIt->requestBodyComplete)
-	{
-		closeClient("Server::sendResponseHead: !requestBodyComplete");
-		throw std::runtime_error("Server::sendResponseHead: !requestBodyComplete");
-	}
 	ANNOUNCEME_FD
 
-	size_t	contentLength;
-
-	if (_clientIt->sendPath.empty())
-		contentLength = 0;
-	else
-		contentLength = fileSize(_clientIt->sendPath);
-	
-	std::stringstream	ss_header;
-	
-	ss_header << HTTPVERSION << ' ' << _clientIt->statusCode << ' ' << getHttpMsg(_clientIt->statusCode) << "\r\n";
-	ss_header << "Server: " << SERVERVERSION << "\r\n";
-	ss_header << "content-type: " << mimeType(_clientIt->sendPath) << "\r\n";
-	ss_header << "content-length: " << contentLength << "\r\n";
-	ss_header << "connection: close" << "\r\n";
-	ss_header << "\r\n";
-	
-	if (::send(_clientfd, ss_header.str().c_str(), ss_header.str().size(), 0) == -1)
+	std::string header = buildResponseHead();
+	if (::send(_clientIt->fd, header.c_str(), header.size(), 0) == -1)
+	{
+		closeClient("Server::sendResponseHead: send failure.");
 		throw std::runtime_error(E_SEND);
-	std::cout << "responseHead sent to fd: " << _clientfd << "\n" << ss_header.str() << std::endl;
+	}
+	std::cout << "responseHead sent to fd: " << _clientIt->fd << "\n" << header << std::endl;
 	_clientIt->responseHeadSent = true;
-}
-
-void Server::selectResponseContent()
-{
-	std::string	completePath;
-	
-	if (_clientIt->responseFileSelected || !_clientIt->requestBodyComplete)
-		return;
-	ANNOUNCEME_FD
-	if (_clientIt->method == POST)
-	{
-		_clientIt->responseFileSelected = true;
-		_clientIt->statusCode = 201; //errors on post would have already been handled, so only reamining case is ok
-		//_clientIt->sendPath.clear(); //shoujlndt neede this, should be empty upon init
-		return;
-	}
-	// check for http redirection
-	if (_locations[_clientIt->directory].http_redir.empty())
-		completePath = _root + _clientIt->path;
-	else
-		completePath = _root + _locations[_clientIt->directory].http_redir + _clientIt->filename;
-
-	if (isDirectory(completePath))
-	{
-		std::cout << "completePath is a directory" << std::endl;
-		std::string standardFile = _locations[_clientIt->directory].std_file;
-		if (standardFile.empty())
-			standardFile = "index.html";
-		if (resourceExists(completePath + standardFile))
-		{
-			std::cout << "'" << completePath + standardFile << "' exists." << std::endl;
-			_clientIt->statusCode = 200;
-			_clientIt->sendPath = completePath + standardFile;
-		}
-		else if (dirListing(completePath))
-		{
-			std::cout << "no, '" << completePath + standardFile << "' does not exist, but dir listing is allowed. Show dir listing here" << std::endl;
-			_clientIt->statusCode = 200;
-			_clientIt->sendPath = "dirlisting"; // dunno how to handle this best yet. wait to implemnt dirlisting to decide
-		}
-		else
-		{
-			std::cout << "'" << completePath + standardFile << "' does not exist, and dir listing is not allowed. Send 404." << std::endl;
-			selectErrorPage(404);
-		}
-	}
-	else // is not directory
-	{
-		std::cout << "completePath is not a directory" << std::endl;
-
-		if (resourceExists(completePath))
-		{
-			std::cout << "resource exists" << std::endl;
-			
-			_clientIt->statusCode = 200;
-			_clientIt->sendPath = completePath;
-		}
-		else
-		{
-			std::cout << "resource does not exist" << std::endl;
-			selectErrorPage(404);
-		}
-	}
-	_clientIt->responseFileSelected = true;
 }
 
 void Server::sendResponseBody()
 {
-	if (!_clientIt->requestHeadComplete || !_clientIt->responseFileSelected || !_clientIt->responseHeadSent)
+	if (!_clientIt->responseHeadSent)
 		return;
 	ANNOUNCEME_FD
 	std::cout << "sendPath:'" << _clientIt->sendPath << "'" << std::endl;
 	
 	if (_clientIt->sendPath.empty())
 	{
-		closeClient("Server::sendResponseBody: sendPath empty.");
+		closeClient("Server::sendResponseBody: nothing to send.");
 		return;
 	}
 	std::ifstream fileStream(_clientIt->sendPath.c_str(), std::ios::binary);
@@ -387,13 +395,12 @@ void Server::sendResponseBody()
 		closeClient("Server::sendResponseBody: ifstream failure.");
 		throw std::runtime_error("sendResponseBody: Could not open file to send. Client closed.");
 	}
-	std::cout << "fileposition: " << _clientIt->filePosition << std::endl;
+	
+	char buffer[SEND_CHUNK_SIZE];
 	fileStream.seekg(_clientIt->filePosition);
-	char	buffer[SEND_CHUNK_SIZE];
-	bzero(buffer, SEND_CHUNK_SIZE);
 	fileStream.read(buffer, SEND_CHUNK_SIZE);
 
-	if (::send(_clientfd, buffer, fileStream.gcount(), 0) == -1)
+	if (::send(_clientIt->fd, buffer, fileStream.gcount(), 0) == -1)
 	{
 		fileStream.close();
 		closeClient("Server::sendResponseBody: send failure.");
@@ -407,25 +414,8 @@ void Server::sendResponseBody()
 	}
 	_clientIt->filePosition = fileStream.tellg();
 	fileStream.close();
-	std::cout << "sendFile.gcount to fd " << _clientfd << ": " << fileStream.gcount() << std::endl;
-	
 }	 
 	
-/*
-// CGI handling (for php and potentially python scripts)
-			// if (request.path() == ".php")
-			// {
-			// 	pid = fork ()
-			// 	if (pid == 0)
-			// 	{
-			// 		// run cgi with input file as argument or piped in
-			// 		// save file to temp directory
-			// 	}
-			// 	// attempt to serve file (html from cgi)
-			// }
-*/
-
-// change other functions also to take const string &
 bool Server::dirListing(std::string path)
 {
 	strLocMap_it	locIt =_locations.find(path);
@@ -443,23 +433,21 @@ bool Server::dirListing(std::string path)
 
 void Server::closeClient(const char* msg)
 {
-	std::vector<pollfd>::iterator	it = _pollVector.begin();
-	size_t							clientIndex;
-	
 	if (msg)
-		std::cout << "closeClient fd " << _clientIt->fd << ": " << msg << std::endl;
-	close(_clientfd);
-	while (it != _pollVector.end() && it->fd != _clientfd)
+		std::cout << "closeClient on fd " << _clientIt->fd << ": " << msg << std::endl;
+	close(_clientIt->fd);
+	
+	// erase corresponding pollStruct
+	std::vector<pollfd>::iterator it = _pollVector->begin();
+	while (it != _pollVector->end() && it->fd != _clientIt->fd)
 		++it;
-	if (it == _pollVector.end())
+	if (it == _pollVector->end())
 		throw std::runtime_error("Server::closeClient: fd to close not found in pollVector");
-	_pollVector.erase(it);
-	clientIndex = std::distance(_clients.begin(), _clientIt);
+	_pollVector->erase(it);
+	
+	// erase client and decrement _index to not skip the next client in the for loop
 	_clients.erase(_clientIt);
-	_clientIt = _clients.begin() + clientIndex;
-	if (_clientIt == _clients.end())
-		throw std::runtime_error("Server::closeClient: new clientIt points to end after closeClient");
-	_clientfd = _clientIt->fd;
+	--_index;
 }
 
 void Server::whoIsI()
@@ -482,21 +470,7 @@ void Server::whoIsI()
 						std::cout << "\t\t" << it->first << '\n';
 	std::cout	<< "CGI Paths:\t" << _cgiPaths.begin()->first << '\t' << _cgiPaths.begin()->second << '\n';
 					for (strMap_it it = ++_cgiPaths.begin(); it != _cgiPaths.end(); it++)
-						std::cout << "\t\t" << it->first << '\t' << it->second << std::endl;		
-}
-
-void Server::setNames(std::string input)
-{
-	std::string name;
-
-	while (!input.empty())
-	{
-		name = splitEraseTrimChars(input, WHITESPACE);
-		for (std::string::const_iterator it = name.begin(); it != name.end(); it++)
-			if (!isalnum(*it) && *it != '.' && *it != '_')
-				throw std::runtime_error(E_SERVERNAME + name + '\n');
-		_names.push_back(name);
-	}
+						std::cout << "\t\t" << it->first << '\t' << it->second << std::endl;
 }
 
 void Server::setHost(std::string input)
@@ -540,15 +514,6 @@ void Server::setMaxConnections(std::string input)
 		throw std::runtime_error(E_MAXCONNVAL + input + '\n');
 }
 
-/* void Server::setBacklog(std::string input)
-{
-	if (input.find_first_not_of("0123456789") != std::string::npos)
-			throw std::runtime_error(E_BACKLOGINPUT + input + '\n');
-	_backlog = atoi(input.c_str());
-	if (_backlog > MAX_BACKLOG)
-		throw std::runtime_error(E_BACKLOGVAL + input + '\n');
-} */
-
 void Server::setDefaultDirListing(std::string input)
 {
 	if (input == "yes")
@@ -574,26 +539,37 @@ std::string	Server::mimeType(std::string filepath)
 	return defaultType;
 }
 
-void Server::selectErrorPage(int code)
+void Server::selectStatusPage(int code)
 {
 	_clientIt->requestHeadComplete = true;
 	_clientIt->requestBodyComplete = true;
-	_clientIt->responseFileSelected = true;
+	_clientIt->requestFinished = true;
 	_clientIt->errorPending = true;
 	_clientIt->statusCode = code;
-	
-	std::cout << "errorpage troubleshoot: " << _root + _errorPagesPaths[code] << std::endl;
 
-	if (_errorPagesPaths.find(code) != _errorPagesPaths.end() && resourceExists(_root + _errorPagesPaths[code]))
-		_clientIt->sendPath = _root + _errorPagesPaths[code];
+	if (_errorPagesPaths.find(code) == _errorPagesPaths.end())
+	{
+		generateStatusPage(code);
+		return;
+	}
+	std::string path = prependRoot(_errorPagesPaths[code]);
+	if (resourceExists(path))
+		_clientIt->sendPath = path;
 	else
-		generateErrorPage(code);
+		generateStatusPage(code);
 }
 
-void Server::generateErrorPage(int code)
+std::string Server::prependRoot(const std::string& path)
+{
+	if (path.find('/') == 0)
+		return _root + path.substr(1);
+	else
+		return path;
+}
+
+void Server::generateStatusPage(int code)
 {
 	std::ofstream errorPage("system/errorPage.html", std::ios::binary | std::ios::trunc);
-
 	if (errorPage.fail())
 	{
 		errorPage.close();
@@ -601,8 +577,8 @@ void Server::generateErrorPage(int code)
 		throw std::runtime_error(E_TEMPFILE);
 	}
 
-	std::string			httpMsg(getHttpMsg(code));
 	std::stringstream	ss_body;
+	std::string			httpMsg = getHttpMsg(code);
 
 	ss_body << "<!DOCTYPE html>";
 	ss_body << "<html>\n";
@@ -622,61 +598,15 @@ void Server::generateErrorPage(int code)
 	
 	errorPage.write(ss_body.str().c_str(), ss_body.str().size());
 	errorPage.close();
-	
 	_clientIt->sendPath = "system/errorPage.html";
 }
 
-/* void Server::checkMethodAccess(std::string path)
+int Server::fd()
 {
-	if (_GET && access(path.c_str(), R_OK) != 0)
-		throw std::runtime_error(E_ACC_READ + path + '\n');
-	if ((_POST | _DELETE) && access(path.c_str(), W_OK) != 0)
-		throw std::runtime_error(E_ACC_WRITE + path + '\n');
+	return _server_fd;
 }
 
-void Server::checkReadAccess(std::string path)
+void Server::addClient(int fd)
 {
-	if (access(path.c_str(), R_OK) != 0)
-		throw std::runtime_error(E_ACC_READ + path + '\n');
-}
-
-void Server::checkWriteAccess(std::string path)
-{
-	if (access(path.c_str(), W_OK) != 0)
-		throw std::runtime_error(E_ACC_WRITE + path + '\n');
-}
-
-void Server::checkExecAccess(std::string path)
-{
-	if (access(path.c_str(), X_OK) != 0)
-		throw std::runtime_error(E_ACC_EXEC + path + '\n');
-} */
-
-const char *	Server::invalidAddressException::what() const throw()
-{
-	return ("invalid IP address supplied.");
-}
-
-const char *	Server::socketCreationFailureException::what() const throw()
-{
-	return ("error creating socket for server.");
-}
-
-const char *	Server::fileDescriptorControlFailureException::what() const throw()
-{
-	return ("error controlling file descriptor to non-blocking.");
-}
-
-const char *	Server::bindFailureException::what() const throw()
-{
-	return ("error using bind.");
-}
-
-const char *	Server::listenFailureException::what() const throw()
-{
-	return ("error using listen.");
-}
-const char *	Server::sendFailureException::what() const throw()
-{
-	return ("error sending data to client.");
+	_clients.push_back(Client(fd));
 }

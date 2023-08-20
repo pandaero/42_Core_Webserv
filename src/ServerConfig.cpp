@@ -8,6 +8,9 @@ This constructor is only called when reading the default config.
 The key values contained in the passed string will all be accepted,
 forming the template to check against when parsing user supplied config
 files.
+This approach was interesting to implement, but would not recommend.
+It is only useful if the key value pairs are constantly changing.
+
 Note: parseLocation has only one version for default and client parsing
 because it performs its own and rigid input checks.
 */
@@ -25,10 +28,11 @@ ServerConfig::ServerConfig(std::string defaultConfigStr, strMap* mimeTypes)
 			parseLocation(instruction);
 		else if (key == CGITITLE)
 			parseDefaultCgi(instruction);
-		else 
+		else
 			_configPairs.insert(make_pair(key, instruction));
 	}
 	_mimeTypes = mimeTypes;
+	_names.push_back(_configPairs[SERVERNAME]);
 }
 
 ServerConfig::ServerConfig(const ServerConfig& src)
@@ -38,6 +42,8 @@ ServerConfig::ServerConfig(const ServerConfig& src)
 
 ServerConfig& ServerConfig::operator=(const ServerConfig& src)
 {
+	_names = src._names;
+	_altConfigs = src._altConfigs;
 	_configPairs = src._configPairs;
 	_errorPages = src._errorPages;
 	_locations = src._locations;
@@ -61,6 +67,8 @@ void ServerConfig::applySettings(std::string userConfigStr)
 			parseLocation(instruction);
 		else if (key == CGITITLE)
 			parseUserCgi(instruction);
+		else if (key == SERVERNAME)
+			parseNames(instruction);
 		else 
 		{
 			iter = _configPairs.find(key);
@@ -114,6 +122,11 @@ strMap ServerConfig::getCgiPaths() const
 strMap*	ServerConfig::getMIMETypes() const
 {
 	return _mimeTypes;
+}
+
+strVec ServerConfig::getNames() const
+{
+	return _names;
 }
 
 void ServerConfig::parseDefaultErrorPages(std::string& defaultErrorPages)
@@ -238,4 +251,34 @@ void ServerConfig::parseUserCgi(std::string& userCgiElement)
 		else
 			std::cerr << I_INVALIDKEY << key << std::endl;
 	}
+}
+
+void ServerConfig::parseNames(std::string& input)
+{
+	std::string name;
+	strVec temp;
+
+	while (!input.empty())
+	{
+		name = splitEraseTrimChars(input, WHITESPACE);
+		for (std::string::const_iterator it = name.begin(); it != name.end(); it++)
+			if (!isalnum(*it) && *it != '.' && *it != '_')
+			{
+				std::cerr << I_INVALSERVERNAME << name << std::endl;
+				continue;
+			}
+		temp.push_back(name);
+	}
+	if (!temp.empty())
+		_names = temp;
+}
+
+void ServerConfig::addAltConfig(const ServerConfig& altConfig)
+{
+	_altConfigs.push_back(altConfig);
+}
+
+std::vector<ServerConfig> ServerConfig::getAltConfigs() const
+{
+	return _altConfigs;
 }

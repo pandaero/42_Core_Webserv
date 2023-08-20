@@ -129,8 +129,7 @@ std::string getInstruction(std::string& inputStr)
 
 bool resourceExists(const std::string& path)
 {
-	std::ifstream	resource(path.c_str());
-	
+	std::ifstream resource(path.c_str());
 	return resource.good();
 }
 
@@ -145,11 +144,20 @@ bool isDirectory(const std::string& path)
 
 size_t	fileSize(const std::string& filePath)
 {
-	struct	stat fileInfo;
+	struct stat fileInfo;
 
+	if (filePath.empty())
+		return 0;
 	if (stat(filePath.c_str(), &fileInfo) != 0)
 		return static_cast<size_t>(-1);
 	return static_cast<size_t>(fileInfo.st_size);
+}
+
+bool stringInVec(const std::string& string, const strVec& vector)
+{
+	if (std::find(vector.begin(), vector.end(), string) != vector.end())
+		return true;
+	return false;
 }
 
 std::string getHttpMsg(int code)

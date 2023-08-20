@@ -20,6 +20,10 @@ class ServerConfig
 		strLocMap	getLocations() const;
 		strMap		getCgiPaths() const;
 		strMap*		getMIMETypes() const;
+		strVec		getNames() const;
+
+		std::vector<ServerConfig>	getAltConfigs() const;
+		void						addAltConfig(const ServerConfig&);
 
 	private:
 		void		parseDefaultErrorPages(std::string&);
@@ -27,12 +31,15 @@ class ServerConfig
 		void		parseLocation(std::string&);
 		void		parseDefaultCgi(std::string&);
 		void		parseUserCgi(std::string&);
+		void		parseNames(std::string&);
 		
-		strMap		_configPairs;
-		intStrMap	_errorPages;
-		strLocMap	_locations;
-		strMap		_cgiPaths;
-		strMap*		_mimeTypes;
+		strVec						_names;
+		std::vector<ServerConfig>	_altConfigs;
+		strMap						_configPairs;
+		intStrMap					_errorPages;
+		strLocMap					_locations;
+		strMap						_cgiPaths;
+		strMap*						_mimeTypes;
 };
 
 #endif

@@ -6,10 +6,12 @@
 class	Client
 {
 	public:
+		Client();
 		Client(int);
 		~Client();
 
 		void			parseRequest();
+		void			whoIsI();
 		
 		int				fd;
 		std::string		buffer;
@@ -17,6 +19,8 @@ class	Client
 		std::string		directory;
 		std::string		filename;
 		std::string		sendPath;
+		bool			dirListing;
+		std::string		standardFile;
 		std::streampos	filePosition;
 		size_t			bytesWritten;
 
@@ -24,6 +28,8 @@ class	Client
 		std::string		httpProtocol;
 		std::string		method;
 		std::string		path;
+		std::string		queryString;
+		std::string		host;
 		int				contentLength;
 		std::string		contentType;
 		strMap			headers;
@@ -32,13 +38,13 @@ class	Client
 		bool			errorPending;
 		bool			requestHeadComplete;
 		bool			requestBodyComplete;
-		bool			responseFileSelected;
+		bool			requestFinished;
 		bool			responseHeadSent;
-		bool			responseBodySent;
+		bool			append;
 	
 	private:
+		void			initDefaults();
 		strMap			createHeaderMap(std::string&, std::string, std::string, std::string);
-		
 };
 
 #endif

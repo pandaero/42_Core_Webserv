@@ -16,6 +16,8 @@ class ConfigFile
 		std::string					loadFile(const char*);
 		void 						setMIMEtypes();
 		std::string					getServerConfigElement(std::string&);
+		bool						combineSharedNetAddr(const ServerConfig&, size_t);
+		bool						sharedNetAddr(const ServerConfig&, const ServerConfig&);
 		
 		ServerConfig*				_defaultServerConfig;
 		std::vector<ServerConfig>	_serverConfigs;

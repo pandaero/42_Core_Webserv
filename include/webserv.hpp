@@ -52,15 +52,20 @@ std::string		splitEraseTrimChars(std::string&, const std::string&);
 strVec 			splitEraseStrVec(std::string& input, const std::string& targetChars, const std::string& endOfParsing);
 // Splits a string ref and returns the first instruction it contains, defined as all characters from the string ref's start until the next top-level semicolon. Deletes the instruction from the string ref.
 std::string		getInstruction(std::string& inputStr);
-// Checks whether a resource exists, be it file or directory
+// Checks whether a resource exists, be it file or directory.
 bool			resourceExists(const std::string&);
 // Checks whether a path corresponds to a directory
 bool			isDirectory(const std::string&);
 // Returns the size of a file. Returns (size_t)-1 on error.
 size_t			fileSize(const std::string&);
-// Returns the message string associated with an HTTP status code
+// Returns the message string associated with an HTTP status code.
 std::string		getHttpMsg(int);
+<<<<<<< HEAD
 // Create a directory listing HTML file for a given path.
 std::string		createDirList(const std::string &);
+=======
+// Checks whether a string is present in a string vector.
+bool			stringInVec(const std::string&, const strVec&);
+>>>>>>> save_branch
 
 #endif
