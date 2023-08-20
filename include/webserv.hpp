@@ -70,5 +70,7 @@ std::string		getHttpMsg(int);
 std::string		createDirList(const std::string &);
 // Checks whether a string is present in a string vector.
 bool			stringInVec(const std::string&, const strVec&);
+// Returns the current local time in ISO8601 format.
+const char*		currentTimeISO();
 
 #endif

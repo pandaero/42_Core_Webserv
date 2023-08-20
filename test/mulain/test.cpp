@@ -7,15 +7,16 @@ c++ -Wall -Werror -Wextra -std=c++98 test.cpp && ./a.out
 
 int main()
 {
-	std::string queryString;
-	std::string path = "knudel/shmang/index.html?hizzle=shmizzle";
+	time_t		rawtime;
+	tm*			timeinfo;
+	const char*	timeformat = "%G-%m-%dT%H:%M:%S";
+	char		timeoutput[69];
+
+	time(&rawtime);
+	timeinfo = localtime(&rawtime);
+	//strftime(timeoutput, 420, timeformat, timeinfo);
+	strftime(timeoutput, 420, timeformat, timeinfo);
+	std::string	output = timeoutput;
 	
-	size_t questionMarkPos = path.find("?");
-	if (questionMarkPos != std::string::npos)
-	{
-		queryString = path.substr(questionMarkPos + 1);
-		path = path.substr(0, questionMarkPos);
-	}
-	std::cout << "path:'" << path << "'" << std::endl;
-	std::cout << "queryString:'" << queryString << "'" << std::endl;
+	std::cout << timeoutput << std::endl;
 }

@@ -269,3 +269,15 @@ std::string	createDirList(const std::string & path)
 	dirListingFile.close();
 	return ("./system/dirListing.html");
 }
+
+const char* currentTimeISO()
+{
+	time_t rawtime;
+	const char* timeformat = "%G-%m-%dT%H:%M:%S";
+	char timeoutput[69];
+
+	time(&rawtime);
+	tm* timeinfo = localtime(&rawtime);
+	strftime(timeoutput, 420, timeformat, timeinfo);
+	return timeoutput;
+}

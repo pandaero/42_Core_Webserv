@@ -1,0 +1,18 @@
+char buf[1000];
+	time_t now = time(0);
+	struct tm tm = *gmtime(&now);
+	strftime(buf, sizeof buf, "%a, %d %b %Y %H:%M:%S %Z", &tm);
+
+
+void	Account::_displayTimestamp(void)
+{
+	time_t		rawtime;
+	tm			*timeinfo;
+	char		timeoutput[69];
+	char const	*timeformat = "[%G%m%d_%H%M%S] ";
+
+	time(&rawtime);
+	timeinfo = localtime(&rawtime);
+	strftime(timeoutput, 420, timeformat, timeinfo);
+	std::cout << timeoutput;
+}
