@@ -595,8 +595,13 @@ void	Server::doTheCGI()
 		tmpVar = "SERVER_PROTOCOL=HTTP/1.1";
 		tmpEnv.push_back(tmpVar);
 		//port number to which request was sent
-		tmpVar = "SERVER_PORT=" + ntohs(_serverAddress.sin_port);
-		tmpEnv.push_back(tmpVar);
+		
+		//tmpVar = "SERVER_PORT=" + ntohs(_serverAddress.sin_port);
+		std::stringstream tempStream;
+		tempStream << "SERVER_PORT=";
+		tempStream << ntohs(_serverAddress.sin_port);
+		tmpEnv.push_back(tempStream.str());
+		
 		tmpVar = "REQUEST_METHOD=" + _clientIt->method;
 		tmpEnv.push_back(tmpVar);
 		tmpVar = "PATH_INFO=" + pathToScript;
@@ -607,8 +612,13 @@ void	Server::doTheCGI()
 		tmpEnv.push_back(tmpVar);
 		tmpVar = "CONTENT_TYPE=" + _clientIt->contentType;
 		tmpEnv.push_back(tmpVar);
-		tmpVar = "CONTENT_LENGTH=" + _clientIt->contentLength; //maybe cast is needed
-		tmpEnv.push_back(tmpVar);
+		
+		//tmpVar = "CONTENT_LENGTH=" + _clientIt->contentLength; //maybe cast is needed
+		tempStream.clear();
+		tempStream << "CONTENT_LENGTH=";
+		tempStream << _clientIt->contentLength;
+		tmpEnv.push_back(tempStream.str());
+		
 		tmpVar = "REDIRECT_STATUS=CGI";
 		tmpEnv.push_back(tmpVar);
 		tmpVar = "POST_BODY=message=blabla receiver=alkane"; //to improve when you know how POST and body work
