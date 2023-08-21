@@ -298,8 +298,9 @@ bool Server::sendData()
 	if (_clientIt->state == recv_head)
 	{
 		std::cout << "POLLOUT but no head" << std::endl;
-		int bytesReceived = recv(_clientIt->fd, NULL, 0, MSG_PEEK);
-		std::cout << "bytesReceived by msgpeek: " << bytesReceived << "*********************************************************" << std::endl;
+		char* buffer[4096];
+		int bytesReceived = recv(_clientIt->fd, buffer, 4096, 0);
+		std::cout << "bytesReceived: " << bytesReceived << "*********************************************************" << std::endl;
 		if (bytesReceived == 0)
 		{
 			return false;
