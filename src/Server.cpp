@@ -127,7 +127,7 @@ void Server::handleConnections()
 		{
 			if (hangUp())
 				continue;
-			if (errorPending())
+			if (errorPending()) // remove. should be part of normal processing
 				continue;
 			if (receiveData() && requestHead())
 			{
@@ -171,16 +171,22 @@ bool Server::errorPending()
 	return true;
 }
 
+bool Server::weirdShit()
+{
+	if (_pollStruct->revents & POLLIN && !_clientIt->requestHeadComplete)
+	{
+		std::cout << "weirdShit active." << std::endl;
+
+	}
+}
+
 bool Server::receiveData()
 {
-	if (!(_pollStruct->revents & POLLIN) && !_clientIt->dataButNoPollin)
+	if (_clientIt->requestBodyComplete)
+		return true;
+	if (!(_pollStruct->revents & POLLIN) /* && !weirdShit() */)
 		return false;
 	ANNOUNCEME_FD
-	if (_clientIt->requestBodyComplete)
-	{
-		std::cout << "receiveData returning because reqeustbodyComplete" << std::endl;
-		return true;
-	}
 	char buffer[RECV_CHUNK_SIZE];
 	int bytesReceived = recv(_clientIt->fd, buffer, RECV_CHUNK_SIZE, 0);
 	if (bytesReceived <= 0)

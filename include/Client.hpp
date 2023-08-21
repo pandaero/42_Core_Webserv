@@ -33,7 +33,8 @@ class	Client
 		std::string		contentType;
 		strMap			headers;
 		
-		// status bools
+		// status vars
+		state_enum		state;
 		bool			dataButNoPollin;
 		bool			errorPending;
 		bool			requestHeadComplete;

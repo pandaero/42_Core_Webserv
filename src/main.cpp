@@ -26,6 +26,14 @@ int main()
 	
 	while (poll_(pollVector))
 	{
+		try
+		{
+			acceptConnections(servers, pollVector);
+		}
+		catch (const std::exception& e)
+		{
+			std::cerr << e.what() << std::endl;
+		}
 	
 		for (size_t i = 0; i < servers.size(); ++i)
 		{
@@ -39,14 +47,6 @@ int main()
 			}
 		}
 
-		try
-		{
-			acceptConnections(servers, pollVector);
-		}
-		catch (const std::exception& e)
-		{
-			std::cerr << e.what() << std::endl;
-		}
 	}
 }
 

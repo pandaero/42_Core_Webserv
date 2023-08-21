@@ -40,6 +40,7 @@ class	Server
 		void			doTheCGI();
 
 		// utils
+		bool			weirdShit();
 		void			applyHostConfig(const ServerConfig&);
 		std::string 	prependRoot(const std::string&);
 		pollfd*			getPollStruct(int);
