@@ -2,21 +2,6 @@
 
 Client::Client()
 {
-	initDefaults();
-}
-
-/*
-Client::Client(int socketfd): Client()
--> not possible in cpp98, so have to use extra function.
-*/
-Client::Client(int socketfd)
-{
-	initDefaults();
-	fd  = socketfd;
-}
-
-void Client::initDefaults()
-{
 	fd = -42;
 	statusCode = 0;
 	filePosition = 0;
@@ -34,7 +19,8 @@ void Client::initDefaults()
 
 Client::~Client()
 {
-	std::cout << "Client destructor on fd " << fd << std::endl;
+	if (fd != -42)
+		std::cout << "Client destructor on fd " << fd << std::endl;
 }
 		
 void Client::parseRequest()

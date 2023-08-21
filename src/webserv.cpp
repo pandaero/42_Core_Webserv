@@ -153,13 +153,6 @@ size_t	fileSize(const std::string& filePath)
 	return static_cast<size_t>(fileInfo.st_size);
 }
 
-bool stringInVec(const std::string& string, const strVec& vector)
-{
-	if (std::find(vector.begin(), vector.end(), string) != vector.end())
-		return true;
-	return false;
-}
-
 std::string getHttpMsg(int code)
 {
 	switch (code)
@@ -268,4 +261,19 @@ std::string	createDirList(const std::string & path)
 	dirListingFile << dirListingStream.rdbuf();
 	dirListingFile.close();
 	return ("./system/dirListing.html");
+}
+
+bool stringInVec(const std::string& string, const strVec& vector)
+{
+	if (std::find(vector.begin(), vector.end(), string) != vector.end())
+		return true;
+	return false;
+}
+
+std::string fileExtension(const std::string& filename)
+{
+	size_t dotPosition = filename.find_last_of(".");
+	if (dotPosition == std::string::npos)
+		return "";
+	return filename.substr(dotPosition);
 }

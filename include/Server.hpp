@@ -55,6 +55,7 @@ class	Server
 
 		int								_server_fd;
 		std::vector<std::string>		_names;
+		std::string						_activeServerName;
 		std::vector<ServerConfig>		_configs;
 		std::string						_root;
 		std::string						_standardFile;

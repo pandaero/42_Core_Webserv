@@ -71,5 +71,7 @@ std::string		getHttpMsg(int);
 std::string		createDirList(const std::string &);
 // Checks whether a string is present in a string vector.
 bool			stringInVec(const std::string&, const strVec&);
+// From the passed string, returns the last '.' and the characters behind it, e.g. ".html".
+std::string		fileExtension(const std::string&);
 
 #endif

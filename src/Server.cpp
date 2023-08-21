@@ -36,7 +36,8 @@ int Server::fd()
 
 void Server::addClient(int fd)
 {
-	_clients.push_back(Client(fd));
+	_clients.push_back(Client());
+	_clients.back().fd = fd;
 }
 
 Server::~Server()
@@ -67,7 +68,8 @@ void Server::whoIsI()
 				<< "Root:\t\t" << _root << '\n'
 				<< "Dflt. dir_list:\t" << (_defaultDirListing ? "yes" : "no") << '\n'
 				<< "Cl. max body:\t" << _clientMaxBody << '\n'
-				<< "Max Conns:\t" << _maxConns << '\n';
+				<< "Max Conns:\t" << _maxConns << '\n'
+				<< "standardfile:\t" << _standardFile << '\n';
 				if (!_errorPagesPaths.empty())
 				{
 					std::cout << "Error Pages:\t" << _errorPagesPaths.begin()->first << '\t' << _errorPagesPaths.begin()->second << '\n';
@@ -134,9 +136,7 @@ void Server::handleConnections()
 				continue;
 			if (receiveData() && requestHead())
 			{
-				if (cgiRequest())
-					doTheCGI();
-				else if (_clientIt->method == GET)
+				if (_clientIt->method == GET)
 					handleGet();
 				else if (_clientIt->method == POST)
 					handlePost();
@@ -221,10 +221,7 @@ bool Server::requestHead()
 
 bool Server::cgiRequest()
 {
-	size_t dotPosition = _clientIt->filename.find_last_of(".");
-	if (dotPosition == std::string::npos)
-		return false;
-	std::string extension = _clientIt->filename.substr(dotPosition);
+	std::string extension = fileExtension(_clientIt->filename);
 	if (extension == ".py" || extension == ".php")
 	{
 		_cgiExtension = extension;
@@ -235,6 +232,11 @@ bool Server::cgiRequest()
 
 void Server::handleGet()
 {
+	if (cgiRequest())
+	{
+		doTheCGI();
+		return;
+	}
 	if (isDirectory(_clientIt->path))
 	{
 		if (resourceExists(_clientIt->path + _clientIt->standardFile))
@@ -291,8 +293,13 @@ void Server::handlePost()
 	if (_clientIt->bytesWritten >= (size_t)_clientIt->contentLength)
 	{
 		_clientIt->requestBodyComplete = true;
-		_clientIt->requestFinished = true;
-		_clientIt->statusCode = 201;
+		if (cgiRequest())
+			doTheCGI();
+		else
+		{
+			_clientIt->requestFinished = true;
+			_clientIt->statusCode = 201;
+		}
 	}
 }
 
@@ -476,19 +483,22 @@ void Server::selectHostConfig()
 	if (_clientIt->host.empty())
 	{
 		applyHostConfig(_configs[0]);
+		_activeServerName = _configs[0].getNames()[0];
 		return;
 	}
 	for (size_t i = 0; i < _configs.size(); ++i)
 	{
 		if (stringInVec(_clientIt->host, _configs[i].getNames()))
 		{
-			applyHostConfig(_configs[i]);
 			std::cout << "Hostname '" << _clientIt->host << "' found in ServerConfig #" << i << std::endl;
+			applyHostConfig(_configs[i]);
+			_activeServerName = _clientIt->host;
 			return;
 		}
 	}
 	std::cout << "Hostname '" << _clientIt->host << "' not found. Running default ServerConfig." << std::endl;
 	applyHostConfig(_configs[0]);
+	_activeServerName = _configs[0].getNames()[0];
 }
 
 bool Server::requestError()
@@ -515,7 +525,7 @@ bool Server::requestError()
 			return (selectStatusPage(404), true); // returning 404, not 403, to not leak file structure
 	
 		// access granted, but not for the requested method
-		else if ((_clientIt->method == GET && !locIt->second.get)
+		if ((_clientIt->method == GET && !locIt->second.get)
 			|| (_clientIt->method == POST && !locIt->second.post)
 			|| (_clientIt->method == DELETE && !locIt->second.delete_))
 			return (selectStatusPage(405), true);
@@ -576,7 +586,7 @@ void	Server::doTheCGI()
 		tmpVar = "SERVER_SOFTWARE=webservInC++98BabyLetsGo/4.2";
 		tmpEnv.push_back(tmpVar);
 		//server's hostname or IP address
-		tmpVar = "SERVER_NAME=" + _names[0];//🍏
+		tmpVar = "SERVER_NAME=" + _activeServerName;
 		tmpEnv.push_back(tmpVar);
 		tmpVar = "GATEWAY_INTERFACE=CGI/1.2";
 		tmpEnv.push_back(tmpVar);
@@ -649,13 +659,17 @@ void	Server::doTheCGI()
 //only if there wasnt timeout we should get here, so throw exceptions instead break higher
 		char	buffer[1024];
 		ssize_t	bytesRead;
-		std::ofstream	cgiHtml("cgi.html");
+		std::ofstream	cgiHtml("system/cgi.html");
 		while ((bytesRead = read(pipeFd[0], buffer, 1023)) > 0) {
 			buffer[bytesRead] = '\0';
 			cgiHtml << buffer;
 		}
 		cgiHtml.close();
 		close(pipeFd[0]);
+		_clientIt->statusCode = 200;
+		_clientIt->requestFinished = true;
+		_clientIt->sendPath = "system/cgi.html";
+
 		
 		std::cout << "Child process exited with status: " << WEXITSTATUS(status) << std::endl;
 	}
@@ -691,6 +705,8 @@ std::string	Server::mimeType(const std::string& filepath)
 	if (dotPosition == std::string::npos)
 		return defaultType;
 	extension = filepath.substr(dotPosition);
+
+	extension = fileExtension(filepath);
 	it = _mimeTypes->find(extension);
 	if (it != _mimeTypes->end())
 		return it->second;
