@@ -1,8 +1,12 @@
 - fix dir listing
 - cgi
 
-- report single active hostname
 - remove CGI paths from config file
+
+- setup normal hp for single upload (non multipart msg)
+- error with reloading (problem is: POLLOUT is active but no reqeust was received)
+	- check listen fds (unlikely)
+	- deactivate instaClose upon POLLOUT first detection
 
 testing:
 - check eval sheet questions
