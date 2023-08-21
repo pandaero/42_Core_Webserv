@@ -98,15 +98,16 @@ void Server::startListening(std::vector<pollfd>& pollVector)
 	
 	_server_fd = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP);
 	if (_server_fd == -1)
-		errorHandler(_server_fd);
+		closeAndThrow(_server_fd);
 	if (setsockopt(_server_fd, SOL_SOCKET, SO_REUSEADDR, (char*)&options, sizeof(options)) == -1)
-		errorHandler(_server_fd);;
+		closeAndThrow(_server_fd);;
 	if (fcntl(_server_fd, F_SETFL, O_NONBLOCK) == -1)
-		errorHandler(_server_fd);
+		closeAndThrow(_server_fd);
 	if (bind(_server_fd, (struct sockaddr*) &_serverAddress, sizeof(_serverAddress)) == -1)
-		errorHandler(_server_fd);
+		closeAndThrow(_server_fd);
 	if (listen(_server_fd, SOMAXCONN) == -1)
-		errorHandler(_server_fd);
+		closeAndThrow(_server_fd);
+	
 	newPollStruct.fd = _server_fd;
 	newPollStruct.events = POLLIN;
 	newPollStruct.revents = 0;
@@ -172,7 +173,7 @@ bool Server::errorPending()
 
 bool Server::receiveData()
 {
-	if (!(_pollStruct->revents & POLLIN))
+	if (!(_pollStruct->revents & POLLIN) && !_clientIt->dataButNoPollin)
 		return false;
 	ANNOUNCEME_FD
 	if (_clientIt->requestBodyComplete)
@@ -208,17 +209,6 @@ bool Server::requestHead()
 	updateClientPath();
 	_clientIt->whoIsI();
 	return true;
-}
-
-bool Server::cgiRequest()
-{
-	std::string extension = fileExtension(_clientIt->filename);
-	if (extension == ".py" || extension == ".php")
-	{
-		_cgiExtension = extension;
-		return true;
-	}
-	return false;
 }
 
 void Server::handleGet()
@@ -322,11 +312,14 @@ bool Server::sendData()
 	if (!_clientIt->requestHeadComplete)
 	{
 		std::cout << "POLLOUT but no head" << std::endl;
-		char buffer[1];
-		int bytesReceived = recv(_clientIt->fd, buffer, 0, MSG_PEEK);
+		int bytesReceived = recv(_clientIt->fd, NULL, 0, MSG_PEEK);
 		std::cout << "bytesReceived by msgpeek: " << bytesReceived << std::endl;
+		if (bytesReceived == 0)
+		{
+			_clientIt->dataButNoPollin = true;
+			return false;
+		}
 		selectStatusPage(400);
-		//closeClient("Server::handleConnections: POLLOUT but no request Head");
 		return true;
 	}
 	if (!_clientIt->requestFinished)
@@ -546,6 +539,17 @@ void Server::closeClient(const char* msg)
 	// erase client and decrement _index to not skip the next client in the for loop
 	_clients.erase(_clientIt);
 	--_index;
+}
+
+bool Server::cgiRequest()
+{
+	std::string extension = fileExtension(_clientIt->filename);
+	if (extension == ".py" || extension == ".php")
+	{
+		_cgiExtension = extension;
+		return true;
+	}
+	return false;
 }
 
 void	Server::doTheCGI()

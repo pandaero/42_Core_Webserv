@@ -9,7 +9,6 @@ class	Server
 		Server(const ServerConfig &);
 		~Server();
 		
-		void			applyHostConfig(const ServerConfig&);
 		int				fd();
 		void			addClient(int);
 
@@ -23,7 +22,6 @@ class	Server
 		bool			errorPending();
 		bool			receiveData();
 		bool			requestHead();
-		bool			cgiRequest();
 		void			handleGet();
 		void			handlePost();
 		void			handleDelete();
@@ -38,9 +36,11 @@ class	Server
 		void			selectHostConfig();
 		bool			requestError();
 		void			closeClient(const char*);
+		bool			cgiRequest();
 		void			doTheCGI();
 
 		// utils
+		void			applyHostConfig(const ServerConfig&);
 		std::string 	prependRoot(const std::string&);
 		pollfd*			getPollStruct(int);
 		std::string		mimeType(const std::string&);
@@ -50,7 +50,7 @@ class	Server
 		void			setHost(std::string);
 		void			setPort(std::string);
 		void			setClientMaxBody(std::string);
-		void			setMaxConnections(std::string);
+		void			setMaxConnections(std::string); //unused
 		void			setDefaultDirListing(std::string);
 
 		int								_server_fd;

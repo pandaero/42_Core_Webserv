@@ -34,6 +34,7 @@ class	Client
 		strMap			headers;
 		
 		// status bools
+		bool			dataButNoPollin;
 		bool			errorPending;
 		bool			requestHeadComplete;
 		bool			requestBodyComplete;

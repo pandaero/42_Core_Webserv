@@ -74,5 +74,5 @@ bool			stringInVec(const std::string&, const strVec&);
 // From the passed string, returns the last '.' and the characters behind it, e.g. ".html".
 std::string		fileExtension(const std::string&);
 // Throws a runtime error with the message contained in errnum and closes the passed fd if it is not -1.
-void			errorHandler(int);
+void			closeAndThrow(int);
 #endif

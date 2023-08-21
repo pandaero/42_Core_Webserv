@@ -91,7 +91,7 @@ void acceptConnections(std::vector<Server>& servers, std::vector<pollfd>& pollVe
 			}
 			int flags = fcntl(new_sock, F_GETFL, 0);
 			if (fcntl(new_sock, F_SETFL, flags | O_NONBLOCK) == -1)
-				errorHandler(new_sock);
+				closeAndThrow(new_sock);
 			servers[i].addClient(new_sock);
 			
 			pollfd new_pollStruct;

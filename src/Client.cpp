@@ -8,6 +8,7 @@ Client::Client()
 	bytesWritten = 0;
 	contentLength = -1;
 
+	dataButNoPollin = false;
 	dirListing = false;
 	errorPending = false;
 	requestHeadComplete = false;

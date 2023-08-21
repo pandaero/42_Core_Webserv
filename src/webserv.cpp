@@ -278,7 +278,7 @@ std::string fileExtension(const std::string& filename)
 	return filename.substr(dotPosition);
 }
 
-void errorHandler(int fd)
+void closeAndThrow(int fd)
 {
 	if (fd != -1)
 		close(fd);
