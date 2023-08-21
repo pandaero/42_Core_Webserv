@@ -298,11 +298,9 @@ bool Server::sendData()
 	if (_clientIt->state == recv_head)
 	{
 		std::cout << "POLLOUT but no head" << std::endl;
-		char* buffer[4096];
-		int bytesReceived = recv(_clientIt->fd, buffer, 4096, 0);
-		std::cout << "bytesReceived: " << bytesReceived << "*********************************************************" << std::endl;
-		if (bytesReceived == 0)
+		if (recv(_clientIt->fd, NULL, 0, MSG_PEEK) == 0)
 		{
+			std::cout << "Residual data on socket buffer without POLLIN. POLLIN triggered for next loop iteration." << std::endl;
 			return false;
 		}
 		selectStatusPage(400);
