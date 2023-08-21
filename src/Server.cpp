@@ -41,14 +41,16 @@ void Server::addClient(int fd)
 
 Server::~Server()
 {
-	std::cout << "Server destructor on listening fd " << _server_fd << "." << std::endl;
+	if (_server_fd != -1)
+	{
+		std::cout << "Server destructor on listening fd " << _server_fd << "." << std::endl;
+		close(_server_fd);
+	}
 	while (!_clients.empty())
 	{
 		_clientIt = _clients.begin();
 		closeClient("Server::~Server(): Server Object shutting down");
 	}
-	if (_server_fd != -1)
-		close(_server_fd);
 }
 
 void Server::whoIsI()

@@ -74,6 +74,7 @@
 # define I_INVALERRPAGE		"Info: ServerConfig: Skipping invalid error page key-value pair."
 # define I_INVALIDHEADER	"Info: ServerConfig: Elements between valid subelement headers and beginning of subelement (opening curly brace) will be ignored: "
 # define I_INVALSERVERNAME	"Info: ServerConfig: Skipping invalid server name: "
+# define I_NONDIRROOT		"Info: ServerConfig: Root does not end with a directory (no trailing '/'): "
 
 // Server
 # define E_HOSTADDRINPUT		"Error: Server: Invalid characters in host address input. Only numerical and dot allowed: "
