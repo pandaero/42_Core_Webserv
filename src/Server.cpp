@@ -328,6 +328,9 @@ bool Server::sendData()
 	if (!_clientIt->requestHeadComplete)
 	{
 		std::cout << "POLLOUT but no head" << std::endl;
+		char buffer[1];
+		int bytesReceived = recv(_clientIt->fd, buffer, 0, MSG_PEEK);
+		std::cout << "bytesReceived by msgpeek: " << bytesReceived << std::endl;
 		selectStatusPage(400);
 		//closeClient("Server::handleConnections: POLLOUT but no request Head");
 		return true;

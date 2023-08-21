@@ -9,6 +9,7 @@ int main()
 	std::vector<pollfd> pollVector;
 	
 	std::signal(SIGINT, sigHandler);
+	
 	for (size_t i = 0; i < servers.size(); ++i)
 	{
 		try
@@ -25,7 +26,7 @@ int main()
 	
 	while (poll_(pollVector))
 	{
-		acceptConnections(servers, pollVector);
+	
 		for (size_t i = 0; i < servers.size(); ++i)
 		{
 			try
@@ -36,6 +37,15 @@ int main()
 			{
 				std::cerr << e.what() << std::endl;
 			}
+		}
+
+		try
+		{
+			acceptConnections(servers, pollVector);
+		}
+		catch (const std::exception& e)
+		{
+			std::cerr << e.what() << std::endl;
 		}
 	}
 }
@@ -78,8 +88,20 @@ void acceptConnections(std::vector<Server>& servers, std::vector<pollfd>& pollVe
 					std::cerr << E_ACCEPT << std::endl;
 				break;
 			}
-			if (fcntl(new_sock, F_SETFL, O_NONBLOCK) == -1)
-				throw std::runtime_error(E_FCNTL);
+			int flags = fcntl(new_sock, F_GETFL, 0);
+			if (fcntl(new_sock, F_SETFL, flags | O_NONBLOCK) == -1)
+			{
+				close(new_sock);
+				std::cerr << E_FCNTL << std::endl;
+				return;
+			}
+
+			int error = 0;
+			socklen_t len = sizeof(error);
+			int result = getsockopt(new_sock, SOL_SOCKET, SO_ERROR, &error, &len);
+			std::cout << "error=" << error << ". result=" << result << "." << std::endl;
+			
+			
 			servers[i].addClient(new_sock);
 			
 			pollfd new_pollStruct;
