@@ -55,6 +55,7 @@ bool poll_(std::vector<pollfd>& pollVector)
 
 /* 	
 currently not checking for a size restriction. Revisit this during testing.
+prolly just returns from accept with -1. 
 if (pollVector.size() > 420)
 	{
 		std::cerr << I_CONNECTIONLIMIT << std::endl;
@@ -77,6 +78,8 @@ void acceptConnections(std::vector<Server>& servers, std::vector<pollfd>& pollVe
 					std::cerr << E_ACCEPT << std::endl;
 				break;
 			}
+			if (fcntl(new_sock, F_SETFL, O_NONBLOCK) == -1)
+				throw std::runtime_error(E_FCNTL);
 			servers[i].addClient(new_sock);
 			
 			pollfd new_pollStruct;
