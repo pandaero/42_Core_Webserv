@@ -53,25 +53,37 @@ Server::~Server()
 
 void Server::whoIsI()
 {
-	std::cout	<< '\n'
-				<< "Name(s):\t" << *_names.begin() << '\n';
+	std::cout	<< '\n';
+				if (!_names.empty())
+				{
+					std::cout << "Name(s):\t" << *_names.begin() << '\n';
 					for (strVec_it it = ++_names.begin(); it != _names.end(); ++it)
 						std::cout << "\t\t" << *it << '\n';
+				}
 	std::cout	<< "Host:\t\t" << inet_ntoa(_serverAddress.sin_addr) << '\n'
 				<< "Port:\t\t" << ntohs(_serverAddress.sin_port) << '\n'
 				<< "Root:\t\t" << _root << '\n'
 				<< "Dflt. dir_list:\t" << (_defaultDirListing ? "yes" : "no") << '\n'
 				<< "Cl. max body:\t" << _clientMaxBody << '\n'
-				<< "Max Conns:\t" << _maxConns << '\n'
-				<< "Error Pages:\t" << _errorPagesPaths.begin()->first << '\t' << _errorPagesPaths.begin()->second << '\n';
+				<< "Max Conns:\t" << _maxConns << '\n';
+				if (!_errorPagesPaths.empty())
+				{
+					std::cout << "Error Pages:\t" << _errorPagesPaths.begin()->first << '\t' << _errorPagesPaths.begin()->second << '\n';
 					for (intStrMap_it it = ++_errorPagesPaths.begin(); it != _errorPagesPaths.end(); it++)
 						std::cout << "\t\t" << it->first << '\t' << it->second << std::endl;
-	std::cout	<< "Known loctns:\t" << _locations.begin()->first << '\n';
+				}
+				if (!_locations.empty())
+				{
+					std::cout	<< "Known loctns:\t" << _locations.begin()->first << '\n';
 					for (strLocMap_it it = ++_locations.begin(); it != _locations.end(); it++)
 						std::cout << "\t\t" << it->first << '\n';
-	std::cout	<< "CGI Paths:\t" << _cgiPaths.begin()->first << '\t' << _cgiPaths.begin()->second << '\n';
+				}
+				if (!_cgiPaths.empty())
+				{
+					std::cout	<< "CGI Paths:\t" << _cgiPaths.begin()->first << '\t' << _cgiPaths.begin()->second << '\n';
 					for (strMap_it it = ++_cgiPaths.begin(); it != _cgiPaths.end(); it++)
 						std::cout << "\t\t" << it->first << '\t' << it->second << std::endl;
+				}
 }
 
 void Server::startListening(std::vector<pollfd>& pollVector)
