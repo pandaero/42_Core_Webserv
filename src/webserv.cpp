@@ -277,3 +277,10 @@ std::string fileExtension(const std::string& filename)
 		return "";
 	return filename.substr(dotPosition);
 }
+
+void errorHandler(int fd)
+{
+	if (fd != -1)
+		close(fd);
+	throw std::runtime_error(errno == 0 ? "Unknown error." : strerror(errno));
+}

@@ -9,7 +9,7 @@ int main()
 	std::vector<pollfd> pollVector;
 	
 	std::signal(SIGINT, sigHandler);
-	
+
 	for (size_t i = 0; i < servers.size(); ++i)
 	{
 		try
@@ -77,6 +77,7 @@ void acceptConnections(std::vector<Server>& servers, std::vector<pollfd>& pollVe
 	ANNOUNCEME
 	for (size_t i = 0; i < servers.size(); ++i)
 	{
+		std::cout << "server_fd:" << servers[i].fd() << ". pollvector[i].fd:" << pollVector[i].fd << "." << std::endl;
 		if (!(pollVector[i].revents & POLLIN))
 			continue;
 		while (true)
@@ -90,18 +91,7 @@ void acceptConnections(std::vector<Server>& servers, std::vector<pollfd>& pollVe
 			}
 			int flags = fcntl(new_sock, F_GETFL, 0);
 			if (fcntl(new_sock, F_SETFL, flags | O_NONBLOCK) == -1)
-			{
-				close(new_sock);
-				std::cerr << E_FCNTL << std::endl;
-				return;
-			}
-
-			int error = 0;
-			socklen_t len = sizeof(error);
-			int result = getsockopt(new_sock, SOL_SOCKET, SO_ERROR, &error, &len);
-			std::cout << "error=" << error << ". result=" << result << "." << std::endl;
-			
-			
+				errorHandler(new_sock);
 			servers[i].addClient(new_sock);
 			
 			pollfd new_pollStruct;

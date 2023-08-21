@@ -98,21 +98,15 @@ void Server::startListening(std::vector<pollfd>& pollVector)
 	
 	_server_fd = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP);
 	if (_server_fd == -1)
-		throw std::runtime_error(E_SOCKET);
+		errorHandler(_server_fd);
 	if (setsockopt(_server_fd, SOL_SOCKET, SO_REUSEADDR, (char*)&options, sizeof(options)) == -1)
-		throw std::runtime_error(E_SOCKOPT);
+		errorHandler(_server_fd);;
 	if (fcntl(_server_fd, F_SETFL, O_NONBLOCK) == -1)
-		throw std::runtime_error(E_FCNTL);
+		errorHandler(_server_fd);
 	if (bind(_server_fd, (struct sockaddr*) &_serverAddress, sizeof(_serverAddress)) == -1)
-	{
-		close(_server_fd);
-		throw std::runtime_error(E_BIND);
-	}
+		errorHandler(_server_fd);
 	if (listen(_server_fd, SOMAXCONN) == -1)
-	{
-		close(_server_fd);
-		throw std::runtime_error(E_LISTEN);
-	}
+		errorHandler(_server_fd);
 	newPollStruct.fd = _server_fd;
 	newPollStruct.events = POLLIN;
 	newPollStruct.revents = 0;
