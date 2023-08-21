@@ -7,17 +7,9 @@ Client::Client()
 	filePosition = 0;
 	bytesWritten = 0;
 	contentLength = -1;
-
 	state = recv_head;
 	dirListing = false;
 	append = false;
-
-	/* dataButNoPollin = false;
-	errorPending = false;
-	requestHeadComplete = false;
-	requestBodyComplete = false;
-	requestFinished = false;
-	responseHeadSent = false; */
 }
 
 Client::~Client()

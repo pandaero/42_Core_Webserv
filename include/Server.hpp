@@ -20,7 +20,7 @@ class	Server
 		// main handlers
 		bool			hangUp();
 		bool			errorPending();
-		bool			receiveData();
+		bool			receivedData();
 		bool			requestHead();
 		void			handleGet();
 		void			handlePost();
