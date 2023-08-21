@@ -127,8 +127,8 @@ void Server::handleConnections()
 		{
 			if (hangUp())
 				continue;
-			if (errorPending()) // remove. should be part of normal processing
-				continue;
+			/* if (errorPending()) // remove. should be part of normal processing
+				continue; */
 			if (receiveData() && requestHead())
 			{
 				if (_clientIt->method == GET)
@@ -158,7 +158,7 @@ bool Server::hangUp()
 	return false;
 }
 
-bool Server::errorPending()
+/* bool Server::errorPending()
 {
 	if (!_clientIt->errorPending)
 		return false;
@@ -169,22 +169,26 @@ bool Server::errorPending()
 			sendResponseBody();
 	}
 	return true;
-}
+} */
 
 bool Server::weirdShit()
 {
-	if (_pollStruct->revents & POLLIN && !_clientIt->requestHeadComplete)
+	if (_pollStruct->revents & POLLIN && _clientIt->state == recv_head)
 	{
 		std::cout << "weirdShit active." << std::endl;
 
 	}
+	return true;
 }
 
 bool Server::receiveData()
 {
-	if (_clientIt->requestBodyComplete)
+	if (_clientIt->state > recv_head) // done receiving head
 		return true;
-	if (!(_pollStruct->revents & POLLIN) /* && !weirdShit() */)
+	
+	/* if (_clientIt->requestBodyComplete)
+		return true; */
+	if (!(_pollStruct->revents & POLLIN)) /* && !weirdShit() */
 		return false;
 	ANNOUNCEME_FD
 	char buffer[RECV_CHUNK_SIZE];
@@ -200,8 +204,10 @@ bool Server::receiveData()
 
 bool Server::requestHead()
 {
-	if (_clientIt->requestHeadComplete)
+	if (_clientIt->state > recv_head) // done receiving request head
 		return true;
+	/* if (_clientIt->requestHeadComplete)
+		return true; */
 	ANNOUNCEME_FD
 	if (_clientIt->buffer.find("\r\n\r\n") == std::string::npos)
 	{
@@ -219,6 +225,8 @@ bool Server::requestHead()
 
 void Server::handleGet()
 {
+	if (_clientIt->state > handleRequest)
+		return;
 	if (cgiRequest())
 	{
 		doTheCGI();
@@ -249,13 +257,16 @@ void Server::handleGet()
 		else
 			selectStatusPage(404);
 	}
-	_clientIt->requestFinished = true;
+	//_clientIt->requestFinished = true;
+	_clientIt-> state = send_head;
 }
 
 void Server::handlePost()
 {
-	if (_clientIt->requestBodyComplete)
+	if (_clientIt->state > handleRequest)
 		return;
+	/* if (_clientIt->requestBodyComplete)
+		return; */
 	if (!resourceExists(_clientIt->directory))
 	{
 		selectStatusPage(500);
@@ -279,19 +290,22 @@ void Server::handlePost()
 	outputFile.close();
 	if (_clientIt->bytesWritten >= (size_t)_clientIt->contentLength)
 	{
-		_clientIt->requestBodyComplete = true;
+		//_clientIt->requestBodyComplete = true;
 		if (cgiRequest())
 			doTheCGI();
 		else
 		{
-			_clientIt->requestFinished = true;
 			_clientIt->statusCode = 201;
+			_clientIt->state = send_head;
+			//_clientIt->requestFinished = true;
 		}
 	}
 }
 
 void Server::handleDelete()
 {
+	if (_clientIt->state > handleRequest)
+		return;
 	if (isDirectory(_clientIt->path)) // deleting directories not allowed
 	{
 		selectStatusPage(405);
@@ -305,7 +319,8 @@ void Server::handleDelete()
 	if (remove(_clientIt->path.c_str()) == 0)
 	{
 		_clientIt->statusCode = 204;
-		_clientIt->requestFinished = true;
+		_clientIt->state = send_head;
+		//_clientIt->requestFinished = true;
 	}
 	else
 		selectStatusPage(500);
@@ -315,28 +330,35 @@ bool Server::sendData()
 {
 	if (!(_pollStruct->revents & POLLOUT))
 		return false;
-	if (!_clientIt->requestHeadComplete)
+	
+	//weirdshit
+	//if (!_clientIt->requestHeadComplete)
+	if (_clientIt->state == recv_head)
 	{
 		std::cout << "POLLOUT but no head" << std::endl;
 		int bytesReceived = recv(_clientIt->fd, NULL, 0, MSG_PEEK);
 		std::cout << "bytesReceived by msgpeek: " << bytesReceived << std::endl;
 		if (bytesReceived == 0)
 		{
-			_clientIt->dataButNoPollin = true;
 			return false;
 		}
 		selectStatusPage(400);
 		return true;
 	}
-	if (!_clientIt->requestFinished)
+
+	if (_clientIt->state == rdyToClose)
 		return false;
+	/* if (!_clientIt->requestFinished)
+		return false; */
 	return true;
 }
 
 bool Server::responseHead()
 {
-	if (_clientIt->responseHeadSent)
+	if (_clientIt->state > send_head)
 		return true;
+	/* if (_clientIt->responseHeadSent)
+		return true; */
 	ANNOUNCEME_FD
 
 	std::string header = buildResponseHead();
@@ -346,14 +368,17 @@ bool Server::responseHead()
 		throw std::runtime_error(E_SEND);
 	}
 	std::cout << "responseHead sent to fd: " << _clientIt->fd << "\n" << header << std::endl;
-	_clientIt->responseHeadSent = true;
+	_clientIt->state = send_body;
+	//_clientIt->responseHeadSent = true;
 	return false;
 }
 
 void Server::sendResponseBody()
 {
-	if (!_clientIt->responseHeadSent)
+	if (_clientIt->state > send_body) // shouldnt ever happen, because closeClient first
 		return;
+	/* if (!_clientIt->responseHeadSent)
+		return; */
 	ANNOUNCEME_FD
 	std::cout << "sendPath:'" << _clientIt->sendPath << "'" << std::endl;
 	
@@ -421,10 +446,11 @@ void Server::updateClientPath()
 
 void Server::selectStatusPage(int code)
 {
-	_clientIt->requestHeadComplete = true;
+	_clientIt->state = send_head;
+	/* _clientIt->requestHeadComplete = true;
 	_clientIt->requestBodyComplete = true;
 	_clientIt->requestFinished = true;
-	_clientIt->errorPending = true;
+	_clientIt->errorPending = true; */
 	_clientIt->statusCode = code;
 
 	if (_errorPagesPaths.find(code) == _errorPagesPaths.end())
@@ -683,7 +709,7 @@ void	Server::doTheCGI()
 		cgiHtml.close();
 		close(pipeFd[0]);
 		_clientIt->statusCode = 200;
-		_clientIt->requestFinished = true;
+		//_clientIt->requestFinished = true;
 		_clientIt->sendPath = "system/cgi.html";
 
 		

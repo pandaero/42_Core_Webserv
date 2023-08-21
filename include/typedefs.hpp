@@ -20,11 +20,11 @@ typedef struct
 
 typedef enum
 {
-	recvRequestHead,
-	recvRequestBody,
-	processRequest,
-	sendResponseHead,
-	sendResponseBody,
+	recv_head,
+	recv_body,
+	handleRequest,
+	send_head,
+	send_body,
 	rdyToClose
 }	state_enum;
 

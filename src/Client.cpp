@@ -8,15 +8,16 @@ Client::Client()
 	bytesWritten = 0;
 	contentLength = -1;
 
-	state = 0;
-	dataButNoPollin = false;
+	state = recv_head;
 	dirListing = false;
+	append = false;
+
+	/* dataButNoPollin = false;
 	errorPending = false;
 	requestHeadComplete = false;
 	requestBodyComplete = false;
 	requestFinished = false;
-	responseHeadSent = false;
-	append = false;
+	responseHeadSent = false; */
 }
 
 Client::~Client()
@@ -55,8 +56,9 @@ void Client::parseRequest()
 	directory = path.substr(0, path.find_last_of("/") + 1);
 	filename = path.substr(path.find_last_of("/") + 1);
 	if (contentLength <= 0 || method != POST) // we don't process bodies of GET or DELETE requests
-		requestBodyComplete = true;
-	requestHeadComplete = true;
+		state = handleRequest;
+	else
+		state = recv_body;
 }
 
 void Client::whoIsI()
