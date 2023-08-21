@@ -28,7 +28,7 @@ class	Server
 		void			handlePost();
 		void			handleDelete();
 		bool			sendData();
-		void			sendResponseHead();
+		bool			responseHead();
 		void			sendResponseBody();
 		
 		std::string		buildResponseHead();

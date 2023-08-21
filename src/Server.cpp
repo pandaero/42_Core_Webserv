@@ -143,11 +143,8 @@ void Server::handleConnections()
 				else if (_clientIt->method == DELETE)
 					handleDelete();
 			}
-			if (sendData())
-			{
-				sendResponseHead();
+			if (sendData() && responseHead())
 				sendResponseBody();
-			}
 		}
 		catch (const std::exception& e)
 		{
@@ -173,8 +170,8 @@ bool Server::errorPending()
 	ANNOUNCEME_FD
 	if (_pollStruct->revents & POLLOUT)
 	{
-		sendResponseHead();
-		sendResponseBody();
+		if (responseHead())
+			sendResponseBody();
 	}
 	return true;
 }
@@ -330,18 +327,20 @@ bool Server::sendData()
 		return false;
 	if (!_clientIt->requestHeadComplete)
 	{
-		closeClient("Server::handleConnections: POLLOUT but no request Head");
-		return false;
+		std::cout << "POLLOUT but no head" << std::endl;
+		selectStatusPage(400);
+		//closeClient("Server::handleConnections: POLLOUT but no request Head");
+		return true;
 	}
 	if (!_clientIt->requestFinished)
 		return false;
 	return true;
 }
 
-void Server::sendResponseHead()
+bool Server::responseHead()
 {
 	if (_clientIt->responseHeadSent)
-		return;
+		return true;
 	ANNOUNCEME_FD
 
 	std::string header = buildResponseHead();
@@ -352,6 +351,7 @@ void Server::sendResponseHead()
 	}
 	std::cout << "responseHead sent to fd: " << _clientIt->fd << "\n" << header << std::endl;
 	_clientIt->responseHeadSent = true;
+	return false;
 }
 
 void Server::sendResponseBody()
@@ -373,25 +373,32 @@ void Server::sendResponseBody()
 		closeClient("Server::sendResponseBody: ifstream failure.");
 		throw std::runtime_error("sendResponseBody: Could not open file to send. Client closed.");
 	}
-	
+	std::cout << "before buffer\n\n" << std::endl;
 	char buffer[SEND_CHUNK_SIZE];
 	fileStream.seekg(_clientIt->filePosition);
 	fileStream.read(buffer, SEND_CHUNK_SIZE);
 
+	std::cout << "after buffer\n\n" << std::endl;
 	if (send(_clientIt->fd, buffer, fileStream.gcount(), 0) <= 0)
 	{
 		fileStream.close();
 		closeClient("Server::sendResponseBody: send failure.");
 		throw std::runtime_error(E_SEND);
 	}
+	std::cout << "after send\n\n" << std::endl;
+
 	if (fileStream.eof())
 	{
 		fileStream.close();
 		closeClient("Server::sendResponseBody: sending complete.");
 		return;
 	}
+	std::cout << "befor tellg\n\n" << std::endl;
+
 	_clientIt->filePosition = fileStream.tellg();
 	fileStream.close();
+	std::cout << "after close (end of funct)\n\n" << std::endl;
+
 }
 
 std::string Server::buildResponseHead()
