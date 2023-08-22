@@ -29,7 +29,7 @@ class	Client
 		std::string		path;
 		std::string		queryString;
 		std::string		host;
-		int				contentLength;
+		size_t			contentLength;
 		std::string		contentType;
 		strMap			headers;
 		

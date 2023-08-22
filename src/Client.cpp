@@ -6,7 +6,7 @@ Client::Client()
 	statusCode = 0;
 	filePosition = 0;
 	bytesWritten = 0;
-	contentLength = -1;
+	contentLength = 0;
 	state = recv_head;
 	dirListing = false;
 	append = false;
@@ -47,7 +47,9 @@ void Client::parseRequest()
 		throw std::runtime_error("invalid URL in request.");
 	directory = path.substr(0, path.find_last_of("/") + 1);
 	filename = path.substr(path.find_last_of("/") + 1);
-	if (contentLength <= 0 || method != POST) // we don't process bodies of GET or DELETE requests
+	if (method != POST) // we don't process bodies of GET or DELETE requests
+		state = handleRequest;
+	else if (contentLength <= buffer.size()) // body is already complete in this recv (header content has already been deleted from buffer)
 		state = handleRequest;
 	else
 		state = recv_body;

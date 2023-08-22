@@ -10,3 +10,23 @@ testing:
 - test file upload, incl. files > chunksize
 - check eval sheet questions
 
+Announcer: poll_
+Announcer: acceptConnections
+Announcer: handleConnections on fd 4
+Announcer: sendResponseBody on fd 4
+sendPath:'default/site/styles.css'
+closeClient on fd 4: Server::sendResponseBody: sending complete.
+Client destructor on fd 4
+Announcer: poll_
+Announcer: acceptConnections
+New client accepted for servlet #0 on fd 4.
+PollStructs in Vector: 2
+Client destructor on fd 4 						// Why? No idea how this gets called on fd4. this is destrcutor for addClient temp client, but that should have fd -42.
+New client accepted for servlet #0 on fd 5.
+PollStructs in Vector: 3
+Announcer: handleConnections on fd 4
+Announcer: requestHead on fd 4
+Announcer: handleConnections on fd 5
+Announcer: requestHead on fd 5
+Announcer: poll_
+Announcer: acceptConnections

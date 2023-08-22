@@ -36,7 +36,12 @@ int Server::fd()
 
 void Server::addClient(int fd)
 {
-	_clients.push_back(Client());
+	// testing something here, weird things happen in the client destructor
+	// after calling this function. Clients with an assigned
+	{
+		Client newClient;
+		_clients.push_back(newClient);
+	}
 	_clients.back().fd = fd;
 }
 
@@ -127,7 +132,7 @@ void Server::handleConnections()
 		{
 			if (hangUp())
 				continue;
-			if (receivedData() && requestHead())
+			if (requestHead())
 			{
 				if (_clientIt->method == GET)
 					handleGet();
@@ -174,11 +179,29 @@ bool Server::receivedData()
 	return true;
 }
 
+bool Server::receive()
+{
+	if (!(_pollStruct->revents & POLLIN))
+		return false;
+	ANNOUNCEME_FD
+	char buffer[RECV_CHUNK_SIZE];
+	int bytesReceived = recv(_clientIt->fd, buffer, RECV_CHUNK_SIZE, 0);
+	if (bytesReceived <= 0)
+	{
+		closeClient("Server::receiveData: 0 bytes received or error");
+		throw std::runtime_error(I_CLOSENODATA);
+	}
+	_clientIt->buffer.append(buffer, bytesReceived);
+	return true;
+}
+
 bool Server::requestHead()
 {
 	if (_clientIt->state > recv_head) // done receiving request head
 		return true;
 	ANNOUNCEME_FD
+	if (!receive())
+		return false;
 	if (_clientIt->buffer.find("\r\n\r\n") == std::string::npos)
 	{
 		selectStatusPage(431);
@@ -234,11 +257,14 @@ void Server::handlePost()
 {
 	if (_clientIt->state > handleRequest)
 		return;
+	ANNOUNCEME_FD
 	if (!resourceExists(_clientIt->directory))
 	{
 		selectStatusPage(500);
 		return;		
 	}
+	if (_clientIt->state == recv_body)
+		receive();
 	std::ofstream outputFile;
 	if (_clientIt->append)
 		outputFile.open(_clientIt->path.c_str(), std::ios::binary | std::ios::app);
@@ -254,6 +280,7 @@ void Server::handlePost()
 	}
 	outputFile.write(_clientIt->buffer.c_str(), _clientIt->buffer.size());
 	_clientIt->bytesWritten += _clientIt->buffer.size();
+	_clientIt->buffer.clear();
 	outputFile.close();
 	if (_clientIt->bytesWritten >= (size_t)_clientIt->contentLength)
 	{
@@ -498,7 +525,7 @@ bool Server::requestError()
 		return (selectStatusPage(501), true);
 	
 	// body size too large
-	if (_clientIt->contentLength > (int)_clientMaxBody)
+	if (_clientIt->contentLength > _clientMaxBody)
 		return (selectStatusPage(413), true);
 	else
 	{
