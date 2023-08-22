@@ -4,7 +4,6 @@
 - remove CGI paths from config file?
 
 - setup normal hp for single upload (non multipart msg)
-- clear buffer
 
 
 testing:

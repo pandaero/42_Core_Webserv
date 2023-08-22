@@ -19,7 +19,6 @@ class	Server
 	private:
 		// main handlers
 		bool			hangUp();
-		bool			errorPending();
 		bool			receivedData();
 		bool			requestHead();
 		void			handleGet();
@@ -40,7 +39,6 @@ class	Server
 		void			doTheCGI();
 
 		// utils
-		bool			weirdShit();
 		void			applyHostConfig(const ServerConfig&);
 		std::string 	prependRoot(const std::string&);
 		pollfd*			getPollStruct(int);

@@ -170,7 +170,7 @@ bool Server::receivedData()
 		closeClient("Server::receiveData: 0 bytes received");
 		throw std::runtime_error(I_CLOSENODATA);
 	}
-	_clientIt->buffer.append(buffer, bytesReceived); // should probably not append tho
+	_clientIt->buffer.assign(buffer, bytesReceived);
 	return true;
 }
 
@@ -306,9 +306,6 @@ bool Server::sendData()
 		selectStatusPage(400);
 		return true;
 	}
-
-	if (_clientIt->state == rdyToClose)
-		return false;
 	return true;
 }
 
@@ -316,8 +313,6 @@ bool Server::responseHead()
 {
 	if (_clientIt->state > send_head)
 		return true;
-	/* if (_clientIt->responseHeadSent)
-		return true; */
 	ANNOUNCEME_FD
 
 	std::string header = buildResponseHead();
@@ -328,16 +323,13 @@ bool Server::responseHead()
 	}
 	std::cout << "responseHead sent to fd: " << _clientIt->fd << "\n" << header << std::endl;
 	_clientIt->state = send_body;
-	//_clientIt->responseHeadSent = true;
 	return false;
 }
 
 void Server::sendResponseBody()
 {
-	if (_clientIt->state > send_body) // shouldnt ever happen, because closeClient first
+	if (_clientIt->state < send_body)
 		return;
-	/* if (!_clientIt->responseHeadSent)
-		return; */
 	ANNOUNCEME_FD
 	std::cout << "sendPath:'" << _clientIt->sendPath << "'" << std::endl;
 	
@@ -390,16 +382,27 @@ std::string Server::buildResponseHead()
 
 void Server::updateClientPath()
 {
+	// set dir listing
 	_clientIt->dirListing = dirListing(_clientIt->directory);
+	
+	// select the file to try to serve in case of directory
 	_clientIt->standardFile = _locations[_clientIt->directory].std_file;
 	if (_clientIt->standardFile.empty())
 		_clientIt->standardFile = _standardFile;
+	
+	// check for HTTP redirection
 	std::string	http_redir = _locations[_clientIt->directory].http_redir;
 	if (!http_redir.empty())
 		_clientIt->directory = http_redir;
-	if (_clientIt->method == POST)
+	
+	// check for upload redirection
+	if (_clientIt->method == POST && !_locations[_clientIt->directory].upload_dir.empty())
 		_clientIt->directory = _locations[_clientIt->directory].upload_dir;
+	
+	// prepend the server root if path begins with /
 	_clientIt->directory = prependRoot(_clientIt->directory);
+
+	// build the new request path
 	_clientIt->path = _clientIt->directory + _clientIt->filename;
 }
 
@@ -454,6 +457,11 @@ void Server::generateStatusPage(int code)
 	_clientIt->sendPath = "system/errorPage.html";
 }
 
+/*
+A better way to handle this would be to not write the data from the ServerConfig to
+the Server object, but to just point to the currently active ServerConfig and call
+its getters.
+*/
 void Server::selectHostConfig()
 {
 	if (_clientIt->host.empty())
