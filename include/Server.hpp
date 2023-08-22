@@ -10,8 +10,6 @@ class	Server
 		~Server();
 		
 		int				fd();
-		void			addClient(int);
-
 		void			whoIsI();
 		void			startListening(std::vector<pollfd>&);
 		void			acceptConnections();
@@ -20,7 +18,6 @@ class	Server
 	private:
 		// main handlers
 		bool			hangUp();
-		bool			receivedData();
 		bool			receive(); //sdfsdfsdf
 		bool			requestHead();
 		void			handleGet();

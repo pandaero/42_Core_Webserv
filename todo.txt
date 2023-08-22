@@ -3,8 +3,6 @@
 
 - remove CGI paths from config file?
 
-- setup normal hp for single upload (non multipart msg)
-
 
 testing:
 - test file upload, incl. files > chunksize

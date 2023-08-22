@@ -34,19 +34,6 @@ int Server::fd()
 	return _server_fd;
 }
 
-void Server::addClient(int fd)
-{
-	ANNOUNCEME
-	// testing something here, weird things happen in the client destructor
-	// after calling this function. Clients with an assigned
-	{
-		Client newClient;
-		_clients.push_back(newClient);
-	}
-	_clients.back().fd = fd;
-	std::cout << "end of addClient" << std::endl;
-}
-
 Server::~Server()
 {
 	if (_server_fd != -1)
@@ -149,15 +136,16 @@ void Server::acceptConnections()
 		int flags = fcntl(new_sock, F_GETFL, 0);
 		if (fcntl(new_sock, F_SETFL, flags | O_NONBLOCK) == -1)
 			closeAndThrow(new_sock);
-		addClient(new_sock);
 		
-		std::cout << "return to acceptConns after addClient" << std::endl;
+		Client newClient;
+		newClient.fd = new_sock;
+		_clients.push_back(newClient);
+
 		pollfd new_pollStruct;
 		new_pollStruct.fd = new_sock;
 		new_pollStruct.events = POLLIN | POLLOUT | POLLHUP;
 		new_pollStruct.revents = 0;
 		_pollVector->push_back(new_pollStruct);
-		std::cout << "New client accepted for servlet_fd" << _server_fd << " on fd " << new_sock << "." << std::endl;
 	}
 }
 
@@ -200,24 +188,6 @@ bool Server::hangUp()
 		return true;
 	}
 	return false;
-}
-
-bool Server::receivedData()
-{
-	if (_clientIt->state > recv_body) // done receiving request body && smaller send?
-		return true;
-	if (!(_pollStruct->revents & POLLIN))
-		return false;
-	ANNOUNCEME_FD
-	char buffer[RECV_CHUNK_SIZE];
-	int bytesReceived = recv(_clientIt->fd, buffer, RECV_CHUNK_SIZE, 0);
-	if (bytesReceived <= 0)
-	{
-		closeClient("Server::receiveData: 0 bytes received");
-		throw std::runtime_error(I_CLOSENODATA);
-	}
-	_clientIt->buffer.assign(buffer, bytesReceived);
-	return true;
 }
 
 bool Server::receive()
@@ -371,8 +341,10 @@ bool Server::sendData()
 			std::cout << "Residual data on socket buffer without POLLIN. POLLIN triggered for next loop iteration." << std::endl;
 			return false;
 		}
-		selectStatusPage(400);
-		return true;
+		closeClient("Server::sendData: Nothing to read and no request head.");
+		//selectStatusPage(400);
+		// return true;
+		return false;
 	}
 	return true;
 }

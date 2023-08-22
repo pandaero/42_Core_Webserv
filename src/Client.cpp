@@ -13,10 +13,7 @@ Client::Client()
 }
 
 Client::~Client()
-{
-	if (fd != -42)
-		std::cout << "Client destructor on fd " << fd << std::endl;
-}
+{}
 		
 void Client::parseRequest()
 {
