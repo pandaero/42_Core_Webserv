@@ -290,6 +290,7 @@ strMap parseStrMap(std::string& input, const std::string& endOfKey, const std::s
 	strMap 		stringMap;
 	std::string key, value;
 
+	std::cout << input << std::endl;
 	while (!input.empty())
 	{
 		if (input.find(endOfMap) == 0)
@@ -298,7 +299,11 @@ strMap parseStrMap(std::string& input, const std::string& endOfKey, const std::s
 			return stringMap;
 		}
 		key = splitEraseStr(input, endOfKey);
+		std::cout << "key:" << key << std::endl;
+
 		value = splitEraseStr(input, endOfValue);
+		std::cout << "value:" << value << std::endl;
+
 		stringMap.insert(std::make_pair(strToLower(key), value));
 	}
 	return stringMap;

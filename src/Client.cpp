@@ -36,7 +36,18 @@ void Client::parseRequest()
 	if (headers.find("content-type") != headers.end())
 		contentType = headers["content-type"];
 	if (headers.find("cookie") != headers.end())
-		cookies = parseStrMap(headers["cookie"], "=", ";", "");
+		cookies = parseStrMap(headers["cookie"], "=", ";", "Please parse me to the end!");
+
+	std::cout << "cookies:" << std::endl;
+	if (!cookies.empty())
+	{
+		for (strMap_it it = cookies.begin(); it != cookies.end(); ++it)
+		{
+			std::cout 	<< "key:'" << it->first << "'. "
+						<< "value:'" << it->second << "'.\n"; 
+		}
+		std::cout << std::endl;
+	}
 
 	// parse URL for easy access
 	if (path.find("/") == std::string::npos)
