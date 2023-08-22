@@ -75,4 +75,8 @@ bool			stringInVec(const std::string&, const strVec&);
 std::string		fileExtension(const std::string&);
 // Throws a runtime error with the message contained in errnum and closes the passed fd if it is not -1.
 void			closeAndThrow(int);
+// Operates on a string ref that represents a string map. 1st arg is the string to be parsed. 2nd is end of key, 3rd is end of value, 4th is end of region to parse in 1st arg.
+strMap			parseStrMap(std::string&, const std::string&, const std::string&, const std::string&);
+
+
 #endif

@@ -11,9 +11,6 @@ Client::Client()
 	dirListing = false;
 	append = false;
 }
-
-Client::~Client()
-{}
 		
 void Client::parseRequest()
 {
@@ -23,7 +20,7 @@ void Client::parseRequest()
 	httpProtocol = splitEraseStr(buffer, "\r\n");
 	
 	// check for CGI query string
-	size_t questionMarkPos =  path.find("?");
+	size_t questionMarkPos = path.find("?");
 	if (questionMarkPos != std::string::npos)
 	{
 		queryString = path.substr(questionMarkPos + 1);
@@ -31,13 +28,15 @@ void Client::parseRequest()
 	}
 
 	// parse headers and populate specific headers for easy access
-	headers = createHeaderMap(buffer, ":", "\r\n", "\r\n");
+	headers = parseStrMap(buffer, ":", "\r\n", "\r\n");
 	if (headers.find("host") != headers.end())
 		host = headers["host"].substr(0, headers["host"].find_first_of(':'));
 	if (headers.find("content-length") != headers.end())
 		contentLength = atoi(headers["content-length"].c_str());
 	if (headers.find("content-type") != headers.end())
 		contentType = headers["content-type"];
+	if (headers.find("cookie") != headers.end())
+		cookies = parseStrMap(headers["cookie"], "=", ";", "");
 
 	// parse URL for easy access
 	if (path.find("/") == std::string::npos)
@@ -62,23 +61,4 @@ void Client::whoIsI()
 	std::cout << "content-type:'" << contentType << "'" << std::endl;
 	std::cout << "standardfile:'" << standardFile << "'" << std::endl;
 	std::cout << "dirlisting: " << (dirListing ? "yes" : "no") << std::endl;
-}
-
-strMap Client::createHeaderMap(std::string& input, std::string endOfKey, std::string endOfValue, std::string endOfMap)
-{
-	strMap 		stringMap;
-	std::string key, value;
-
-	while (!input.empty())
-	{
-		if (input.find(endOfMap) == 0)
-		{
-			input = input.substr(endOfMap.size());
-			return stringMap;
-		}
-		key = splitEraseStr(input, endOfKey);
-		value = splitEraseStr(input, endOfValue);
-		stringMap.insert(std::make_pair(strToLower(key), value));
-	}
-	return stringMap;
 }

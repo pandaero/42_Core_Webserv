@@ -7,7 +7,6 @@ class	Client
 {
 	public:
 		Client();
-		~Client();
 
 		void			parseRequest();
 		void			whoIsI();
@@ -31,6 +30,7 @@ class	Client
 		std::string		host;
 		size_t			contentLength;
 		std::string		contentType;
+		strMap			cookies;
 		strMap			headers;
 		
 		// status vars
@@ -38,7 +38,8 @@ class	Client
 		bool			append;
 	
 	private:
-		strMap			createHeaderMap(std::string&, std::string, std::string, std::string);
+		// this "class" is a glorified struct. It only gets instantiated as a private member
+		// of the Server class. That's why it doesn't have traditional privacy.
 };
 
 #endif

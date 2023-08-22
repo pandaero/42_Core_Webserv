@@ -284,3 +284,22 @@ void closeAndThrow(int fd)
 		close(fd);
 	throw std::runtime_error(errno == 0 ? "Unknown error." : strerror(errno));
 }
+
+strMap parseStrMap(std::string& input, const std::string& endOfKey, const std::string& endOfValue, const std::string& endOfMap)
+{
+	strMap 		stringMap;
+	std::string key, value;
+
+	while (!input.empty())
+	{
+		if (input.find(endOfMap) == 0)
+		{
+			input = input.substr(endOfMap.size());
+			return stringMap;
+		}
+		key = splitEraseStr(input, endOfKey);
+		value = splitEraseStr(input, endOfValue);
+		stringMap.insert(std::make_pair(strToLower(key), value));
+	}
+	return stringMap;
+}
