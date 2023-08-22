@@ -289,12 +289,16 @@ void Server::handlePost()
 		selectStatusPage(500);
 		return;		
 	}
+	std::cout << "before writing test. bytesWritten:" << _clientIt->bytesWritten << std::endl;
 	outputFile.write(_clientIt->buffer.c_str(), _clientIt->buffer.size());
 	_clientIt->bytesWritten += _clientIt->buffer.size();
 	_clientIt->buffer.clear();
 	outputFile.close();
-	if (_clientIt->bytesWritten >= (size_t)_clientIt->contentLength)
+	std::cout << "before bytesWritten test. bytesWritten:" << _clientIt->bytesWritten << std::endl;
+
+	if (_clientIt->bytesWritten >= _clientIt->contentLength)
 	{
+		std::cout << "bytesWritten >= size evald positive!" << std::endl;
 		if (cgiRequest())
 			doTheCGI();
 		else
@@ -333,19 +337,27 @@ bool Server::sendData()
 	if (!(_pollStruct->revents & POLLOUT))
 		return false;
 	
+	// situation where no data was read from the socket, but POLLOUT is active
+	// and no further data is being sent. Would cause and endless loop.
+	// on mac: there actually is data in the socket buffer, but POLLIN is not triggered
+	// recv call without reading triggers POLLIN for the next run of the loop.
+	// on WSL2 Ubuntu this also happens, but there is no data to be read (recv returns -1). Just close client.
+	// No idea what causes this, researched it extensively.
+	// Seems to occur when one client opens 2 connections at once. There is no evidence in the network tab
+	// of the client of these weird requests. 
 	if (_clientIt->state == recv_head)
 	{
-		std::cout << "POLLOUT but no head" << std::endl;
 		if (recv(_clientIt->fd, NULL, 0, MSG_PEEK) == 0)
 		{
 			std::cout << "Residual data on socket buffer without POLLIN. POLLIN triggered for next loop iteration." << std::endl;
 			return false;
 		}
 		closeClient("Server::sendData: Nothing to read and no request head.");
-		//selectStatusPage(400);
-		// return true;
 		return false;
 	}
+
+	if (_clientIt->state == recv_body)
+		return false;
 	return true;
 }
 
