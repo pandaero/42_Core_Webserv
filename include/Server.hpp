@@ -14,6 +14,7 @@ class	Server
 
 		void			whoIsI();
 		void			startListening(std::vector<pollfd>&);
+		void			acceptConnections();
 		void			handleConnections();
 
 	private:

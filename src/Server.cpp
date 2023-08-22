@@ -36,6 +36,7 @@ int Server::fd()
 
 void Server::addClient(int fd)
 {
+	ANNOUNCEME
 	// testing something here, weird things happen in the client destructor
 	// after calling this function. Clients with an assigned
 	{
@@ -43,6 +44,7 @@ void Server::addClient(int fd)
 		_clients.push_back(newClient);
 	}
 	_clients.back().fd = fd;
+	std::cout << "end of addClient" << std::endl;
 }
 
 Server::~Server()
@@ -118,6 +120,45 @@ void Server::startListening(std::vector<pollfd>& pollVector)
 	newPollStruct.revents = 0;
 	pollVector.push_back(newPollStruct);
 	_pollVector = &pollVector;
+}
+
+/*
+currently not checking for a size restriction. Revisit this during testing.
+prolly just returns from accept with -1. 
+if (pollVector.size() > 420)
+	{
+		std::cerr << I_CONNECTIONLIMIT << std::endl;
+		return;
+	}
+*/
+void Server::acceptConnections()
+{
+	ANNOUNCEME
+	
+	if (!(getPollStruct(_server_fd)->revents & POLLIN))
+		return;
+	while (true)
+	{
+		int new_sock = accept(_server_fd, NULL, NULL); // don't need client info, so pass NULL
+		if (new_sock == -1)
+		{
+			if (errno != EWOULDBLOCK)
+				std::cerr << E_ACCEPT << std::endl;
+			return;
+		}
+		int flags = fcntl(new_sock, F_GETFL, 0);
+		if (fcntl(new_sock, F_SETFL, flags | O_NONBLOCK) == -1)
+			closeAndThrow(new_sock);
+		addClient(new_sock);
+		
+		std::cout << "return to acceptConns after addClient" << std::endl;
+		pollfd new_pollStruct;
+		new_pollStruct.fd = new_sock;
+		new_pollStruct.events = POLLIN | POLLOUT | POLLHUP;
+		new_pollStruct.revents = 0;
+		_pollVector->push_back(new_pollStruct);
+		std::cout << "New client accepted for servlet_fd" << _server_fd << " on fd " << new_sock << "." << std::endl;
+	}
 }
 
 void Server::handleConnections()
@@ -556,6 +597,7 @@ void Server::closeClient(const char* msg)
 		++it;
 	if (it == _pollVector->end())
 		throw std::runtime_error("Server::closeClient: fd to close not found in pollVector");
+	std::cout << "closeClient: erasing pollStruct with fd " << it->fd << std::endl;
 	_pollVector->erase(it);
 	
 	// erase client and decrement _index to not skip the next client in the for loop
