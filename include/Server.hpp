@@ -37,6 +37,11 @@ class	Server
 		bool			cgiRequest();
 		void			doTheCGI();
 
+		// cookie
+		std::string		makeCookie(const std::string&, const std::string&, int, const std::string&);
+		std::string		generateSessionId();
+
+
 		// utils
 		void			applyHostConfig(const ServerConfig&);
 		std::string 	prependRoot(const std::string&);

@@ -35,8 +35,23 @@ void Client::parseRequest()
 		contentLength = atoi(headers["content-length"].c_str());
 	if (headers.find("content-type") != headers.end())
 		contentType = headers["content-type"];
+	
+	// manage cookies
 	if (headers.find("cookie") != headers.end())
 		cookies = parseStrMap(headers["cookie"], "=", ";", "Please parse me to the end!");
+	if (cookies.find(SESSIONID) != cookies.end())
+	{
+		sessionId = cookies[SESSIONID];
+		std::string logPath = "./site/logs/" + sessionId;
+		std::ofstream logFile(logPath, std::ios::app);
+		if (logFile.is_open())
+		{
+			logFile << 
+		}
+		else
+			std::cerr << "Could not open log file for session tracking." << std::endl;
+
+
 
 	std::cout << "cookies:" << std::endl;
 	if (!cookies.empty())

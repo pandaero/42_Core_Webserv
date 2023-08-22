@@ -32,6 +32,7 @@ class	Client
 		std::string		contentType;
 		strMap			cookies;
 		strMap			headers;
+		std::string		sessionId;
 		
 		// status vars
 		state_enum		state;

@@ -1,13 +1,14 @@
 #ifndef DEFINES_HPP
 # define DEFINES_HPP
 
-// Macros
+// general macros
 # define SERVERVERSION	"webserv v0.69"
 # define WHITESPACE		" \t\v\r\n"
 # define HTTPVERSION	"HTTP/1.1"
 # define NOTFOUND		"_____TARGETSTRINGNOTFOUND_____"
 # define ANNOUNCEME		std::cout << "Announcer: " << __FUNCTION__ << std::endl;
 # define ANNOUNCEME_FD	std::cout << "Announcer: " << __FUNCTION__ << " on fd " << _clientIt->fd << std::endl;
+# define SESSIONID		"sessionid"
 
 // ===== ===== ===== ===== Directories ===== ===== ===== =====
 # define SYS_ROOT	"./system"
@@ -95,8 +96,5 @@
 # define I_CONNECTIONLIMIT		"Info: Server: Connection limit reached."
 # define I_CLOSENODATA			"Info: Server: Connection closed (no data received)."
 # define I_REQUESTHEADERROR		"Info: Server: Connection closed by request head handler: "
-
-// Client
-# define E_REQUESTFILE			"Error: Client: outputfile"
 
 #endif
