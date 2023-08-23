@@ -18,7 +18,7 @@ class	Server
 	private:
 		// main handlers
 		bool			hangUp();
-		bool			receive(); //sdfsdfsdf
+		bool			receive();
 		bool			requestHead();
 		void			handleGet();
 		void			handlePost();
@@ -31,6 +31,7 @@ class	Server
 		void			updateClientPath();
 		void			selectStatusPage(int);
 		void			generateStatusPage(int);
+		void			generateCookieLogPage();
 		void			selectHostConfig();
 		bool			requestError();
 		void			closeClient(const char*);

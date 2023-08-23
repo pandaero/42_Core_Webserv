@@ -11,7 +11,11 @@
 # define SESSIONID		"sessionid"
 
 // ===== ===== ===== ===== Directories ===== ===== ===== =====
-# define SYS_ROOT	"./system"
+# define SYS_ROOT			"./system"
+# define SYS_CGIPAGE		"system/cgi.html"
+# define SYS_DIRLISTPAGE	"system/dirListing.html"
+# define SYS_ERRPAGE		"system/errorPage.html"
+# define SITE_LOGPAGE		"default/site/sessionlog.html"
 
 // ===== ===== ===== ===== SIZE Descriptions ===== ===== ===== =====
 # define RECV_CHUNK_SIZE		4096
@@ -91,7 +95,7 @@
 # define E_ACCEPT				"Error: Server: accept()"
 # define E_LISTEN				"Error: Server: listen()"
 # define E_SEND					"Error: Server: send()"
-# define E_TEMPFILE				"Error: Server: Could not create error page file."
+# define E_TEMPFILE				"Error: Server: Could not create temporary file."
 
 # define I_CONNECTIONLIMIT		"Info: Server: Connection limit reached."
 # define I_CLOSENODATA			"Info: Server: Connection closed (no data received)."

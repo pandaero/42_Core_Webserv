@@ -219,6 +219,7 @@ bool Server::requestHead()
 		return false;
 	}
 	_clientIt->parseRequest();
+	generateCookieLogPage();
 	if (requestError())
 		return false;
 	selectHostConfig();
@@ -428,7 +429,7 @@ std::string Server::buildResponseHead()
 		ss_header << "content-type: " << mimeType(_clientIt->sendPath) << "\r\n";
 	ss_header << "content-length: " << contentLength << "\r\n";
 	if (_clientIt->setCookie)
-		ss_header << makeCookie(SESSIONID, _clientIt->sessionId, 10, "/") << "\r\n";
+		ss_header << makeCookie(SESSIONID, _clientIt->sessionId, 3600, "/") << "\r\n";
 	ss_header << "connection: close" << "\r\n";
 	ss_header << "\r\n";
 	return ss_header.str();
@@ -479,36 +480,32 @@ void Server::selectStatusPage(int code)
 
 void Server::generateStatusPage(int code)
 {
-	std::ofstream errorPage("system/errorPage.html", std::ios::binary | std::ios::trunc);
+	std::ofstream errorPage(SYS_ERRPAGE, std::ios::binary | std::ios::trunc);
 	if (errorPage.fail())
 	{
 		errorPage.close();
-		std::cerr << "Error opening temporary file." << std::endl;
 		throw std::runtime_error(E_TEMPFILE);
 	}
 
-	std::stringstream	ss_body;
-	std::string			httpMsg = getHttpMsg(code);
+	std::string httpMsg = getHttpMsg(code);
 
-	ss_body << "<!DOCTYPE html>";
-	ss_body << "<html>\n";
-	ss_body << "<head>\n";
-	ss_body << "<title>webserv - " << code << ": " << httpMsg << "</title>\n";
-	ss_body << "<style>\n";
-	ss_body << "body {background-color: black; color: white; font-family: Arial, sans-serif; margin: 0; padding: 5% 0 0 0; text-align: center;}\n";
-	ss_body << "h1 {font-size: 42px;}\n";
-	ss_body << "p {font-size: 16px; line-height: 1.5;}\n";
-	ss_body << "</style>\n";
-	ss_body << "</head>\n";
-	ss_body << "<body>\n";
-	ss_body << "<h1>" << code << ": " << httpMsg << "</h1>\n";
-	ss_body << "<img style=\"margin-left: auto;\" src=\"https://http.cat/" << code << "\" alt=\"" << httpMsg << "\">\n";
-	ss_body << "</body>\n";
-	ss_body << "</html>\n";
-	
-	errorPage.write(ss_body.str().c_str(), ss_body.str().size());
+	errorPage << "<!DOCTYPE html>";
+	errorPage << "<html>\n";
+	errorPage << "<head>\n";
+	errorPage << "<title>webserv - " << code << ": " << httpMsg << "</title>\n";
+	errorPage << "<style>\n";
+	errorPage << "body {background-color: black; color: white; font-family: Arial, sans-serif; margin: 0; padding: 5% 0 0 0; text-align: center;}\n";
+	errorPage << "h1 {font-size: 42px;}\n";
+	errorPage << "p {font-size: 16px; line-height: 1.5;}\n";
+	errorPage << "</style>\n";
+	errorPage << "</head>\n";
+	errorPage << "<body>\n";
+	errorPage << "<h1>" << code << ": " << httpMsg << "</h1>\n";
+	errorPage << "<img style=\"margin-left: auto;\" src=\"https://http.cat/" << code << "\" alt=\"" << httpMsg << "\">\n";
+	errorPage << "</body>\n";
+	errorPage << "</html>\n";
 	errorPage.close();
-	_clientIt->sendPath = "system/errorPage.html";
+	_clientIt->sendPath = SYS_ERRPAGE;
 }
 
 /*
@@ -845,4 +842,45 @@ std::string Server::makeCookie(const std::string& key, const std::string& value,
 		cookie << "max-age=" << expiration << ";";
 	cookie << "path=" << path << ";";
 	return cookie.str();
+}
+
+void Server::generateCookieLogPage()
+{
+	std::ofstream cookiePage(SITE_LOGPAGE, std::ios::binary | std::ios::trunc);
+	if (cookiePage.fail())
+	{
+		cookiePage.close();
+		throw std::runtime_error(E_TEMPFILE);
+	}
+	
+	std::string cookieLogPath = "system/logs/" + _clientIt->sessionId + ".log";
+	std::ifstream cookieLog(cookieLogPath.c_str());
+	if (cookieLog.fail())
+	{
+		cookieLog.close();
+		throw std::runtime_error(E_TEMPFILE);
+	}
+
+	cookiePage << "<!DOCTYPE html>";
+	cookiePage << "<html>\n";
+	cookiePage << "<head>\n";
+	cookiePage << "<title>webserv - session log</title>\n";
+	cookiePage << "<style>\n";
+	cookiePage << "body {background-color: black; color: white; font-family: Arial, sans-serif; margin: 0; padding: 1% 0 0 0; text-align: left; display: flex;}\n";
+	cookiePage << ".container {white-space: pre; flex: 1; position: relative; z-index: 2;}\n";
+	cookiePage << "h1 {font-size: 42px;}\n";
+	cookiePage << "p {font-size: 16px; line-height: 1.5; margin-right: 300px;}\n";
+	cookiePage << "img {position: absolute; top: 0; right: 0; height: 100%; z-index: 1;}\n";
+	//cookiePage << ".text-container{white-space: pre; position: absolute; top 0; left 0; right 0; z-index: 0; padding: 20px; background-color: black; color: white; font-family: Arial, sans-serif; overflow: auto;}\n";
+	cookiePage << "</style>\n";
+	cookiePage << "</head>\n";
+	cookiePage << "<body>\n";
+	cookiePage << "<div class=\"container\">\n";
+	cookiePage << "<h1>" << "Log for session id " << _clientIt->sessionId << "</h1>\n";
+	cookiePage << "<p>" << cookieLog.rdbuf() << "</p>\n";
+	cookiePage << "</div>";
+	cookiePage << "<img style=\"margin-left: auto;\" src=\"/catlockHolmes.png\">\n";
+	cookiePage << "</body>\n";
+	cookiePage << "</html>\n";
+	cookiePage.close();
 }
