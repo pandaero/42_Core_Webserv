@@ -873,7 +873,6 @@ void Server::generateCookieLogPage()
 	cookiePage << "h1 {font-size: 42px;}\n";
 	cookiePage << "p {font-size: 16px; line-height: 1.5; margin-right: 300px;}\n";
 	cookiePage << "img {position: absolute; top: 0; right: 0; height: 100%; z-index: 1;}\n";
-	//cookiePage << ".text-container{white-space: pre; position: absolute; top 0; left 0; right 0; z-index: 0; padding: 20px; background-color: black; color: white; font-family: Arial, sans-serif; overflow: auto;}\n";
 	cookiePage << "</style>\n";
 	cookiePage << "</head>\n";
 	cookiePage << "<body>\n";

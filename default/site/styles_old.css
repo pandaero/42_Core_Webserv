@@ -1,0 +1,22 @@
+body
+{
+	font-family: Arial, sans-serif;
+	margin: 0;
+	padding: 0;
+}
+
+header
+{
+	background-color: #0e45ea;
+	color: #fff;
+	padding: 10px;
+	text-align: left;
+}
+
+.container
+{
+	max-width: 800px;
+	margin: 0 auto;
+	padding: 20px;
+	text-align: center;
+}

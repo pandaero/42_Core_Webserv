@@ -335,7 +335,12 @@ void generateDirListing(const std::string& directory)
 	if (dir)
 	{
 		while ((ent = readdir(dir)) != NULL)
-			dirListPage << "<li><a href=\"" << ent->d_name << "\">" << ent->d_name << "</a></li>";
+		{
+            if (ent->d_type == DT_DIR)
+				dirListPage << "<li><a href=\"" << ent->d_name << "/\">" << ent->d_name << "/</a></li>";
+			else
+				dirListPage << "<li><a href=\"" << ent->d_name << "\">" << ent->d_name << "</a></li>";
+		}
 		closedir(dir);
 	}
 
