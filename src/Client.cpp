@@ -75,7 +75,7 @@ void Client::handleCookieSession()
 	std::string logPath = "system/logs/" + sessionId + ".log";
 	std::ofstream logFile(logPath.c_str(), std::ios::app);
 	if (logFile.is_open())
-		logFile << currentTime() << ":\t\t" << method << "\t\t" << path << "\n";
+		logFile << currentTime() << " " << method << " " << path << "\n";
 	else
 		std::cerr << "Could not open log file for session tracking." << std::endl;
 }

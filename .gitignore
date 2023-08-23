@@ -14,4 +14,4 @@ test/url
 
 output.txt
 
-#system/logs
+system/logs/

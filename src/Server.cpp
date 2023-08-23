@@ -428,7 +428,7 @@ std::string Server::buildResponseHead()
 		ss_header << "content-type: " << mimeType(_clientIt->sendPath) << "\r\n";
 	ss_header << "content-length: " << contentLength << "\r\n";
 	if (_clientIt->setCookie)
-		ss_header << makeCookie(SESSIONID, _clientIt->sessionId, 3600, "/") << "\r\n";
+		ss_header << makeCookie(SESSIONID, _clientIt->sessionId, 10, "/") << "\r\n";
 	ss_header << "connection: close" << "\r\n";
 	ss_header << "\r\n";
 	return ss_header.str();

@@ -307,7 +307,7 @@ strMap parseStrMap(std::string& input, const std::string& endOfKey, const std::s
 std::string currentTime()
 {
 	time_t rawtime;
-	const char* timeformat = "%G-%m-%d %H:%M:%S";
+	const char* timeformat = "%G-%m-%d %H:%M.%S";
 	char timeoutput[69];
 
 	time(&rawtime);

@@ -44,7 +44,6 @@ class	Client
 		state_enum		state;
 		bool			append;
 		bool			setCookie;
-
 	
 	private:
 		void			parseHeaders();
