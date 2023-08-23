@@ -316,3 +316,29 @@ std::string currentTime()
 	std::string returnVal(timeoutput);
 	return returnVal;
 }
+
+void generateDirListing(const std::string& directory)
+{
+	DIR* dir;
+	struct dirent* ent;
+
+	std::ofstream dirListPage(SYS_DIRLISTPAGE);
+	if (dirListPage.fail())
+	{
+		dirListPage.close();
+		throw std::runtime_error(E_TEMPFILE);
+	}
+
+	dirListPage << "<html><body><h1>Directory Listing</h1><ul>";
+
+	dir = opendir(directory.c_str());
+	if (dir)
+	{
+		while ((ent = readdir(dir)) != NULL)
+			dirListPage << "<li><a href=\"" << ent->d_name << "\">" << ent->d_name << "</a></li>";
+		closedir(dir);
+	}
+
+	dirListPage << "</ul></body></html>";
+	dirListPage.close();
+}

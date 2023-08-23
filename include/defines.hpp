@@ -6,8 +6,8 @@
 # define WHITESPACE		" \t\v\r\n"
 # define HTTPVERSION	"HTTP/1.1"
 # define NOTFOUND		"_____TARGETSTRINGNOTFOUND_____"
-# define ANNOUNCEME		std::cout << "Announcer: " << __FUNCTION__ << std::endl;
-# define ANNOUNCEME_FD	std::cout << "Announcer: " << __FUNCTION__ << " on fd " << _clientIt->fd << std::endl;
+# define ANNOUNCEME		//std::cout << "Announcer: " << __FUNCTION__ << std::endl;
+# define ANNOUNCEME_FD	//std::cout << "Announcer: " << __FUNCTION__ << " on fd " << _clientIt->fd << std::endl;
 # define SESSIONID		"sessionid"
 
 // ===== ===== ===== ===== Directories ===== ===== ===== =====
