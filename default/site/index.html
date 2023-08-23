@@ -1,64 +1,73 @@
 <!DOCTYPE html>
 <html>
-	<head>
-		<title>Test Website for 42 Project: webserv</title>
-		<link rel="stylesheet" type="text/css" href="styles.css?v=2"/>
-	</head>
-	<body>
-		<header>
-			<h1>webserv testing</h1>
-		</header>
+<head>
+	<title>Test Website for 42 Project: webserv</title>
+	<link rel="stylesheet" type="text/css" href="styles.css?v=2"/>
+</head>
+<body>
+	<header>
+		<h1>webserv testing</h1>
+	</header>
 
-		<div class="container">
-			<h2>Shmismshmang</h2>
+	<div class="container">
+		<h2>Shmismshmang</h2>
 
-			<p>Test webserv functions by entering text and choosing an image to upload.</p>
+		<p>Test webserv functions by entering text and choosing an image to upload.</p>
 
-			<form enctype="multipart/form-data">
-				<label for="input">Enter some text:</label>
-				<input type="text" id="input" name="input">
-				<br>
-				<br>
-				<label for="image">Upload an image:</label>
-				<input type="file" id="image" name="image">
-				<br>
-				<br>
-				<button type="submit" onclick="submitForm(event)">Submit</button>
-				<br>
-				<br>
-			</form>
+		<label for="input">Enter some text:</label>
+		<input type="text" id="input" name="input">
+		<br>
+		<br>
+		<label for="image">Upload an image:</label>
+		<input type="file" id="image" name="image">
+		<br>
+		<br>
+		<button type="button" onclick="submitText()">Submit Text</button>
+		<button type="button" onclick="submitImage()">Submit Image</button>
+		<br>
+		<br>
+		<a href="/sessionLog.html">
+			<button type="button">Go to session log</button>
+		</a>
+		
+		<div id="output"></div>
+		<img class="header-img" src="cat.avif">
+	</div>
 
-			<div id="output"></div>
-			<img class="header-img" src="cat.avif">
-		</div>
+	<script>
+		const textEndpointUrl = '/api/text.txt';
+		const fileBaseEndpointUrl = '/api/';
 
-		<script>
-		function submitForm(event) {
-			event.preventDefault();
-			
-			// Get the value of the input field
+		function submitText() {
 			const input = document.getElementById('input').value;
+			sendData(input, textEndpointUrl);
+		}
 
-			// Get the selected image file
+		function submitImage() {
 			const fileInput = document.getElementById('image');
 			const file = fileInput.files[0];
-
-			// Create a FormData object to send the form data and file to the server
-			const formData = new FormData();
-			formData.append('input', input);
-			formData.append('image', file);
-
-			// Make an AJAX request to the server
-			const xhr = new XMLHttpRequest();
-			xhr.open('POST', '/api/test', true);
-			xhr.onload = function() {
-			if (this.status === 200) {
-				// Display the server's response in the output div
-				document.getElementById('output').innerHTML = this.responseText;
-			}
-			};
-			xhr.send(formData);
+			sendData(file, fileBaseEndpointUrl + encodeURIComponent(file.name));
 		}
-		</script>
-	</body>
+
+		function sendData(data, endpointUrl) {
+			const xhr = new XMLHttpRequest();
+			xhr.open('POST', endpointUrl, true);
+			xhr.onload = function() {
+				if (this.status === 200) {
+					document.getElementById('output').innerHTML = this.responseText;
+				}
+			};
+
+			if (data instanceof File) {
+				xhr.setRequestHeader('Content-Type', data.type);
+				xhr.setRequestHeader('X-File-Name', data.name);
+				xhr.send(data);
+			} else {
+				xhr.setRequestHeader('Content-Type', 'text/plain');
+				xhr.setRequestHeader('X-File-Name', 'text.txt');
+				xhr.send(data);
+			}
+		}
+	</script>
+</body>
 </html>

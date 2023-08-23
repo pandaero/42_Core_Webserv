@@ -78,25 +78,39 @@ void ServerConfig::applySettings(std::string userConfigStr)
 				std::cerr << I_INVALIDKEY << key << std::endl;
 		}
 	}
+	if (_configPairs.find(ROOT) != _configPairs.end())
+	{
+		if (*(_configPairs[ROOT].end() - 1) != '/')
+			std::cerr << I_NONDIRROOT << _configPairs[ROOT] << std::endl;
+	}
 }
 
 void ServerConfig::whoIsI()
 {
 	std::cout << "*****_configPairs*****\n";
-	for (strMap_it it = _configPairs.begin(); it != _configPairs.end(); it++)
-		std::cout << it->first << "\t\t" << it->second << std::endl;
-	
+	if (!_configPairs.empty())
+	{
+		for (strMap_it it = _configPairs.begin(); it != _configPairs.end(); it++)
+			std::cout << it->first << "\t\t" << it->second << '\n';
+	}
 	std::cout << "*****_errorPages*****\n";
-	for (intStrMap_it it = _errorPages.begin(); it != _errorPages.end(); it++)
-		std::cout << it->first << "\t\t" << it->second << std::endl;
-
-	std::cout << "*****_locations*****\n";
-	for (strLocMap_it it = _locations.begin(); it != _locations.end(); it++)
-		std::cout << it->first << "\t\t" << "methods: " << (it->second.get == true ? "get" : "") << (it->second.post == true ? " post" : "") << (it->second.delete_ == true ? " delete" : "") << ". alt_location: " << it->second.http_redir << ". dir_listing: " << it->second.dir_listing << std::endl;
-	
-	std::cout << "*****_cgiPaths*****\n";
-	for (strMap_it it = _cgiPaths.begin(); it != _cgiPaths.end(); it++)
-		std::cout << it->first << "\t\t" << it->second  << std::endl;
+	if (!_errorPages.empty())
+	{
+		for (intStrMap_it it = _errorPages.begin(); it != _errorPages.end(); it++)
+			std::cout << it->first << "\t\t" << it->second << '\n';
+	}
+	if (!_locations.empty())
+	{
+		std::cout << "*****_locations*****\n";
+		for (strLocMap_it it = _locations.begin(); it != _locations.end(); it++)
+			std::cout << it->first << "\t\t" << "methods: " << (it->second.get == true ? "get" : "") << (it->second.post == true ? " post" : "") << (it->second.delete_ == true ? " delete" : "") << ". alt_location: " << it->second.http_redir << ". dir_listing: " << it->second.dir_listing << '\n';
+	}
+	if (!_cgiPaths.empty())
+	{
+		std::cout << "*****_cgiPaths*****\n";
+		for (strMap_it it = _cgiPaths.begin(); it != _cgiPaths.end(); it++)
+			std::cout << it->first << "\t\t" << it->second  << std::endl;
+	}
 }
 
 strMap ServerConfig::getConfigPairs() const

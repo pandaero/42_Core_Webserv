@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<title>Test Website for 42 Project: webserv</title>
+		<link rel="stylesheet" type="text/css" href="styles.css?v=2"/>
+	</head>
+	<body>
+		<header>
+			<h1>webserv testing</h1>
+		</header>
+
+		<div class="container">
+			<h2>Shmismshmang</h2>
+
+			<p>Test webserv functions by entering text and choosing an image to upload.</p>
+
+			<form enctype="multipart/form-data">
+				<label for="input">Enter some text:</label>
+				<input type="text" id="input" name="input">
+				<br>
+				<br>
+				<label for="image">Upload an image:</label>
+				<input type="file" id="image" name="image">
+				<br>
+				<br>
+				<button type="submit" onclick="submitForm(event)">Submit</button>
+				<br>
+				<br>
+			</form>
+
+			<div id="output"></div>
+			<img class="header-img" src="cat.avif">
+		</div>
+
+		<script>
+		function submitForm(event) {
+			event.preventDefault();
+			
+			// Get the value of the input field
+			const input = document.getElementById('input').value;
+
+			// Get the selected image file
+			const fileInput = document.getElementById('image');
+			const file = fileInput.files[0];
+
+			// Create a FormData object to send the form data and file to the server
+			const formData = new FormData();
+			formData.append('input', input);
+			formData.append('image', file);
+
+			// Make an AJAX request to the server
+			const xhr = new XMLHttpRequest();
+			xhr.open('POST', '/api/test', true);
+			xhr.onload = function() {
+			if (this.status === 200) {
+				// Display the server's response in the output div
+				document.getElementById('output').innerHTML = this.responseText;
+			}
+			};
+			xhr.send(formData);
+		}
+		</script>
+	</body>
+</html>

@@ -9,38 +9,41 @@ class	Server
 		Server(const ServerConfig &);
 		~Server();
 		
-		void			applyHostConfig(const ServerConfig&);
 		int				fd();
-		void			addClient(int);
-
 		void			whoIsI();
 		void			startListening(std::vector<pollfd>&);
+		void			acceptConnections();
 		void			handleConnections();
 
 	private:
 		// main handlers
 		bool			hangUp();
-		bool			errorPending();
-		bool			receiveData();
+		bool			receive();
 		bool			requestHead();
-		bool			cgiRequest();
 		void			handleGet();
 		void			handlePost();
 		void			handleDelete();
 		bool			sendData();
-		void			sendResponseHead();
+		bool			responseHead();
 		void			sendResponseBody();
 		
 		std::string		buildResponseHead();
 		void			updateClientPath();
 		void			selectStatusPage(int);
 		void			generateStatusPage(int);
+		void			generateCookieLogPage();
 		void			selectHostConfig();
 		bool			requestError();
 		void			closeClient(const char*);
+		bool			cgiRequest();
 		void			doTheCGI();
 
+		// cookie
+		std::string		makeCookie(const std::string&, const std::string&, int, const std::string&);
+
+
 		// utils
+		void			applyHostConfig(const ServerConfig&);
 		std::string 	prependRoot(const std::string&);
 		pollfd*			getPollStruct(int);
 		std::string		mimeType(const std::string&);
@@ -50,11 +53,12 @@ class	Server
 		void			setHost(std::string);
 		void			setPort(std::string);
 		void			setClientMaxBody(std::string);
-		void			setMaxConnections(std::string);
+		void			setMaxConnections(std::string); //unused
 		void			setDefaultDirListing(std::string);
 
 		int								_server_fd;
 		std::vector<std::string>		_names;
+		std::string						_activeServerName;
 		std::vector<ServerConfig>		_configs;
 		std::string						_root;
 		std::string						_standardFile;

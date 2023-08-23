@@ -153,13 +153,6 @@ size_t	fileSize(const std::string& filePath)
 	return static_cast<size_t>(fileInfo.st_size);
 }
 
-bool stringInVec(const std::string& string, const strVec& vector)
-{
-	if (std::find(vector.begin(), vector.end(), string) != vector.end())
-		return true;
-	return false;
-}
-
 std::string getHttpMsg(int code)
 {
 	switch (code)
@@ -268,4 +261,58 @@ std::string	createDirList(const std::string & path)
 	dirListingFile << dirListingStream.rdbuf();
 	dirListingFile.close();
 	return ("./system/dirListing.html");
+}
+
+bool stringInVec(const std::string& string, const strVec& vector)
+{
+	if (std::find(vector.begin(), vector.end(), string) != vector.end())
+		return true;
+	return false;
+}
+
+std::string fileExtension(const std::string& filename)
+{
+	size_t dotPosition = filename.find_last_of(".");
+	if (dotPosition == std::string::npos)
+		return "";
+	return filename.substr(dotPosition);
+}
+
+void closeAndThrow(int fd)
+{
+	if (fd != -1)
+		close(fd);
+	throw std::runtime_error(errno == 0 ? "Unknown error." : strerror(errno));
+}
+
+strMap parseStrMap(std::string& input, const std::string& endOfKey, const std::string& endOfValue, const std::string& endOfMap)
+{
+	strMap 		stringMap;
+	std::string key, value;
+
+	while (!input.empty())
+	{
+		if (input.find(endOfMap) == 0)
+		{
+			input = input.substr(endOfMap.size());
+			return stringMap;
+		}
+		key = splitEraseStr(input, endOfKey);
+		value = splitEraseStr(input, endOfValue);
+		stringMap.insert(std::make_pair(strToLower(key), value));
+	}
+	return stringMap;
+}
+
+std::string currentTime()
+{
+	time_t rawtime;
+	const char* timeformat = "%G-%m-%d %H:%M:%S";
+	char timeoutput[69];
+
+	time(&rawtime);
+	tm* timeinfo = localtime(&rawtime);
+	strftime(timeoutput, 420, timeformat, timeinfo);
+	std::string returnVal(timeoutput);
+	return returnVal;
 }

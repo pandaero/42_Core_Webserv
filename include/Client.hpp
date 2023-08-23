@@ -3,12 +3,16 @@
 
 # include "webserv.hpp"
 
+/*
+This class only gets instantiated as a private member of the Server class.
+That's why it doesn't have traditional encapsulation.
+This would be the perfect place to use the friend keyword and make everything
+private, which is however not allowed.
+*/
 class	Client
 {
 	public:
 		Client();
-		Client(int);
-		~Client();
 
 		void			parseRequest();
 		void			whoIsI();
@@ -30,21 +34,22 @@ class	Client
 		std::string		path;
 		std::string		queryString;
 		std::string		host;
-		int				contentLength;
+		size_t			contentLength;
 		std::string		contentType;
+		strMap			cookies;
 		strMap			headers;
+		std::string		sessionId;
 		
-		// status bools
-		bool			errorPending;
-		bool			requestHeadComplete;
-		bool			requestBodyComplete;
-		bool			requestFinished;
-		bool			responseHeadSent;
+		// status vars
+		state_enum		state;
 		bool			append;
+		bool			setCookie;
 	
 	private:
-		void			initDefaults();
-		strMap			createHeaderMap(std::string&, std::string, std::string, std::string);
+		void			parseHeaders();
+		void			handleCookieSession();
+		std::string		generateSessionId();
+
 };
 
 #endif

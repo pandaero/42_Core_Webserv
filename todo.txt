@@ -1,8 +1,9 @@
 - fix dir listing
 - cgi
 
-- report single active hostname
-- remove CGI paths from config file
+- remove CGI paths from config file?
+- cookies
 
 testing:
 - check eval sheet questions
+- intra tester

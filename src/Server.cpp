@@ -34,44 +34,54 @@ int Server::fd()
 	return _server_fd;
 }
 
-void Server::addClient(int fd)
-{
-	_clients.push_back(Client(fd));
-}
-
 Server::~Server()
 {
-	std::cout << "Server destructor on listening fd " << _server_fd << "." << std::endl;
+	if (_server_fd != -1)
+	{
+		std::cout << "Server destructor on listening fd " << _server_fd << "." << std::endl;
+		close(_server_fd);
+	}
 	while (!_clients.empty())
 	{
 		_clientIt = _clients.begin();
 		closeClient("Server::~Server(): Server Object shutting down");
 	}
-	if (_server_fd != -1)
-		close(_server_fd);
 }
 
 void Server::whoIsI()
 {
-	std::cout	<< '\n'
-				<< "Name(s):\t" << *_names.begin() << '\n';
+	std::cout	<< '\n';
+				if (!_names.empty())
+				{
+					std::cout << "Name(s):\t" << *_names.begin() << '\n';
 					for (strVec_it it = ++_names.begin(); it != _names.end(); ++it)
 						std::cout << "\t\t" << *it << '\n';
+				}
 	std::cout	<< "Host:\t\t" << inet_ntoa(_serverAddress.sin_addr) << '\n'
 				<< "Port:\t\t" << ntohs(_serverAddress.sin_port) << '\n'
 				<< "Root:\t\t" << _root << '\n'
 				<< "Dflt. dir_list:\t" << (_defaultDirListing ? "yes" : "no") << '\n'
 				<< "Cl. max body:\t" << _clientMaxBody << '\n'
 				<< "Max Conns:\t" << _maxConns << '\n'
-				<< "Error Pages:\t" << _errorPagesPaths.begin()->first << '\t' << _errorPagesPaths.begin()->second << '\n';
+				<< "standardfile:\t" << _standardFile << '\n';
+				if (!_errorPagesPaths.empty())
+				{
+					std::cout << "Error Pages:\t" << _errorPagesPaths.begin()->first << '\t' << _errorPagesPaths.begin()->second << '\n';
 					for (intStrMap_it it = ++_errorPagesPaths.begin(); it != _errorPagesPaths.end(); it++)
 						std::cout << "\t\t" << it->first << '\t' << it->second << std::endl;
-	std::cout	<< "Known loctns:\t" << _locations.begin()->first << '\n';
+				}
+				if (!_locations.empty())
+				{
+					std::cout	<< "Known loctns:\t" << _locations.begin()->first << '\n';
 					for (strLocMap_it it = ++_locations.begin(); it != _locations.end(); it++)
 						std::cout << "\t\t" << it->first << '\n';
-	std::cout	<< "CGI Paths:\t" << _cgiPaths.begin()->first << '\t' << _cgiPaths.begin()->second << '\n';
+				}
+				if (!_cgiPaths.empty())
+				{
+					std::cout	<< "CGI Paths:\t" << _cgiPaths.begin()->first << '\t' << _cgiPaths.begin()->second << '\n';
 					for (strMap_it it = ++_cgiPaths.begin(); it != _cgiPaths.end(); it++)
 						std::cout << "\t\t" << it->first << '\t' << it->second << std::endl;
+				}
 }
 
 void Server::startListening(std::vector<pollfd>& pollVector)
@@ -82,26 +92,61 @@ void Server::startListening(std::vector<pollfd>& pollVector)
 	
 	_server_fd = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP);
 	if (_server_fd == -1)
-		throw std::runtime_error(E_SOCKET);
+		closeAndThrow(_server_fd);
 	if (setsockopt(_server_fd, SOL_SOCKET, SO_REUSEADDR, (char*)&options, sizeof(options)) == -1)
-		throw std::runtime_error(E_SOCKOPT);
+		closeAndThrow(_server_fd);;
 	if (fcntl(_server_fd, F_SETFL, O_NONBLOCK) == -1)
-		throw std::runtime_error(E_FCNTL);
+		closeAndThrow(_server_fd);
 	if (bind(_server_fd, (struct sockaddr*) &_serverAddress, sizeof(_serverAddress)) == -1)
-	{
-		close(_server_fd);
-		throw std::runtime_error(E_BIND);
-	}
+		closeAndThrow(_server_fd);
 	if (listen(_server_fd, SOMAXCONN) == -1)
-	{
-		close(_server_fd);
-		throw std::runtime_error(E_LISTEN);
-	}
+		closeAndThrow(_server_fd);
+	
 	newPollStruct.fd = _server_fd;
 	newPollStruct.events = POLLIN;
 	newPollStruct.revents = 0;
 	pollVector.push_back(newPollStruct);
 	_pollVector = &pollVector;
+}
+
+/*
+currently not checking for a size restriction. Revisit this during testing.
+prolly just returns from accept with -1. 
+if (pollVector.size() > 420)
+	{
+		std::cerr << I_CONNECTIONLIMIT << std::endl;
+		return;
+	}
+*/
+void Server::acceptConnections()
+{
+	ANNOUNCEME
+	
+	if (!(getPollStruct(_server_fd)->revents & POLLIN))
+		return;
+	while (true)
+	{
+		int new_sock = accept(_server_fd, NULL, NULL); // don't need client info, so pass NULL
+		if (new_sock == -1)
+		{
+			if (errno != EWOULDBLOCK)
+				std::cerr << E_ACCEPT << std::endl;
+			return;
+		}
+		int flags = fcntl(new_sock, F_GETFL, 0);
+		if (fcntl(new_sock, F_SETFL, flags | O_NONBLOCK) == -1)
+			closeAndThrow(new_sock);
+		
+		Client newClient;
+		newClient.fd = new_sock;
+		_clients.push_back(newClient);
+
+		pollfd new_pollStruct;
+		new_pollStruct.fd = new_sock;
+		new_pollStruct.events = POLLIN | POLLOUT | POLLHUP;
+		new_pollStruct.revents = 0;
+		_pollVector->push_back(new_pollStruct);
+	}
 }
 
 void Server::handleConnections()
@@ -116,24 +161,17 @@ void Server::handleConnections()
 		{
 			if (hangUp())
 				continue;
-			if (errorPending())
-				continue;
-			if (receiveData() && requestHead())
+			if (requestHead())
 			{
-				if (cgiRequest())
-					doTheCGI();
-				else if (_clientIt->method == GET)
+				if (_clientIt->method == GET)
 					handleGet();
 				else if (_clientIt->method == POST)
 					handlePost();
 				else if (_clientIt->method == DELETE)
 					handleDelete();
 			}
-			if (sendData())
-			{
-				sendResponseHead();
+			if (sendData() && responseHead())
 				sendResponseBody();
-			}
 		}
 		catch (const std::exception& e)
 		{
@@ -152,34 +190,16 @@ bool Server::hangUp()
 	return false;
 }
 
-bool Server::errorPending()
-{
-	if (!_clientIt->errorPending)
-		return false;
-	ANNOUNCEME_FD
-	if (_pollStruct->revents & POLLOUT)
-	{
-		sendResponseHead();
-		sendResponseBody();
-	}
-	return true;
-}
-
-bool Server::receiveData()
+bool Server::receive()
 {
 	if (!(_pollStruct->revents & POLLIN))
 		return false;
 	ANNOUNCEME_FD
-	if (_clientIt->requestBodyComplete)
-	{
-		std::cout << "receiveData returning because reqeustbodyComplete" << std::endl;
-		return true;
-	}
 	char buffer[RECV_CHUNK_SIZE];
 	int bytesReceived = recv(_clientIt->fd, buffer, RECV_CHUNK_SIZE, 0);
 	if (bytesReceived <= 0)
 	{
-		closeClient("Server::receiveData: 0 bytes received");
+		closeClient("Server::receiveData: 0 bytes received or error");
 		throw std::runtime_error(I_CLOSENODATA);
 	}
 	_clientIt->buffer.append(buffer, bytesReceived);
@@ -188,15 +208,18 @@ bool Server::receiveData()
 
 bool Server::requestHead()
 {
-	if (_clientIt->requestHeadComplete)
+	if (_clientIt->state > recv_head) // done receiving request head
 		return true;
 	ANNOUNCEME_FD
+	if (!receive())
+		return false;
 	if (_clientIt->buffer.find("\r\n\r\n") == std::string::npos)
 	{
 		selectStatusPage(431);
 		return false;
 	}
 	_clientIt->parseRequest();
+	generateCookieLogPage();
 	if (requestError())
 		return false;
 	selectHostConfig();
@@ -205,22 +228,15 @@ bool Server::requestHead()
 	return true;
 }
 
-bool Server::cgiRequest()
-{
-	size_t dotPosition = _clientIt->filename.find_last_of(".");
-	if (dotPosition == std::string::npos)
-		return false;
-	std::string extension = _clientIt->filename.substr(dotPosition);
-	if (extension == ".py" || extension == ".php")
-	{
-		_cgiExtension = extension;
-		return true;
-	}
-	return false;
-}
-
 void Server::handleGet()
 {
+	if (_clientIt->state > handleRequest)
+		return;
+	if (cgiRequest())
+	{
+		doTheCGI();
+		return;
+	}
 	if (isDirectory(_clientIt->path))
 	{
 		if (resourceExists(_clientIt->path + _clientIt->standardFile))
@@ -246,18 +262,21 @@ void Server::handleGet()
 		else
 			selectStatusPage(404);
 	}
-	_clientIt->requestFinished = true;
+	_clientIt-> state = send_head;
 }
 
 void Server::handlePost()
 {
-	if (_clientIt->requestBodyComplete)
+	if (_clientIt->state > handleRequest)
 		return;
+	ANNOUNCEME_FD
 	if (!resourceExists(_clientIt->directory))
 	{
 		selectStatusPage(500);
 		return;		
 	}
+	if (_clientIt->state == recv_body)
+		receive();
 	std::ofstream outputFile;
 	if (_clientIt->append)
 		outputFile.open(_clientIt->path.c_str(), std::ios::binary | std::ios::app);
@@ -271,19 +290,30 @@ void Server::handlePost()
 		selectStatusPage(500);
 		return;		
 	}
+	std::cout << "before writing test. bytesWritten:" << _clientIt->bytesWritten << std::endl;
 	outputFile.write(_clientIt->buffer.c_str(), _clientIt->buffer.size());
 	_clientIt->bytesWritten += _clientIt->buffer.size();
+	_clientIt->buffer.clear();
 	outputFile.close();
-	if (_clientIt->bytesWritten >= (size_t)_clientIt->contentLength)
+	std::cout << "before bytesWritten test. bytesWritten:" << _clientIt->bytesWritten << std::endl;
+
+	if (_clientIt->bytesWritten >= _clientIt->contentLength)
 	{
-		_clientIt->requestBodyComplete = true;
-		_clientIt->requestFinished = true;
-		_clientIt->statusCode = 201;
+		std::cout << "bytesWritten >= size evald positive!" << std::endl;
+		if (cgiRequest())
+			doTheCGI();
+		else
+		{
+			_clientIt->statusCode = 201;
+			_clientIt->state = send_head;
+		}
 	}
 }
 
 void Server::handleDelete()
 {
+	if (_clientIt->state > handleRequest)
+		return;
 	if (isDirectory(_clientIt->path)) // deleting directories not allowed
 	{
 		selectStatusPage(405);
@@ -297,7 +327,7 @@ void Server::handleDelete()
 	if (remove(_clientIt->path.c_str()) == 0)
 	{
 		_clientIt->statusCode = 204;
-		_clientIt->requestFinished = true;
+		_clientIt->state = send_head;
 	}
 	else
 		selectStatusPage(500);
@@ -307,20 +337,35 @@ bool Server::sendData()
 {
 	if (!(_pollStruct->revents & POLLOUT))
 		return false;
-	if (!_clientIt->requestHeadComplete)
+	
+	// situation where no data was read from the socket, but POLLOUT is active
+	// and no further data is being sent. Would cause and endless loop.
+	// on mac: there actually is data in the socket buffer, but POLLIN is not triggered
+	// recv call without reading triggers POLLIN for the next run of the loop.
+	// on WSL2 Ubuntu this also happens, but there is no data to be read (recv returns -1). Just close client.
+	// No idea what causes this, researched it extensively.
+	// Seems to occur when one client opens 2 connections at once. There is no evidence in the network tab
+	// of the client of these weird requests. 
+	if (_clientIt->state == recv_head)
 	{
-		closeClient("Server::handleConnections: POLLOUT but no request Head");
+		if (recv(_clientIt->fd, NULL, 0, MSG_PEEK) == 0)
+		{
+			std::cout << "Residual data on socket buffer without POLLIN. POLLIN triggered for next loop iteration." << std::endl;
+			return false;
+		}
+		closeClient("Server::sendData: Nothing to read and no request head.");
 		return false;
 	}
-	if (!_clientIt->requestFinished)
+
+	if (_clientIt->state == recv_body)
 		return false;
 	return true;
 }
 
-void Server::sendResponseHead()
+bool Server::responseHead()
 {
-	if (_clientIt->responseHeadSent)
-		return;
+	if (_clientIt->state > send_head)
+		return true;
 	ANNOUNCEME_FD
 
 	std::string header = buildResponseHead();
@@ -330,12 +375,13 @@ void Server::sendResponseHead()
 		throw std::runtime_error(E_SEND);
 	}
 	std::cout << "responseHead sent to fd: " << _clientIt->fd << "\n" << header << std::endl;
-	_clientIt->responseHeadSent = true;
+	_clientIt->state = send_body;
+	return false;
 }
 
 void Server::sendResponseBody()
 {
-	if (!_clientIt->responseHeadSent)
+	if (_clientIt->state < send_body)
 		return;
 	ANNOUNCEME_FD
 	std::cout << "sendPath:'" << _clientIt->sendPath << "'" << std::endl;
@@ -352,7 +398,6 @@ void Server::sendResponseBody()
 		closeClient("Server::sendResponseBody: ifstream failure.");
 		throw std::runtime_error("sendResponseBody: Could not open file to send. Client closed.");
 	}
-	
 	char buffer[SEND_CHUNK_SIZE];
 	fileStream.seekg(_clientIt->filePosition);
 	fileStream.read(buffer, SEND_CHUNK_SIZE);
@@ -383,6 +428,8 @@ std::string Server::buildResponseHead()
 	if (contentLength != 0)
 		ss_header << "content-type: " << mimeType(_clientIt->sendPath) << "\r\n";
 	ss_header << "content-length: " << contentLength << "\r\n";
+	if (_clientIt->setCookie)
+		ss_header << makeCookie(SESSIONID, _clientIt->sessionId, 3600, "/") << "\r\n";
 	ss_header << "connection: close" << "\r\n";
 	ss_header << "\r\n";
 	return ss_header.str();
@@ -390,26 +437,34 @@ std::string Server::buildResponseHead()
 
 void Server::updateClientPath()
 {
+	// set dir listing
 	_clientIt->dirListing = dirListing(_clientIt->directory);
+	
+	// select the file to try to serve in case of directory
 	_clientIt->standardFile = _locations[_clientIt->directory].std_file;
 	if (_clientIt->standardFile.empty())
 		_clientIt->standardFile = _standardFile;
+	
+	// check for HTTP redirection
 	std::string	http_redir = _locations[_clientIt->directory].http_redir;
 	if (!http_redir.empty())
 		_clientIt->directory = http_redir;
-	if (_clientIt->method == POST)
+	
+	// check for upload redirection
+	if (_clientIt->method == POST && !_locations[_clientIt->directory].upload_dir.empty())
 		_clientIt->directory = _locations[_clientIt->directory].upload_dir;
+	
+	// prepend the server root if path begins with /
 	_clientIt->directory = prependRoot(_clientIt->directory);
+
+	// build the new request path
 	_clientIt->path = _clientIt->directory + _clientIt->filename;
 }
 
 void Server::selectStatusPage(int code)
 {
-	_clientIt->requestHeadComplete = true;
-	_clientIt->requestBodyComplete = true;
-	_clientIt->requestFinished = true;
-	_clientIt->errorPending = true;
 	_clientIt->statusCode = code;
+	_clientIt->state = send_head;
 
 	if (_errorPagesPaths.find(code) == _errorPagesPaths.end())
 	{
@@ -425,56 +480,60 @@ void Server::selectStatusPage(int code)
 
 void Server::generateStatusPage(int code)
 {
-	std::ofstream errorPage("system/errorPage.html", std::ios::binary | std::ios::trunc);
+	std::ofstream errorPage(SYS_ERRPAGE, std::ios::binary | std::ios::trunc);
 	if (errorPage.fail())
 	{
 		errorPage.close();
-		std::cerr << "Error opening temporary file." << std::endl;
 		throw std::runtime_error(E_TEMPFILE);
 	}
 
-	std::stringstream	ss_body;
-	std::string			httpMsg = getHttpMsg(code);
+	std::string httpMsg = getHttpMsg(code);
 
-	ss_body << "<!DOCTYPE html>";
-	ss_body << "<html>\n";
-	ss_body << "<head>\n";
-	ss_body << "<title>webserv - " << code << ": " << httpMsg << "</title>\n";
-	ss_body << "<style>\n";
-	ss_body << "body {background-color: black; color: white; font-family: Arial, sans-serif; margin: 0; padding: 5% 0 0 0; text-align: center;}\n";
-	ss_body << "h1 {font-size: 42px;}\n";
-	ss_body << "p {font-size: 16px; line-height: 1.5;}\n";
-	ss_body << "</style>\n";
-	ss_body << "</head>\n";
-	ss_body << "<body>\n";
-	ss_body << "<h1>" << code << ": " << httpMsg << "</h1>\n";
-	ss_body << "<img style=\"margin-left: auto;\" src=\"https://http.cat/" << code << "\" alt=\"" << httpMsg << "\">\n";
-	ss_body << "</body>\n";
-	ss_body << "</html>\n";
-	
-	errorPage.write(ss_body.str().c_str(), ss_body.str().size());
+	errorPage << "<!DOCTYPE html>";
+	errorPage << "<html>\n";
+	errorPage << "<head>\n";
+	errorPage << "<title>webserv - " << code << ": " << httpMsg << "</title>\n";
+	errorPage << "<style>\n";
+	errorPage << "body {background-color: black; color: white; font-family: Arial, sans-serif; margin: 0; padding: 5% 0 0 0; text-align: center;}\n";
+	errorPage << "h1 {font-size: 42px;}\n";
+	errorPage << "p {font-size: 16px; line-height: 1.5;}\n";
+	errorPage << "</style>\n";
+	errorPage << "</head>\n";
+	errorPage << "<body>\n";
+	errorPage << "<h1>" << code << ": " << httpMsg << "</h1>\n";
+	errorPage << "<img style=\"margin-left: auto;\" src=\"https://http.cat/" << code << "\" alt=\"" << httpMsg << "\">\n";
+	errorPage << "</body>\n";
+	errorPage << "</html>\n";
 	errorPage.close();
-	_clientIt->sendPath = "system/errorPage.html";
+	_clientIt->sendPath = SYS_ERRPAGE;
 }
 
+/*
+A better way to handle this would be to not write the data from the ServerConfig to
+the Server object, but to just point to the currently active ServerConfig and call
+its getters.
+*/
 void Server::selectHostConfig()
 {
 	if (_clientIt->host.empty())
 	{
 		applyHostConfig(_configs[0]);
+		_activeServerName = _configs[0].getNames()[0];
 		return;
 	}
 	for (size_t i = 0; i < _configs.size(); ++i)
 	{
 		if (stringInVec(_clientIt->host, _configs[i].getNames()))
 		{
-			applyHostConfig(_configs[i]);
 			std::cout << "Hostname '" << _clientIt->host << "' found in ServerConfig #" << i << std::endl;
+			applyHostConfig(_configs[i]);
+			_activeServerName = _clientIt->host;
 			return;
 		}
 	}
 	std::cout << "Hostname '" << _clientIt->host << "' not found. Running default ServerConfig." << std::endl;
 	applyHostConfig(_configs[0]);
+	_activeServerName = _configs[0].getNames()[0];
 }
 
 bool Server::requestError()
@@ -490,7 +549,7 @@ bool Server::requestError()
 		return (selectStatusPage(501), true);
 	
 	// body size too large
-	if (_clientIt->contentLength > (int)_clientMaxBody)
+	if (_clientIt->contentLength > _clientMaxBody)
 		return (selectStatusPage(413), true);
 	else
 	{
@@ -501,7 +560,7 @@ bool Server::requestError()
 			return (selectStatusPage(404), true); // returning 404, not 403, to not leak file structure
 	
 		// access granted, but not for the requested method
-		else if ((_clientIt->method == GET && !locIt->second.get)
+		if ((_clientIt->method == GET && !locIt->second.get)
 			|| (_clientIt->method == POST && !locIt->second.post)
 			|| (_clientIt->method == DELETE && !locIt->second.delete_))
 			return (selectStatusPage(405), true);
@@ -521,11 +580,23 @@ void Server::closeClient(const char* msg)
 		++it;
 	if (it == _pollVector->end())
 		throw std::runtime_error("Server::closeClient: fd to close not found in pollVector");
+	std::cout << "closeClient: erasing pollStruct with fd " << it->fd << std::endl;
 	_pollVector->erase(it);
 	
 	// erase client and decrement _index to not skip the next client in the for loop
 	_clients.erase(_clientIt);
 	--_index;
+}
+
+bool Server::cgiRequest()
+{
+	std::string extension = fileExtension(_clientIt->filename);
+	if (extension == ".py" || extension == ".php")
+	{
+		_cgiExtension = extension;
+		return true;
+	}
+	return false;
 }
 
 void	Server::doTheCGI()
@@ -562,7 +633,7 @@ void	Server::doTheCGI()
 		tmpVar = "SERVER_SOFTWARE=webservInC++98BabyLetsGo/4.2";
 		tmpEnv.push_back(tmpVar);
 		//server's hostname or IP address
-		tmpVar = "SERVER_NAME=" + _names[0];//🍏
+		tmpVar = "SERVER_NAME=" + _activeServerName;
 		tmpEnv.push_back(tmpVar);
 		tmpVar = "GATEWAY_INTERFACE=CGI/1.2";
 		tmpEnv.push_back(tmpVar);
@@ -571,8 +642,13 @@ void	Server::doTheCGI()
 		tmpVar = "SERVER_PROTOCOL=HTTP/1.1";
 		tmpEnv.push_back(tmpVar);
 		//port number to which request was sent
-		tmpVar = "SERVER_PORT=8080";//ntohs(_serverAddress.sin_port);
-		tmpEnv.push_back(tmpVar);
+		
+		//tmpVar = "SERVER_PORT=" + ntohs(_serverAddress.sin_port);
+		std::stringstream tempStream;
+		tempStream << "SERVER_PORT=";
+		tempStream << ntohs(_serverAddress.sin_port);
+		tmpEnv.push_back(tempStream.str());
+		
 		tmpVar = "REQUEST_METHOD=" + _clientIt->method;
 		tmpEnv.push_back(tmpVar);
 		tmpVar = "PATH_INFO=" + pathToScript;
@@ -583,8 +659,13 @@ void	Server::doTheCGI()
 		tmpEnv.push_back(tmpVar);
 		tmpVar = "CONTENT_TYPE=" + _clientIt->contentType;
 		tmpEnv.push_back(tmpVar);
-		tmpVar = "CONTENT_LENGTH=10000000";//_clientIt->contentLength; //maybe cast is needed
-		tmpEnv.push_back(tmpVar);
+		
+		//tmpVar = "CONTENT_LENGTH=" + _clientIt->contentLength; //maybe cast is needed
+		tempStream.clear();
+		tempStream << "CONTENT_LENGTH=";
+		tempStream << _clientIt->contentLength;
+		tmpEnv.push_back(tempStream.str());
+		
 		tmpVar = "REDIRECT_STATUS=CGI";
 		tmpEnv.push_back(tmpVar);
 		tmpVar = "POST_BODY=" + _clientIt->path; //to improve when you know how POST and body work
@@ -641,7 +722,9 @@ void	Server::doTheCGI()
 		_clientIt->statusCode = 200;
 		_clientIt->sendPath = "system/cgi.html";
 		close(pipeFd[0]);
-		
+		_clientIt->statusCode = 200;
+		//_clientIt->requestFinished = true;
+		_clientIt->sendPath = "system/cgi.html";
 		// std::cout << "Child process exited with status: " << WEXITSTATUS(status) << std::endl;
 	}
 }
@@ -677,6 +760,8 @@ std::string	Server::mimeType(const std::string& filepath)
 	if (dotPosition == std::string::npos)
 		return defaultType;
 	extension = filepath.substr(dotPosition);
+
+	extension = fileExtension(filepath);
 	it = _mimeTypes->find(extension);
 	if (it != _mimeTypes->end())
 		return it->second;
@@ -745,4 +830,55 @@ void Server::setDefaultDirListing(std::string input)
 		_defaultDirListing = true;
 	else
 		_defaultDirListing = false;
+}
+
+std::string Server::makeCookie(const std::string& key, const std::string& value, int expiration, const std::string& path)
+{
+	std::stringstream cookie;
+	cookie << "set-cookie: " << key << "=" << value << ";";
+	if (expiration >= 0)
+		cookie << "max-age=" << expiration << ";";
+	cookie << "path=" << path << ";";
+	return cookie.str();
+}
+
+void Server::generateCookieLogPage()
+{
+	std::ofstream cookiePage(SITE_LOGPAGE, std::ios::binary | std::ios::trunc);
+	if (cookiePage.fail())
+	{
+		cookiePage.close();
+		throw std::runtime_error(E_TEMPFILE);
+	}
+	
+	std::string cookieLogPath = "system/logs/" + _clientIt->sessionId + ".log";
+	std::ifstream cookieLog(cookieLogPath.c_str());
+	if (cookieLog.fail())
+	{
+		cookieLog.close();
+		throw std::runtime_error(E_TEMPFILE);
+	}
+
+	cookiePage << "<!DOCTYPE html>";
+	cookiePage << "<html>\n";
+	cookiePage << "<head>\n";
+	cookiePage << "<title>webserv - session log</title>\n";
+	cookiePage << "<style>\n";
+	cookiePage << "body {background-color: black; color: white; font-family: Arial, sans-serif; margin: 0; padding: 1% 0 0 0; text-align: left; display: flex;}\n";
+	cookiePage << ".container {white-space: pre; flex: 1; position: relative; z-index: 2;}\n";
+	cookiePage << "h1 {font-size: 42px;}\n";
+	cookiePage << "p {font-size: 16px; line-height: 1.5; margin-right: 300px;}\n";
+	cookiePage << "img {position: absolute; top: 0; right: 0; height: 100%; z-index: 1;}\n";
+	//cookiePage << ".text-container{white-space: pre; position: absolute; top 0; left 0; right 0; z-index: 0; padding: 20px; background-color: black; color: white; font-family: Arial, sans-serif; overflow: auto;}\n";
+	cookiePage << "</style>\n";
+	cookiePage << "</head>\n";
+	cookiePage << "<body>\n";
+	cookiePage << "<div class=\"container\">\n";
+	cookiePage << "<h1>" << "Log for session id " << _clientIt->sessionId << "</h1>\n";
+	cookiePage << "<p>" << cookieLog.rdbuf() << "</p>\n";
+	cookiePage << "</div>";
+	cookiePage << "<img style=\"margin-left: auto;\" src=\"/catlockHolmes.png\">\n";
+	cookiePage << "</body>\n";
+	cookiePage << "</html>\n";
+	cookiePage.close();
 }

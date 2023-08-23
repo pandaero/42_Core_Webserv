@@ -18,6 +18,16 @@ typedef struct
 	std::string		std_file;
 }	s_locInfo;
 
+typedef enum
+{
+	recv_head,
+	recv_body,
+	handleRequest,
+	send_head,
+	send_body,
+	rdyToClose
+}	state_enum;
+
 typedef std::map<std::string, std::string> 				strMap;
 typedef std::map<std::string, std::string>::iterator	strMap_it;
 typedef std::vector<std::string>						strVec;

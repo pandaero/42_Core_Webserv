@@ -25,6 +25,7 @@
 # include <sys/poll.h>
 # include <sys/socket.h>
 # include <sys/stat.h>
+# include <sys/wait.h>
 # include <unistd.h>
 # include <dirent.h>
 
@@ -70,5 +71,13 @@ std::string		getHttpMsg(int);
 std::string		createDirList(const std::string &);
 // Checks whether a string is present in a string vector.
 bool			stringInVec(const std::string&, const strVec&);
+// From the passed string, returns the last '.' and the characters behind it, e.g. ".html".
+std::string		fileExtension(const std::string&);
+// Throws a runtime error with the message contained in errnum and closes the passed fd if it is not -1.
+void			closeAndThrow(int);
+// Operates on a string ref that represents a string map. 1st arg is the string to be parsed. 2nd is end of key, 3rd is end of value, 4th is end of region to parse in 1st arg.
+strMap			parseStrMap(std::string&, const std::string&, const std::string&, const std::string&);
+// Returns the current time in a pleasant format without using modern CPP.
+std::string 	currentTime();
 
 #endif
