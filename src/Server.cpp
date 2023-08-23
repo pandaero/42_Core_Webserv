@@ -1,4 +1,5 @@
 #include "../include/Server.hpp"
+#include <errno.h>
 
 Server::Server(const ServerConfig& config)
 {	
@@ -601,13 +602,19 @@ bool Server::cgiRequest()
 
 void	Server::doTheCGI()
 {
-	std::string	pathToScript = "/cgi-bin/" + _clientIt->filename;
+	std::ofstream	alilog("alilog.txt");
+	alilog << "I got here!\n";
+
+	std::string	pathToScript = "cgi-bin/" + _clientIt->filename;
 	std::string pathToExec;
+	alilog << "pathToScript: " << pathToScript << "\n";
+	alilog << "_cgiExtension: " << _cgiExtension << "\n";
 
 	if (_cgiExtension == ".py") 
-		std::string pathToExec = "/usr/bin/python3"; // find path to python3
+		pathToExec = "/usr/bin/python3"; // find path to python3
 	else if (_cgiExtension == ".php")
-		std::string pathToExec = "/Users/apielasz/Documents/projects_git/webserv/default/cgi/php-8.2.5_MacOS-10.15";
+		pathToExec = "default/cgi/php-8.2.5_MacOS-10.15";
+	alilog << "pathToExec: " << pathToExec << "\n";
 
 	int		pipeFd[2];
 
@@ -620,6 +627,7 @@ void	Server::doTheCGI()
 		selectStatusPage(500);
 
 	if (pid == 0) {
+		alilog << "made it to child process\n";
 		close(pipeFd[0]);
 		if (dup2(pipeFd[1], STDOUT_FILENO) == -1)
             selectStatusPage(500);
@@ -657,10 +665,12 @@ void	Server::doTheCGI()
 		tmpEnv.push_back(tmpVar);
 		tmpVar = "QUERY_STRING=" + _clientIt->queryString;
 		tmpEnv.push_back(tmpVar);
+		alilog << "_clientIt->contentType: " << _clientIt->contentType << "\n";
 		tmpVar = "CONTENT_TYPE=" + _clientIt->contentType;
 		tmpEnv.push_back(tmpVar);
 		
 		//tmpVar = "CONTENT_LENGTH=" + _clientIt->contentLength; //maybe cast is needed
+		tempStream.str("");
 		tempStream.clear();
 		tempStream << "CONTENT_LENGTH=";
 		tempStream << _clientIt->contentLength;
@@ -672,12 +682,15 @@ void	Server::doTheCGI()
 		tmpEnv.push_back(tmpVar);
 
 	//putting vector into char **
+		alilog << "the final env:\n";
 		int	i = 0;
 		for (std::vector<std::string>::iterator it = tmpEnv.begin(); it != tmpEnv.end(); ++it) {
 			_env[i] = const_cast<char *>((*it).c_str());
+			alilog << _env[i] << "\n";
 			i++;
 		}
 		_env[i] = NULL;
+
 
 //creating argv for execve
 		const char	*argv[3];
@@ -686,8 +699,11 @@ void	Server::doTheCGI()
 		argv[2] = NULL;
 		execve(argv[0], const_cast<char *const *>(argv), _env);
 		selectStatusPage(500);
+		alilog << "execve went wrong oops\n";
+		alilog << errno;
 
 	} else {
+		alilog << "made it to parent yay\n";
 		close(pipeFd[1]);
 	//timeout management
 		int status;
@@ -710,6 +726,9 @@ void	Server::doTheCGI()
             if (result == -1) // child exited
                 break;
         }
+		alilog << "past the timeout\n";
+		alilog << "what cgi spat out :\n";
+		
 //only if there wasnt timeout we should get here, so throw exceptions instead break higher
 		char	buffer[1024];
 		ssize_t	bytesRead;
@@ -717,10 +736,10 @@ void	Server::doTheCGI()
 		while ((bytesRead = read(pipeFd[0], buffer, 1023)) > 0) {
 			buffer[bytesRead] = '\0';
 			cgiHtml << buffer;
+			alilog << buffer;
 		}
+		alilog << "\n";
 		cgiHtml.close();
-		_clientIt->statusCode = 200;
-		_clientIt->sendPath = "system/cgi.html";
 		close(pipeFd[0]);
 		_clientIt->statusCode = 200;
 		//_clientIt->requestFinished = true;

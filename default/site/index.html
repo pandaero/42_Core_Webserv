@@ -1,73 +1,86 @@
 <!DOCTYPE html>
 <html>
-<head>
-	<title>Test Website for 42 Project: webserv</title>
-	<link rel="stylesheet" type="text/css" href="styles.css?v=2"/>
-</head>
-<body>
-	<header>
-		<h1>webserv testing</h1>
-	</header>
+  <head>
+    <title>Test Website for 42 Project: webserv</title>
+    <link rel="stylesheet" type="text/css" href="styles.css?v=2" />
+  </head>
+  <body>
+    <header>
+      <h1>webserv testing</h1>
+    </header>
 
-	<div class="container">
-		<h2>Shmismshmang</h2>
+    <div class="container">
+      <h2>Shmismshmang</h2>
 
-		<p>Test webserv functions by entering text and choosing an image to upload.</p>
+      <p>
+        Test webserv functions by entering text and choosing an image to upload.
+      </p>
 
-		<label for="input">Enter some text:</label>
-		<input type="text" id="input" name="input">
-		<br>
-		<br>
-		<label for="image">Upload an image:</label>
-		<input type="file" id="image" name="image">
-		<br>
-		<br>
-		<button type="button" onclick="submitText()">Submit Text</button>
-		<button type="button" onclick="submitImage()">Submit Image</button>
-		<br>
-		<br>
-		<a href="/sessionLog.html">
-			<button type="button">Go to session log</button>
-		</a>
-		
-		<div id="output"></div>
-		<img class="header-img" src="cat.avif">
-	</div>
-
-	<script>
-		const textEndpointUrl = '/api/text.txt';
-		const fileBaseEndpointUrl = '/api/';
-
-		function submitText() {
-			const input = document.getElementById('input').value;
-			sendData(input, textEndpointUrl);
-		}
-
-		function submitImage() {
-			const fileInput = document.getElementById('image');
-			const file = fileInput.files[0];
-			sendData(file, fileBaseEndpointUrl + encodeURIComponent(file.name));
-		}
-
-		function sendData(data, endpointUrl) {
-			const xhr = new XMLHttpRequest();
-			xhr.open('POST', endpointUrl, true);
-			xhr.onload = function() {
-				if (this.status === 200) {
-					document.getElementById('output').innerHTML = this.responseText;
-				}
-			};
-
-			if (data instanceof File) {
-				xhr.setRequestHeader('Content-Type', data.type);
-				xhr.setRequestHeader('X-File-Name', data.name);
-				xhr.send(data);
-			} else {
-				xhr.setRequestHeader('Content-Type', 'text/plain');
-				xhr.setRequestHeader('X-File-Name', 'text.txt');
-				xhr.send(data);
+      <label for="input">Enter some text:</label>
+      <input type="text" id="input" name="input" />
+      <br />
+      <br />
+      <label for="image">Upload an image:</label>
+      <input type="file" id="image" name="image" />
+      <br />
+      <br />
+      <button type="button" onclick="submitText()">Submit Text</button>
+      <button type="button" onclick="submitImage()">Submit Image</button>
+      <br />
+      <br />
+      <a href="/sessionLog.html">
+        <button type="button">Go to session log</button>
+      </a>
+      <br />
+      <br />
+      <a href="/cgi_site.html">
+        <button type="button">Go to CGI testing website</button>
+      </a>
+      <!-- <button onclick="redirectToCGI()">go to cgi testing website</button>
+		<script>
+			function redirectToCGI() {
+				window.location.href = "cgi_site/index.html";
 			}
-		}
-	</script>
-</body>
+		</script> -->
+
+      <div id="output"></div>
+      <img class="header-img" src="cat.avif" />
+    </div>
+
+    <script>
+      const textEndpointUrl = "/api/text.txt";
+      const fileBaseEndpointUrl = "/api/";
+
+      function submitText() {
+        const input = document.getElementById("input").value;
+        sendData(input, textEndpointUrl);
+      }
+
+      function submitImage() {
+        const fileInput = document.getElementById("image");
+        const file = fileInput.files[0];
+        sendData(file, fileBaseEndpointUrl + encodeURIComponent(file.name));
+      }
+
+      function sendData(data, endpointUrl) {
+        const xhr = new XMLHttpRequest();
+        xhr.open("POST", endpointUrl, true);
+        xhr.onload = function () {
+          if (this.status === 200) {
+            document.getElementById("output").innerHTML = this.responseText;
+          }
+        };
+
+        if (data instanceof File) {
+          xhr.setRequestHeader("Content-Type", data.type);
+          xhr.setRequestHeader("X-File-Name", data.name);
+          xhr.send(data);
+        } else {
+          xhr.setRequestHeader("Content-Type", "text/plain");
+          xhr.setRequestHeader("X-File-Name", "text.txt");
+          xhr.send(data);
+        }
+      }
+    </script>
+  </body>
 </html>

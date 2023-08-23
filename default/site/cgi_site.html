@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>CGI test</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+        }
+
+        h1, h2 {
+            color: #333;
+        }
+
+        form {
+            margin-bottom: 20px;
+            border: 1px solid #ccc;
+            padding: 10px;
+            background-color: #f9f9f9;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 5px;
+        }
+
+        input[type="text"] {
+            width: 100%;
+            padding: 5px;
+            margin-bottom: 10px;
+            border: 1px solid #ccc;
+            border-radius: 3px;
+        }
+
+        input[type="submit"] {
+            background-color: #0066ff;
+            color: #fff;
+            padding: 8px 16px;
+            border: none;
+            border-radius: 3px;
+            cursor: pointer;
+        }
+
+        input[type="submit"]:hover {
+            background-color: #7d00b3;
+        }
+    </style>
+</head>
+<body>
+    <h1>This is a php-cgi testing website!</h1>
+
+    <h2>This is for testing php cgi:</h2>
+    <!-- GET Form -->
+    <form action="script.php" method="get">
+        <label for="name">What's your name? :</label>
+        <input type="text" name="name" id="name" />
+        <br />
+        <label for="answer">Do you like cats? :</label>
+        <input type="text" name="answer" id="answer" />
+        <br />
+        <input
+            type="submit"
+            value="GET your personalised, cgi-php generated website now!"
+        />
+    </form>
+    <br />
+    <!-- POST Form -->
+    <form action="script.php" method="post">
+        <label for="age">How old are you? :</label>
+        <input type="text" name="age" id="age" />
+        <br />
+        <input type="submit" value="POST your age using cgi-php now!" />
+    </form>
+    <h2>This is for testing python cgi:</h2>
+    <!-- GET Form -->
+    <form action="simplest.py" method="get">
+        <label>When were you born?</label>
+        <br />
+        <label for="day">Day: </label>
+        <input type="text" name="day" id="day" />
+        <br />
+        <label for="month">Month: </label>
+        <input type="text" name="month" id="month" />
+        <br />
+        <input
+            type="submit"
+            value="GET your personalised, cgi-python generated horoscope now!"
+        />
+    </form>
+    <!-- POST Form -->
+    <form action="simplest.py" method="get">
+        <br />
+        <label>Send a message:</label>
+        <input type="text" name="message" id="message" />
+        <br />
+        <label for="day">To: </label>
+        <input type="text" name="receiver" id="receiver" />
+        <br />
+        <input type="submit" value="POST your message, via cgi-python now!" />
+    </form>
+</body>
+</html>
