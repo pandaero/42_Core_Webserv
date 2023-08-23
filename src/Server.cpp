@@ -530,28 +530,28 @@ void Server::closeClient(const char* msg)
 
 void	Server::doTheCGI()
 {
-//PHP
-	// std::string	pathToScript = "simplest.php";
-	// std::string pathToExec = "/Users/apielasz/Documents/projects_git/webserv/default/cgi/php-8.2.5_MacOS-10.15";
-//PYTHON
 	std::string	pathToScript = "/cgi-bin/" + _clientIt->filename;
-	// differentiate here if php or python
-	std::string pathToExec = "/usr/bin/python3"; // find path to python3
+	std::string pathToExec;
+
+	if (_cgiExtension == ".py") 
+		std::string pathToExec = "/usr/bin/python3"; // find path to python3
+	else if (_cgiExtension == ".php")
+		std::string pathToExec = "/Users/apielasz/Documents/projects_git/webserv/default/cgi/php-8.2.5_MacOS-10.15";
 
 	int		pipeFd[2];
 
 	if (pipe(pipeFd) == -1)
-		throw std::runtime_error("CGI error: pipe() failed");
+		selectStatusPage(500);
 
 	pid_t	pid = fork();
 
 	if (pid == -1)
-		throw std::runtime_error("CGI error: fork() failed");
+		selectStatusPage(500);
 
 	if (pid == 0) {
 		close(pipeFd[0]);
 		if (dup2(pipeFd[1], STDOUT_FILENO) == -1)
-			throw std::runtime_error("CGI error: dup2() failed");
+            selectStatusPage(500);
 // env filler - it's only needed in child process
 		std::vector<std::string>	tmpEnv;
 		std::string	tmpVar;
@@ -571,7 +571,7 @@ void	Server::doTheCGI()
 		tmpVar = "SERVER_PROTOCOL=HTTP/1.1";
 		tmpEnv.push_back(tmpVar);
 		//port number to which request was sent
-		tmpVar = "SERVER_PORT=" + ntohs(_serverAddress.sin_port);
+		tmpVar = "SERVER_PORT=8080";//ntohs(_serverAddress.sin_port);
 		tmpEnv.push_back(tmpVar);
 		tmpVar = "REQUEST_METHOD=" + _clientIt->method;
 		tmpEnv.push_back(tmpVar);
@@ -583,11 +583,11 @@ void	Server::doTheCGI()
 		tmpEnv.push_back(tmpVar);
 		tmpVar = "CONTENT_TYPE=" + _clientIt->contentType;
 		tmpEnv.push_back(tmpVar);
-		tmpVar = "CONTENT_LENGTH=" + _clientIt->contentLength; //maybe cast is needed
+		tmpVar = "CONTENT_LENGTH=10000000";//_clientIt->contentLength; //maybe cast is needed
 		tmpEnv.push_back(tmpVar);
 		tmpVar = "REDIRECT_STATUS=CGI";
 		tmpEnv.push_back(tmpVar);
-		tmpVar = "POST_BODY=message=blabla receiver=alkane"; //to improve when you know how POST and body work
+		tmpVar = "POST_BODY=" + _clientIt->path; //to improve when you know how POST and body work
 		tmpEnv.push_back(tmpVar);
 
 	//putting vector into char **
@@ -604,7 +604,7 @@ void	Server::doTheCGI()
 		argv[1] = pathToScript.c_str();
 		argv[2] = NULL;
 		execve(argv[0], const_cast<char *const *>(argv), _env);
-		throw std::runtime_error("CGI error: execve() failed");
+		selectStatusPage(500);
 
 	} else {
 		close(pipeFd[1]);
@@ -622,12 +622,9 @@ void	Server::doTheCGI()
             if (result == 0 && timePassed > 2000000) { //child is still alive but timeout limit is reached 
                 int killSuccessful = kill(pid, SIGTERM);
                 if (killSuccessful == 0) {
-                    std::cerr << "CGI error: TIMEOUT" << std::endl;
-                    break;
-                } else {
-                    std::cerr << "CGI error: TIMEOUT, but failed to kill child" << std::endl;
-                    break;
-                }
+                    selectStatusPage(500);
+					close(pipeFd[0]);
+					return;
             }
             if (result == -1) // child exited
                 break;
@@ -635,16 +632,19 @@ void	Server::doTheCGI()
 //only if there wasnt timeout we should get here, so throw exceptions instead break higher
 		char	buffer[1024];
 		ssize_t	bytesRead;
-		std::ofstream	cgiHtml("cgi.html");
+		std::ofstream	cgiHtml("system/cgi.html");
 		while ((bytesRead = read(pipeFd[0], buffer, 1023)) > 0) {
 			buffer[bytesRead] = '\0';
 			cgiHtml << buffer;
 		}
 		cgiHtml.close();
+		_clientIt->statusCode = 200;
+		_clientIt->sendPath = "system/cgi.html";
 		close(pipeFd[0]);
 		
-		std::cout << "Child process exited with status: " << WEXITSTATUS(status) << std::endl;
+		// std::cout << "Child process exited with status: " << WEXITSTATUS(status) << std::endl;
 	}
+}
 }
 
 std::string Server::prependRoot(const std::string& path)
