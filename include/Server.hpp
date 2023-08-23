@@ -39,7 +39,6 @@ class	Server
 
 		// cookie
 		std::string		makeCookie(const std::string&, const std::string&, int, const std::string&);
-		std::string		generateSessionId();
 
 
 		// utils

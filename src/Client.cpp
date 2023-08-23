@@ -10,6 +10,7 @@ Client::Client()
 	state = recv_head;
 	dirListing = false;
 	append = false;
+	setCookie = false;
 }
 		
 void Client::parseRequest()
@@ -27,7 +28,26 @@ void Client::parseRequest()
 		path = path.substr(0, questionMarkPos);
 	}
 
-	// parse headers and populate specific headers for easy access
+	parseHeaders();
+	handleCookieSession();
+	
+	// parse URL for easy access
+	if (path.find("/") == std::string::npos)
+		throw std::runtime_error("invalid URL in request.");
+	directory = path.substr(0, path.find_last_of("/") + 1);
+	filename = path.substr(path.find_last_of("/") + 1);
+	
+	// check for body
+	if (method != POST) // we don't process bodies of GET or DELETE requests
+		state = handleRequest;
+	else if (contentLength <= buffer.size()) // body is already complete in this recv (header content has already been deleted from buffer)
+		state = handleRequest;
+	else
+		state = recv_body;
+}
+
+void Client::parseHeaders()
+{
 	headers = parseStrMap(buffer, ":", "\r\n", "\r\n");
 	if (headers.find("host") != headers.end())
 		host = headers["host"].substr(0, headers["host"].find_first_of(':'));
@@ -35,46 +55,29 @@ void Client::parseRequest()
 		contentLength = atoi(headers["content-length"].c_str());
 	if (headers.find("content-type") != headers.end())
 		contentType = headers["content-type"];
-	
-	// manage cookies
+}
+
+void Client::handleCookieSession()
+{
 	if (headers.find("cookie") != headers.end())
 		cookies = parseStrMap(headers["cookie"], "=", ";", "Please parse me to the end!");
+	
+	// take existing session-cookie or create new id and later transmit new session-cookie
 	if (cookies.find(SESSIONID) != cookies.end())
-	{
 		sessionId = cookies[SESSIONID];
-		std::string logPath = "./site/logs/" + sessionId;
-		std::ofstream logFile(logPath, std::ios::app);
-		if (logFile.is_open())
-		{
-			logFile << 
-		}
-		else
-			std::cerr << "Could not open log file for session tracking." << std::endl;
-
-
-
-	std::cout << "cookies:" << std::endl;
-	if (!cookies.empty())
-	{
-		for (strMap_it it = cookies.begin(); it != cookies.end(); ++it)
-		{
-			std::cout 	<< "key:'" << it->first << "'. "
-						<< "value:'" << it->second << "'.\n"; 
-		}
-		std::cout << std::endl;
-	}
-
-	// parse URL for easy access
-	if (path.find("/") == std::string::npos)
-		throw std::runtime_error("invalid URL in request.");
-	directory = path.substr(0, path.find_last_of("/") + 1);
-	filename = path.substr(path.find_last_of("/") + 1);
-	if (method != POST) // we don't process bodies of GET or DELETE requests
-		state = handleRequest;
-	else if (contentLength <= buffer.size()) // body is already complete in this recv (header content has already been deleted from buffer)
-		state = handleRequest;
 	else
-		state = recv_body;
+	{
+		sessionId = generateSessionId();
+		setCookie = true;
+	}
+	
+	// write data of interest to the log
+	std::string logPath = "system/logs/" + sessionId + ".log";
+	std::ofstream logFile(logPath.c_str(), std::ios::app);
+	if (logFile.is_open())
+		logFile << currentTime() << ":\t\t" << method << "\t\t" << path << "\n";
+	else
+		std::cerr << "Could not open log file for session tracking." << std::endl;
 }
 
 void Client::whoIsI()
@@ -87,4 +90,17 @@ void Client::whoIsI()
 	std::cout << "content-type:'" << contentType << "'" << std::endl;
 	std::cout << "standardfile:'" << standardFile << "'" << std::endl;
 	std::cout << "dirlisting: " << (dirListing ? "yes" : "no") << std::endl;
+}
+
+std::string Client::generateSessionId()
+{
+	char sessionId[17];
+	const char charset[] = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ";
+	size_t i = 0;
+	
+	srand(time(NULL));
+	for (; i < sizeof(sessionId) - 1; ++i)
+		sessionId[i] = charset[rand() % (sizeof(charset) - 1)];
+	sessionId[i] = 0;
+	return sessionId;
 }

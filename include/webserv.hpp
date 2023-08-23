@@ -77,7 +77,7 @@ std::string		fileExtension(const std::string&);
 void			closeAndThrow(int);
 // Operates on a string ref that represents a string map. 1st arg is the string to be parsed. 2nd is end of key, 3rd is end of value, 4th is end of region to parse in 1st arg.
 strMap			parseStrMap(std::string&, const std::string&, const std::string&, const std::string&);
-// Returns the current time without using modern CPP.
-const char* 	currentTime();
+// Returns the current time in a pleasant format without using modern CPP.
+std::string 	currentTime();
 
 #endif

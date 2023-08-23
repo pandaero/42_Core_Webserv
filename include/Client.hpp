@@ -3,6 +3,12 @@
 
 # include "webserv.hpp"
 
+/*
+This class only gets instantiated as a private member of the Server class.
+That's why it doesn't have traditional encapsulation.
+This would be the perfect place to use the friend keyword and make everything
+private, which is however not allowed.
+*/
 class	Client
 {
 	public:
@@ -37,10 +43,14 @@ class	Client
 		// status vars
 		state_enum		state;
 		bool			append;
+		bool			setCookie;
+
 	
 	private:
-		// this "class" is a glorified struct. It only gets instantiated as a private member
-		// of the Server class. That's why it doesn't have traditional privacy.
+		void			parseHeaders();
+		void			handleCookieSession();
+		std::string		generateSessionId();
+
 };
 
 #endif

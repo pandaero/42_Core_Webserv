@@ -427,8 +427,8 @@ std::string Server::buildResponseHead()
 	if (contentLength != 0)
 		ss_header << "content-type: " << mimeType(_clientIt->sendPath) << "\r\n";
 	ss_header << "content-length: " << contentLength << "\r\n";
-	if (!_clientIt->hasSessionCookie)
-		ss_header << makeCookie(SESSIONID, generateSessionId(), 3600, "/") << "\r\n";
+	if (_clientIt->setCookie)
+		ss_header << makeCookie(SESSIONID, _clientIt->sessionId, 3600, "/") << "\r\n";
 	ss_header << "connection: close" << "\r\n";
 	ss_header << "\r\n";
 	return ss_header.str();
@@ -845,17 +845,4 @@ std::string Server::makeCookie(const std::string& key, const std::string& value,
 		cookie << "max-age=" << expiration << ";";
 	cookie << "path=" << path << ";";
 	return cookie.str();
-}
-
-std::string Server::generateSessionId()
-{
-	char sessionId[17];
-	const char charset[] = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ";
-	size_t i = 0;
-	
-	srand(time(NULL));
-	for (; i < sizeof(sessionId) - 1; ++i)
-		sessionId[i] = charset[rand() % (sizeof(charset) - 1)];
-	sessionId[i] = 0;
-	return sessionId;
 }

@@ -290,7 +290,6 @@ strMap parseStrMap(std::string& input, const std::string& endOfKey, const std::s
 	strMap 		stringMap;
 	std::string key, value;
 
-	std::cout << input << std::endl;
 	while (!input.empty())
 	{
 		if (input.find(endOfMap) == 0)
@@ -299,17 +298,13 @@ strMap parseStrMap(std::string& input, const std::string& endOfKey, const std::s
 			return stringMap;
 		}
 		key = splitEraseStr(input, endOfKey);
-		std::cout << "key:" << key << std::endl;
-
 		value = splitEraseStr(input, endOfValue);
-		std::cout << "value:" << value << std::endl;
-
 		stringMap.insert(std::make_pair(strToLower(key), value));
 	}
 	return stringMap;
 }
 
-const char* currentTime()
+std::string currentTime()
 {
 	time_t rawtime;
 	const char* timeformat = "%G-%m-%d %H:%M:%S";
@@ -318,5 +313,6 @@ const char* currentTime()
 	time(&rawtime);
 	tm* timeinfo = localtime(&rawtime);
 	strftime(timeoutput, 420, timeformat, timeinfo);
-	return timeoutput;
+	std::string returnVal(timeoutput);
+	return returnVal;
 }
