@@ -18,24 +18,35 @@ header {
 	z-index: 2;
 }
 
-.content_left {
+.text_content_left {
 	display: flex;
 	flex-direction: column;
 	text-align: center;
 	align-items: center;
-
-
 	width: 50%;
-	
 	z-index: 2;
 }
 
-.text-left {
-	text-align: right;
-	/* display: flex;
+.content_group_01 {
+	gap: 30px;	
+	display: flex;
 	flex-direction: column;
-	justify-content: space-evenly;
-	align-items: center; */
+	text-align: left;
+	align-items: center;
+	width: 50%;
+	z-index: 2;
+}
+
+.content_subgroup_01 {
+	padding: 30px;
+	gap: 30px;	
+	display: flex;
+	flex-direction: row;
+	justify-content: center;
+	text-align: center;
+	align-items: center;
+	width: 50%;
+	z-index: 2;
 }
 
 h1 {
@@ -66,13 +77,6 @@ tiny {
 	height: 100%;
 	z-index: 1;
 	margin-left: auto;
-}
-
-.container {
-	white-space: pre;
-	flex: 1;
-	/* position: relative; */
-	z-index: 2;
 }
 
 a:link {

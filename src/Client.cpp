@@ -81,12 +81,12 @@ void Client::handleCookieSession()
 void Client::whoIsI()
 {
 	std::cout << "Client on fd " << fd << "\n";
-	std::cout << "method:'" << method << "'" << "\n";
-	std::cout << "path:'" << path << "'" << "\n";
-	std::cout << "dir:'" << directory << "'" << "\n";
-	std::cout << "file:'" << filename << "'" << "\n";
-	std::cout << "content-type:'" << contentType << "'" << "\n";
-	std::cout << "standardfile:'" << standardFile << "'" << "\n";
+	std::cout << "method: " << method << "\n";
+	std::cout << "path: " << path << "\n";
+	std::cout << "dir: " << directory << "\n";
+	std::cout << "file: " << filename << "\n";
+	std::cout << "content-type: " << contentType << "\n";
+	std::cout << "standardfile: " << standardFile << "\n";
 	std::cout << "dirlisting: " << (dirListing ? "yes" : "no") << "\n";
 	std::cout << "updatedPath: " << updatedPath << "\n";
 	std::cout << "updatedDirectory: " << updatedDirectory << std::endl;

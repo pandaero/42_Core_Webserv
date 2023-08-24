@@ -887,8 +887,8 @@ void Server::generateDirListing(const std::string& directory)
 {
 	DIR* dir;
 	struct dirent* ent;
-
 	std::ofstream dirListPage(SYS_DIRLISTPAGE);
+
 	if (dirListPage.fail())
 	{
 		dirListPage.close();
@@ -901,16 +901,6 @@ void Server::generateDirListing(const std::string& directory)
 	dir = opendir(directory.c_str());
 	if (dir)
 	{
-		std::cout << "directory: " << directory << std::endl;
-		std::cout << "_clientIt->directory: " << _clientIt->directory << std::endl;
-		std::cout << "_clientIt->path: " << _clientIt->path << std::endl;
-		if (isDirectory(prependRoot(_clientIt->path)))
-		{
-			std::cout << "yes, is dir" << std::endl;
-			if (_clientIt->path[_clientIt->path.size() - 1] != '/')
-				_clientIt->path.append("/");
-			std::cout<< "_clientIt->path:" << _clientIt->path << std::endl;
-		}
 		while ((ent = readdir(dir)) != NULL)
 		{
 			if (strcmp(ent->d_name, ".") == 0)

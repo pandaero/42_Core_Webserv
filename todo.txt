@@ -6,6 +6,7 @@
 testing:
 - check eval sheet questions
 - intra tester
+- host redirections
 
 Copy Paste for testing with curl / siege
 curl -H "host: shmang.co" -X DELETE http://localhost:8080/api/upload/text.txt
