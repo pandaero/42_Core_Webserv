@@ -80,14 +80,16 @@ void Client::handleCookieSession()
 
 void Client::whoIsI()
 {
-	std::cout << "Client on fd " << fd << std::endl;
-	std::cout << "method:'" << method << "'" << std::endl;
-	std::cout << "path:'" << path << "'" << std::endl;
-	std::cout << "dir:'" << directory << "'" << std::endl;
-	std::cout << "file:'" << filename << "'" << std::endl;
-	std::cout << "content-type:'" << contentType << "'" << std::endl;
-	std::cout << "standardfile:'" << standardFile << "'" << std::endl;
-	std::cout << "dirlisting: " << (dirListing ? "yes" : "no") << std::endl;
+	std::cout << "Client on fd " << fd << "\n";
+	std::cout << "method:'" << method << "'" << "\n";
+	std::cout << "path:'" << path << "'" << "\n";
+	std::cout << "dir:'" << directory << "'" << "\n";
+	std::cout << "file:'" << filename << "'" << "\n";
+	std::cout << "content-type:'" << contentType << "'" << "\n";
+	std::cout << "standardfile:'" << standardFile << "'" << "\n";
+	std::cout << "dirlisting: " << (dirListing ? "yes" : "no") << "\n";
+	std::cout << "updatedPath: " << updatedPath << "\n";
+	std::cout << "updatedDirectory: " << updatedDirectory << std::endl;
 }
 
 std::string Client::generateSessionId()

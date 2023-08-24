@@ -402,11 +402,8 @@ std::string Server::appendForwardSlash(const std::string& path)
 {
 	std::string newPath = path;
 	
-	if (isDirectory(prependRoot(newPath)))
-	{
-		if (newPath[newPath.size() - 1] != '/')
-			newPath.append("/");
-	}
+	if (isDirectory(prependRoot(newPath)) && newPath[newPath.size() - 1] != '/')
+		newPath.append("/");
 	return newPath;
 }
 
@@ -427,20 +424,27 @@ void Server::updateClientVars()
 	if (_clientIt->standardFile.empty())
 		_clientIt->standardFile = _standardFile;
 	
-	// check for HTTP redirection
+	// check for HTTP redirection and upload redirection; if neither: updatedPath is same as path
 	std::string	http_redir = _locations[_clientIt->directory].http_redir;
 	if (!http_redir.empty())
 		_clientIt->updatedDirectory = http_redir;
-	
-	// check for upload redirection
-	if (_clientIt->method == POST && !_locations[_clientIt->directory].upload_dir.empty())
+	else if (_clientIt->method == POST && !_locations[_clientIt->directory].upload_dir.empty())
 		_clientIt->updatedDirectory = _locations[_clientIt->directory].upload_dir;
-	
+	else
+		_clientIt->updatedDirectory = _clientIt->directory;
+
 	// prepend the server root if path begins with /
 	_clientIt->updatedDirectory = prependRoot(_clientIt->updatedDirectory);
+	std::cout << "updated clientdirectory:" << _clientIt->updatedDirectory << std::endl;
 
 	// build the new request path
 	_clientIt->updatedPath = _clientIt->updatedDirectory + _clientIt->filename;
+	std::cout << "updated clientpath:" << _clientIt->updatedPath << std::endl;
+
+	std::cout << "extracall\n";
+	_clientIt->whoIsI();
+	
+
 }
 
 void Server::sendStatusPage(int code)
