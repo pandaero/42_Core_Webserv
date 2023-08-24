@@ -143,7 +143,7 @@ void Server::acceptConnections()
 
 		pollfd new_pollStruct;
 		new_pollStruct.fd = new_sock;
-		new_pollStruct.events = POLLIN | POLLOUT | POLLHUP;
+		new_pollStruct.events = POLLIN | POLLHUP;
 		new_pollStruct.revents = 0;
 		_pollVector->push_back(new_pollStruct);
 	}
@@ -215,7 +215,7 @@ bool Server::requestHead()
 		return false;
 	if (_clientIt->buffer.find("\r\n\r\n") == std::string::npos)
 	{
-		selectStatusPage(431);
+		sendStatusPage(431);
 		return false;
 	}
 	_clientIt->parseRequest();
@@ -241,30 +241,33 @@ void Server::handleGet()
 	{
 		if (resourceExists(_clientIt->path + _clientIt->standardFile))
 		{
-			_clientIt->statusCode = 200;
-			_clientIt->sendPath = _clientIt->path + _clientIt->standardFile;
+			sendFile200(_clientIt->path + _clientIt->standardFile);
+			/* _clientIt->statusCode = 200;
+			_clientIt->sendPath = _clientIt->path + _clientIt->standardFile; */
 		}
 		else if (_clientIt->dirListing)
 		{
-			_clientIt->statusCode = 200;
-			//_clientIt->sendPath = createDirList(_clientIt->path);
 			generateDirListing(_clientIt->path);
-			_clientIt->sendPath = SYS_DIRLISTPAGE;
+			sendFile200(SYS_DIRLISTPAGE);
+			
+			/* _clientIt->statusCode = 200;
+			_clientIt->sendPath = SYS_DIRLISTPAGE; */
 		}
 		else
-			selectStatusPage(404);
+			sendStatusPage(404);
 	}
 	else
 	{
 		if (resourceExists(_clientIt->path))
 		{
-			_clientIt->statusCode = 200;
-			_clientIt->sendPath = _clientIt->path;
+			sendFile200(_clientIt->path);
+			/* _clientIt->statusCode = 200;
+			_clientIt->sendPath = _clientIt->path; */
 		}
 		else
-			selectStatusPage(404);
+			sendStatusPage(404);
 	}
-	_clientIt-> state = send_head;
+	//_clientIt-> state = send_head;
 }
 
 void Server::handlePost()
@@ -274,7 +277,7 @@ void Server::handlePost()
 	ANNOUNCEME_FD
 	if (!resourceExists(_clientIt->directory))
 	{
-		selectStatusPage(500);
+		sendStatusPage(500);
 		return;		
 	}
 	if (_clientIt->state == recv_body)
@@ -289,25 +292,23 @@ void Server::handlePost()
 	}
 	if (!outputFile.is_open())
 	{
-		selectStatusPage(500);
+		sendStatusPage(500);
 		return;		
 	}
-	std::cout << "before writing test. bytesWritten:" << _clientIt->bytesWritten << std::endl;
 	outputFile.write(_clientIt->buffer.c_str(), _clientIt->buffer.size());
 	_clientIt->bytesWritten += _clientIt->buffer.size();
 	_clientIt->buffer.clear();
 	outputFile.close();
-	std::cout << "before bytesWritten test. bytesWritten:" << _clientIt->bytesWritten << std::endl;
 
 	if (_clientIt->bytesWritten >= _clientIt->contentLength)
 	{
-		std::cout << "bytesWritten >= size evald positive!" << std::endl;
 		if (cgiRequest())
 			doTheCGI();
 		else
 		{
-			_clientIt->statusCode = 201;
-			_clientIt->state = send_head;
+			sendEmptyStatus(201);
+			/* _clientIt->statusCode = 201;
+			_clientIt->state = send_head; */
 		}
 	}
 }
@@ -318,21 +319,22 @@ void Server::handleDelete()
 		return;
 	if (isDirectory(_clientIt->path)) // deleting directories not allowed
 	{
-		selectStatusPage(405);
+		sendStatusPage(405);
 		return;
 	}
 	if (!resourceExists(_clientIt->path))
 	{
-		selectStatusPage(404);
+		sendStatusPage(404);
 		return;
 	}
 	if (remove(_clientIt->path.c_str()) == 0)
 	{
-		_clientIt->statusCode = 204;
-		_clientIt->state = send_head;
+		sendEmptyStatus(204);
+		/* _clientIt->statusCode = 204;
+		_clientIt->state = send_head; */
 	}
 	else
-		selectStatusPage(500);
+		sendStatusPage(500);
 }
 
 bool Server::sendData()
@@ -386,7 +388,6 @@ void Server::sendResponseBody()
 	if (_clientIt->state < send_body)
 		return;
 	ANNOUNCEME_FD
-	std::cout << "sendPath:'" << _clientIt->sendPath << "'" << std::endl;
 	
 	if (_clientIt->sendPath.empty())
 	{
@@ -463,10 +464,11 @@ void Server::updateClientPath()
 	_clientIt->path = _clientIt->directory + _clientIt->filename;
 }
 
-void Server::selectStatusPage(int code)
+void Server::sendStatusPage(int code)
 {
 	_clientIt->statusCode = code;
 	_clientIt->state = send_head;
+	_pollStruct->events = POLLOUT | POLLHUP;
 
 	if (_errorPagesPaths.find(code) == _errorPagesPaths.end())
 	{
@@ -478,6 +480,22 @@ void Server::selectStatusPage(int code)
 		_clientIt->sendPath = path;
 	else
 		generateStatusPage(code);
+}
+
+void Server::sendFile200(std::string sendPath)
+{
+	_clientIt->statusCode = 200;
+	_clientIt-> state = send_head;
+	_pollStruct->events = POLLOUT | POLLHUP;
+	_clientIt->sendPath = sendPath;
+}
+
+void Server::sendEmptyStatus(int code)
+{
+	_clientIt->statusCode = code;
+	_clientIt-> state = send_head;
+	_pollStruct->events = POLLOUT | POLLHUP;
+	_clientIt->sendPath.clear(); // should be empty anyway, but structural symmetry
 }
 
 void Server::generateStatusPage(int code)
@@ -542,30 +560,30 @@ bool Server::requestError()
 {
 	// wrong protocol
 	if (_clientIt->httpProtocol != HTTPVERSION)
-		return (selectStatusPage(505), true);
+		return (sendStatusPage(505), true);
 	
 	// method not supported by server
 	if (_clientIt->method != GET
 		&& _clientIt->method != POST
 		&& _clientIt->method != DELETE)
-		return (selectStatusPage(501), true);
+		return (sendStatusPage(501), true);
 	
 	// body size too large
 	if (_clientIt->contentLength > _clientMaxBody)
-		return (selectStatusPage(413), true);
+		return (sendStatusPage(413), true);
 	else
 	{
 		strLocMap_it locIt = _locations.find(_clientIt->directory);
 		
 		// access forbidden (have to specifically allow each path in config file)
 		if (locIt == _locations.end())
-			return (selectStatusPage(404), true); // returning 404, not 403, to not leak file structure
+			return (sendStatusPage(404), true); // returning 404, not 403, to not leak file structure
 	
 		// access granted, but not for the requested method
 		if ((_clientIt->method == GET && !locIt->second.get)
 			|| (_clientIt->method == POST && !locIt->second.post)
 			|| (_clientIt->method == DELETE && !locIt->second.delete_))
-			return (selectStatusPage(405), true);
+			return (sendStatusPage(405), true);
 	}
 	return false;
 }

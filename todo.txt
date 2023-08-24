@@ -1,8 +1,8 @@
-- fix dir listing
+- fix dir listing subfolder / image issue
 - cgi
+- eval architecture with send / recv state pollevents
 
 - remove CGI paths from config file?
-- cookies
 
 testing:
 - check eval sheet questions

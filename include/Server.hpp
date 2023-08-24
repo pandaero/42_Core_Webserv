@@ -29,7 +29,9 @@ class	Server
 		
 		std::string		buildResponseHead();
 		void			updateClientPath();
-		void			selectStatusPage(int);
+		void			sendStatusPage(int);
+		void			sendFile200(std::string);
+		void			sendEmptyStatus(int);
 		void			generateStatusPage(int);
 		void			generateCookieLogPage();
 		void			selectHostConfig();
