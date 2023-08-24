@@ -17,3 +17,5 @@ output.txt
 system/logs/
 system/dirListing.html
 system/errorPage.html
+system/cgi.html
+default/site/sessionlog.html
