@@ -9,46 +9,39 @@
 		<h1>webserv testing</h1>
 	</header>
 	<div class="content_left">
-		<!-- <div class="text-left" id="unique-text"> -->
-			<h2>Shmismshmang</h2>
-			<p>Test webserv functions by entering text and choosing an image to upload.</p>
+		<h2>Test stuff by:</h2>
+		<ul>
+			<li>entering text to upload</li>
+			<li>choosing a file to upload</li>
+			<li>visiting the cookie tracking log</li>
+			<li>visiting the CGI testing page <tiny> via a http redirection omg!</tiny> </li>
 			
-			<label for="input">Enter some text:</label>
-			<br><br>
-			
-			
-			<div class="input-container">
-				<input type="text" id="input" name="input" class="input_01" placeholder="Enter your text">
-			</div>
-			<br><br>
-			<button class="bluebutton" onclick="submitText()">Submit Text</button>
-			
-			
-			<br>
-			<br><br>
-			<br><br>
-			<br>
-			
-			
-			<br>
-			<br>
-			<label for="image">Upload an image:</label>
-			<input type="file" id="image" name="image">
-			<button class="bluebutton" onclick="submitImage()">Submit Image</button>
-			<br>
-			
-			
-			<br>
-			<br>
-			<br>
-			<a href="/sessionLog.html">
-				<button class="bluebutton">Go to session log</button>
-			</a>
-			
-			<div id="output"></div>
-		<!-- </div> -->
+		</ul>
+		<br>
+		<br>
+		<div class="input-container_01">
+			<input type="text" id="input" name="input" class="input_01" placeholder="Enter your text">
+			<button class="button_01" onclick="submitText()">Submit Text</button>
+		</div>
+		<br>
+		<br>
+		<div class="input-container_01">
+			<input type="file" id="image" name="image" class="input_01">
+			<button class="button_01" onclick="submitImage()">Submit Image</button>
+		</div>
+		<br>
+		<br>
+		<a href="/sessionLog.html">
+			<button class="button_01">Go to session log</button>
+		</a>
+		<br>
+		<br>
+		<a href="/fakeLocationThatDoesntExist/">
+			<button class="button_01">Go to CGI page</button>
+		</a>
+		
 	</div>
-	<img class="img_float_right" src="cat_02.jpg">
+	<img class="img_float_right" src="/img/catFace.jpg">
 
 	<script>
 		const textEndpointUrl = '/api/text.txt';

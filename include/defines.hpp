@@ -11,11 +11,10 @@
 # define SESSIONID		"sessionid"
 
 // ===== ===== ===== ===== Directories ===== ===== ===== =====
-# define SYS_ROOT			"./system"
 # define SYS_CGIPAGE		"system/cgi.html"
 # define SYS_DIRLISTPAGE	"system/dirListing.html"
 # define SYS_ERRPAGE		"system/errorPage.html"
-# define SITE_LOGPAGE		"default/site/sessionlog.html"
+# define SITE_LOGPAGE		"websites/site/sessionlog.html"
 
 // ===== ===== ===== ===== SIZE Descriptions ===== ===== ===== =====
 # define RECV_CHUNK_SIZE		4096

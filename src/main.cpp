@@ -4,7 +4,7 @@ volatile sig_atomic_t sigInt = 0;
 
 int main()
 {
-	ConfigFile configfile("default/config/example.conf");
+	ConfigFile configfile("system/configs/example.conf");
 	std::vector<Server>& servers = configfile.getServers();
 	std::vector<pollfd> pollVector;
 	

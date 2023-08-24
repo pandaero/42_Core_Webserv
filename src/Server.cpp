@@ -435,16 +435,9 @@ void Server::updateClientVars()
 
 	// prepend the server root if path begins with /
 	_clientIt->updatedDirectory = prependRoot(_clientIt->updatedDirectory);
-	std::cout << "updated clientdirectory:" << _clientIt->updatedDirectory << std::endl;
 
 	// build the new request path
 	_clientIt->updatedPath = _clientIt->updatedDirectory + _clientIt->filename;
-	std::cout << "updated clientpath:" << _clientIt->updatedPath << std::endl;
-
-	std::cout << "extracall\n";
-	_clientIt->whoIsI();
-	
-
 }
 
 void Server::sendStatusPage(int code)
@@ -884,7 +877,7 @@ void Server::generateCookieLogPage()
 	cookiePage << "<h1>" << "Log for session id " << _clientIt->sessionId << "</h1>\n";
 	cookiePage << "<p>" << cookieLog.rdbuf() << "</p>\n";
 	cookiePage << "</div>";
-	cookiePage << "<img style=\"margin-left: auto;\" src=\"/catlockHolmes.png\">\n";
+	cookiePage << "<img style=\"margin-left: auto;\" src=\"/img/catlockHolmes.png\">\n";
 	cookiePage << "</body>\n";
 	cookiePage << "</html>\n";
 	cookiePage.close();

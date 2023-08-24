@@ -39,14 +39,24 @@ header {
 }
 
 h1 {
-	font-size: 42px;
+	font-size: 96px;
 }
 
-/* p {
-	font-size: 16px;
-	line-height: 1.5;
-	margin-right: 300px;
-} */
+h2 {
+	font-size: 64px;
+}
+
+p, ul {
+	font-size: 32px;
+	text-align: left;
+	line-height: 1.1;
+}
+
+tiny {
+	font-size: 15px;
+	text-align: left;
+	line-height: 1.1;
+}
 
 .img_float_right {
 	text-align: right;
@@ -87,16 +97,17 @@ button {
 	cursor: pointer;
 }
 
-.bluebutton {
+.button_01 {
 	background-color: #007bff; /* Change this to your desired background color */
 	color: #ffffff; /* Change this to your desired text color */
 	padding: 10px 20px;
 	border-radius: 5px;
 	font-size: 16px;
 	transition: background-color 0.3s ease, color 0.3s ease;
+	width: 200px;
 }
 
-.bluebutton:hover {
+.button_01:hover {
 	background-color: #0056b3; /* Change this to your desired hover background color */
 }
 
@@ -105,24 +116,31 @@ input {
 	outline: none;
 }
 
-.input-container {
+.input-container_01 {
 	display: inline-block;
 	background-color: #7f7f7f;
 	border-radius: 5px;
 	padding: 5px;
+	height: 100px;
+	width: 200px;
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	gap: 20px;	
 }
 
 .input_01 {
-	width: 200px; /* Adjust the width as needed */
-	background-color: transparent;
-	padding: 10px;
+	height: 50px;
+	width: 200px;
+	background-color: rgb(161, 161, 161);
+	padding: 0px;
 	border: none;
 	font-size: 16px;
-	color: #cbcbcb; /* Change this to your desired text color */
+	color: #cbcbcb;
 }
 
 .input_01::placeholder {
-	color: #cdcdcd; /* Change this to your desired placeholder text color */
+	color: #cdcdcd;
 }
   
 .input_01:focus {
