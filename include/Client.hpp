@@ -32,6 +32,7 @@ class	Client
 		std::string		httpProtocol;
 		std::string		method;
 		std::string		path;
+		std::string		updatedPath;
 		std::string		queryString;
 		std::string		host;
 		size_t			contentLength;

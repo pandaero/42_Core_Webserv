@@ -237,37 +237,25 @@ void Server::handleGet()
 		doTheCGI();
 		return;
 	}
-	if (isDirectory(_clientIt->path))
+	if (isDirectory(_clientIt->updatedPath))
 	{
-		if (resourceExists(_clientIt->path + _clientIt->standardFile))
-		{
-			sendFile200(_clientIt->path + _clientIt->standardFile);
-			/* _clientIt->statusCode = 200;
-			_clientIt->sendPath = _clientIt->path + _clientIt->standardFile; */
-		}
+		if (resourceExists(_clientIt->updatedPath + _clientIt->standardFile))
+			sendFile200(_clientIt->updatedPath + _clientIt->standardFile);
 		else if (_clientIt->dirListing)
 		{
-			generateDirListing(_clientIt->path);
+			generateDirListing(_clientIt->updatedPath);
 			sendFile200(SYS_DIRLISTPAGE);
-			
-			/* _clientIt->statusCode = 200;
-			_clientIt->sendPath = SYS_DIRLISTPAGE; */
 		}
 		else
 			sendStatusPage(404);
 	}
 	else
 	{
-		if (resourceExists(_clientIt->path))
-		{
-			sendFile200(_clientIt->path);
-			/* _clientIt->statusCode = 200;
-			_clientIt->sendPath = _clientIt->path; */
-		}
+		if (resourceExists(_clientIt->updatedPath))
+			sendFile200(_clientIt->updatedPath);
 		else
 			sendStatusPage(404);
 	}
-	//_clientIt-> state = send_head;
 }
 
 void Server::handlePost()
@@ -284,10 +272,10 @@ void Server::handlePost()
 		receive();
 	std::ofstream outputFile;
 	if (_clientIt->append)
-		outputFile.open(_clientIt->path.c_str(), std::ios::binary | std::ios::app);
+		outputFile.open(_clientIt->updatedPath.c_str(), std::ios::binary | std::ios::app);
 	else
 	{
-		outputFile.open(_clientIt->path.c_str(), std::ios::binary | std::ios::trunc);
+		outputFile.open(_clientIt->updatedPath.c_str(), std::ios::binary | std::ios::trunc);
 		_clientIt->append = true;
 	}
 	if (!outputFile.is_open())
@@ -305,11 +293,7 @@ void Server::handlePost()
 		if (cgiRequest())
 			doTheCGI();
 		else
-		{
 			sendEmptyStatus(201);
-			/* _clientIt->statusCode = 201;
-			_clientIt->state = send_head; */
-		}
 	}
 }
 
@@ -317,50 +301,26 @@ void Server::handleDelete()
 {
 	if (_clientIt->state > handleRequest)
 		return;
-	if (isDirectory(_clientIt->path)) // deleting directories not allowed
+	if (isDirectory(_clientIt->updatedPath)) // deleting directories not allowed
 	{
 		sendStatusPage(405);
 		return;
 	}
-	if (!resourceExists(_clientIt->path))
+	if (!resourceExists(_clientIt->updatedPath))
 	{
 		sendStatusPage(404);
 		return;
 	}
-	if (remove(_clientIt->path.c_str()) == 0)
-	{
+	if (remove(_clientIt->updatedPath.c_str()) == 0)
 		sendEmptyStatus(204);
-		/* _clientIt->statusCode = 204;
-		_clientIt->state = send_head; */
-	}
 	else
 		sendStatusPage(500);
 }
 
-bool Server::sendData()
+bool Server::sendData() // this is shit. rethink entire structure now that we KNOW we have pollstatus
 {
 	if (!(_pollStruct->revents & POLLOUT))
 		return false;
-	
-	// situation where no data was read from the socket, but POLLOUT is active
-	// and no further data is being sent. Would cause and endless loop.
-	// on mac: there actually is data in the socket buffer, but POLLIN is not triggered
-	// recv call without reading triggers POLLIN for the next run of the loop.
-	// on WSL2 Ubuntu this also happens, but there is no data to be read (recv returns -1). Just close client.
-	// No idea what causes this, researched it extensively.
-	// Seems to occur when one client opens 2 connections at once. There is no evidence in the network tab
-	// of the client of these weird requests. 
-	if (_clientIt->state == recv_head)
-	{
-		if (recv(_clientIt->fd, NULL, 0, MSG_PEEK) == 0)
-		{
-			std::cout << "Residual data on socket buffer without POLLIN. POLLIN triggered for next loop iteration." << std::endl;
-			return false;
-		}
-		closeClient("Server::sendData: Nothing to read and no request head.");
-		return false;
-	}
-
 	if (_clientIt->state == recv_body)
 		return false;
 	return true;
@@ -461,7 +421,7 @@ void Server::updateClientPath()
 	_clientIt->directory = prependRoot(_clientIt->directory);
 
 	// build the new request path
-	_clientIt->path = _clientIt->directory + _clientIt->filename;
+	_clientIt->updatedPath = _clientIt->directory + _clientIt->filename;
 }
 
 void Server::sendStatusPage(int code)
@@ -600,7 +560,6 @@ void Server::closeClient(const char* msg)
 		++it;
 	if (it == _pollVector->end())
 		throw std::runtime_error("Server::closeClient: fd to close not found in pollVector");
-	std::cout << "closeClient: erasing pollStruct with fd " << it->fd << std::endl;
 	_pollVector->erase(it);
 	
 	// erase client and decrement _index to not skip the next client in the for loop

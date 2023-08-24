@@ -329,6 +329,7 @@ void generateDirListing(const std::string& directory)
 		throw std::runtime_error(E_TEMPFILE);
 	}
 
+	dirListPage << "<head><title>Test Website for 42 Project: webserv</title><link rel=\"stylesheet\" type=\"text/css\" href=\"/styles.css\"/></head>";
 	dirListPage << "<html><body><h1>Directory Listing</h1><ul>";
 
 	dir = opendir(directory.c_str());

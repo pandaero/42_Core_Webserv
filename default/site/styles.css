@@ -15,10 +15,16 @@ header {
 	text-align: center;
 	width: 100%;
 	position: relative;
+	z-index: 2;
 }
 
-.content {
+.content_left {
 	display: flex;
+	flex-direction: column;
+
+	width: 50%;
+	
+	z-index: 2;
 	/* justify-content: center; */
 }
 
@@ -40,14 +46,13 @@ h1 {
 	margin-right: 300px;
 } */
 
-img {
+.img_float_right {
 	text-align: right;
-	/* position: absolute; */
-	/* top: 0;
-	/* right: 0; */
-	/* height: 100%; */
-	/* z-index: 1; */
-	/* Inline Style */
+	position: absolute;
+	top: 0;
+	right: 0;
+	height: 100%;
+	z-index: 1;
 	margin-left: auto;
 }
 
