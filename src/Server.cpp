@@ -263,7 +263,7 @@ void Server::handlePost()
 	if (_clientIt->state > handleRequest)
 		return;
 	ANNOUNCEME_FD
-	if (!resourceExists(_clientIt->directory))
+	if (!resourceExists(_clientIt->updatedDirectory))
 	{
 		sendStatusPage(500);
 		return;		
@@ -411,17 +411,17 @@ void Server::updateClientPath()
 	// check for HTTP redirection
 	std::string	http_redir = _locations[_clientIt->directory].http_redir;
 	if (!http_redir.empty())
-		_clientIt->directory = http_redir;
+		_clientIt->updatedDirectory = http_redir;
 	
 	// check for upload redirection
 	if (_clientIt->method == POST && !_locations[_clientIt->directory].upload_dir.empty())
-		_clientIt->directory = _locations[_clientIt->directory].upload_dir;
+		_clientIt->updatedDirectory = _locations[_clientIt->directory].upload_dir;
 	
 	// prepend the server root if path begins with /
-	_clientIt->directory = prependRoot(_clientIt->directory);
+	_clientIt->updatedDirectory = prependRoot(_clientIt->directory);
 
 	// build the new request path
-	_clientIt->updatedPath = _clientIt->directory + _clientIt->filename;
+	_clientIt->updatedPath = _clientIt->updatedDirectory + _clientIt->filename;
 }
 
 void Server::sendStatusPage(int code)
@@ -861,4 +861,48 @@ void Server::generateCookieLogPage()
 	cookiePage << "</body>\n";
 	cookiePage << "</html>\n";
 	cookiePage.close();
+}
+
+void Server::generateDirListing(const std::string& directory)
+{
+	DIR* dir;
+	struct dirent* ent;
+
+	std::ofstream dirListPage(SYS_DIRLISTPAGE);
+	if (dirListPage.fail())
+	{
+		dirListPage.close();
+		throw std::runtime_error(E_TEMPFILE);
+	}
+
+	dirListPage << "<head><title>Test Website for 42 Project: webserv</title><link rel=\"stylesheet\" type=\"text/css\" href=\"/styles.css\"/></head>";
+	dirListPage << "<html><body><h1>Directory Listing</h1><ul>";
+
+	dir = opendir(directory.c_str());
+	if (dir)
+	{
+		std::cout << "directory: " << directory << std::endl;
+		std::cout << "_clientIt->directory: " << _clientIt->directory << std::endl;
+		std::cout << "_clientIt->path: " << _clientIt->path << std::endl;
+		if (isDirectory(prependRoot(_clientIt->path)))
+		{
+			std::cout << "yes, is dir" << std::endl;
+			if (_clientIt->path[_clientIt->path.size() - 1] != '/')
+				_clientIt->path.append("/");
+			std::cout<< "_clientIt->path:" << _clientIt->path << std::endl;
+		}
+		while ((ent = readdir(dir)) != NULL)
+		{
+			if (strcmp(ent->d_name, ".") == 0)
+				continue;
+			if (ent->d_type == DT_DIR)
+				dirListPage << "<li><a href=\"" << _clientIt->directory + ent->d_name << "/\">" << ent->d_name << "/</a></li>";
+			else
+				dirListPage << "<li><a href=\"" << _clientIt->directory + ent->d_name << "\">" << ent->d_name << "</a></li>";
+		}
+		closedir(dir);
+	}
+
+	dirListPage << "</ul></body></html>";
+	dirListPage.close();
 }

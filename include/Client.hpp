@@ -21,6 +21,7 @@ class	Client
 		std::string		buffer;
 		int				statusCode;
 		std::string		directory;
+		std::string		updatedDirectory;
 		std::string		filename;
 		std::string		sendPath;
 		bool			dirListing;

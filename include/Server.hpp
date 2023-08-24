@@ -34,6 +34,8 @@ class	Server
 		void			sendEmptyStatus(int);
 		void			generateStatusPage(int);
 		void			generateCookieLogPage();
+		void			generateDirListing(const std::string&);
+
 		void			selectHostConfig();
 		bool			requestError();
 		void			closeClient(const char*);

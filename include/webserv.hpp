@@ -80,6 +80,4 @@ strMap			parseStrMap(std::string&, const std::string&, const std::string&, const
 // Returns the current time in a pleasant format without using modern CPP.
 std::string 	currentTime();
 
-void generateDirListing(const std::string& directory);
-
 #endif
