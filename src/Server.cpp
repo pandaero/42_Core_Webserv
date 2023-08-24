@@ -223,7 +223,7 @@ bool Server::requestHead()
 	if (requestError())
 		return false;
 	selectHostConfig();
-	updateClientPath();
+	updateClientVars();
 	_clientIt->whoIsI();
 	return true;
 }
@@ -398,8 +398,28 @@ std::string Server::buildResponseHead()
 	return ss_header.str();
 }
 
-void Server::updateClientPath()
+std::string Server::appendForwardSlash(const std::string& path)
 {
+	std::string newPath = path;
+	
+	if (isDirectory(prependRoot(newPath)))
+	{
+		if (newPath[newPath.size() - 1] != '/')
+			newPath.append("/");
+	}
+	return newPath;
+}
+
+void Server::updateClientVars()
+{
+	std::cout << "update Client Path" << std::endl;
+	// update and split URL for easy access
+	// this would ideally happen in Client, but has no access to root and can't appendForwardSlash
+	// move this in a future refactor
+	_clientIt->path = appendForwardSlash(_clientIt->path);
+	_clientIt->directory = _clientIt->path.substr(0, _clientIt->path.find_last_of("/") + 1);
+	_clientIt->filename = _clientIt->path.substr(_clientIt->path.find_last_of("/") + 1);
+	
 	// set dir listing
 	_clientIt->dirListing = dirListing(_clientIt->directory);
 	
@@ -527,7 +547,11 @@ bool Server::requestError()
 		&& _clientIt->method != POST
 		&& _clientIt->method != DELETE)
 		return (sendStatusPage(501), true);
-	
+
+	// invalid URL; but also so we don't have to always guard later when looking for "/"
+	if (_clientIt->path.find("/") == std::string::npos)
+		return (sendStatusPage(404), true);
+
 	// body size too large
 	if (_clientIt->contentLength > _clientMaxBody)
 		return (sendStatusPage(413), true);

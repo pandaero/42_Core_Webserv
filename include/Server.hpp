@@ -28,7 +28,7 @@ class	Server
 		void			sendResponseBody();
 		
 		std::string		buildResponseHead();
-		void			updateClientPath();
+		void			updateClientVars();
 		void			sendStatusPage(int);
 		void			sendFile200(std::string);
 		void			sendEmptyStatus(int);
@@ -49,6 +49,8 @@ class	Server
 		// utils
 		void			applyHostConfig(const ServerConfig&);
 		std::string 	prependRoot(const std::string&);
+		std::string		appendForwardSlash(const std::string&);
+
 		pollfd*			getPollStruct(int);
 		std::string		mimeType(const std::string&);
 		bool			dirListing(const std::string&);

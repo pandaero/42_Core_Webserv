@@ -32,8 +32,6 @@ void Client::parseRequest()
 	handleCookieSession();
 	
 	// parse URL for easy access
-	if (path.find("/") == std::string::npos)
-		throw std::runtime_error("invalid URL in request.");
 	directory = path.substr(0, path.find_last_of("/") + 1);
 	filename = path.substr(path.find_last_of("/") + 1);
 	
