@@ -752,15 +752,9 @@ pollfd* Server::getPollStruct(int fd)
 
 std::string	Server::mimeType(const std::string& filepath)
 {
-	size_t		dotPosition;
 	std::string extension;
 	strMap_it	it;
 	std::string defaultType = "application/octet-stream";
-
-	dotPosition = filepath.find_last_of(".");
-	if (dotPosition == std::string::npos)
-		return defaultType;
-	extension = filepath.substr(dotPosition);
 
 	extension = fileExtension(filepath);
 	it = _mimeTypes->find(extension);
