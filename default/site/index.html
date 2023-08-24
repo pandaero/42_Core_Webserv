@@ -12,20 +12,38 @@
 		<!-- <div class="text-left" id="unique-text"> -->
 			<h2>Shmismshmang</h2>
 			<p>Test webserv functions by entering text and choosing an image to upload.</p>
+			
 			<label for="input">Enter some text:</label>
+			<br><br>
 			<input type="text" id="input" name="input">
-			<button type="button" onclick="submitText()">Submit Text</button>
+			
+			
+			<div class="input-container">
+				<input type="text" id="input" class="input_01" placeholder="Enter your text">
+			</div>
+			<br><br>
+			<button class="bluebutton" onclick="submitText()">Submit Text</button>
+			
+			
+			<br>
+			<br><br>
+			<br><br>
+			<br>
+			
+			
 			<br>
 			<br>
 			<label for="image">Upload an image:</label>
 			<input type="file" id="image" name="image">
-			<button type="button" onclick="submitImage()">Submit Image</button>
+			<button class="bluebutton" onclick="submitImage()">Submit Image</button>
 			<br>
+			
+			
 			<br>
 			<br>
 			<br>
 			<a href="/sessionLog.html">
-				<button type="button">Go to session log</button>
+				<button class="bluebutton">Go to session log</button>
 			</a>
 			
 			<div id="output"></div>

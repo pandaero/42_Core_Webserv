@@ -412,7 +412,6 @@ std::string Server::appendForwardSlash(const std::string& path)
 
 void Server::updateClientVars()
 {
-	std::cout << "update Client Path" << std::endl;
 	// update and split URL for easy access
 	// this would ideally happen in Client, but has no access to root and can't appendForwardSlash
 	// move this in a future refactor
@@ -438,7 +437,7 @@ void Server::updateClientVars()
 		_clientIt->updatedDirectory = _locations[_clientIt->directory].upload_dir;
 	
 	// prepend the server root if path begins with /
-	_clientIt->updatedDirectory = prependRoot(_clientIt->directory);
+	_clientIt->updatedDirectory = prependRoot(_clientIt->updatedDirectory);
 
 	// build the new request path
 	_clientIt->updatedPath = _clientIt->updatedDirectory + _clientIt->filename;
