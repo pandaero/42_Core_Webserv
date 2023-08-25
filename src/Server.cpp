@@ -228,6 +228,12 @@ bool Server::requestHead()
 	return true;
 }
 
+/*
+this structure is bad. It was written before I understood that it's better (and necessary) to not 
+set poll-events to everything you ever want, but only to what you want in the next step.
+It works tho.
+Redo this some day. or not. 
+*/
 void Server::handleGet()
 {
 	if (_clientIt->state > handleRequest)

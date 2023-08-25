@@ -12,6 +12,9 @@ test/url
 
 .vscode/
 
+ubuntu_tester
+tester
+
 output.txt
 
 system/logs/
