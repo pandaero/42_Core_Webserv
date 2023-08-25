@@ -3,9 +3,8 @@
 ConfigFile::ConfigFile(const char* userConfigPath)
 {
 	std::string	configData;
-	std::string defaultFile = "system/default.conf";
 	
-	// All Server objects receive a pointer to this string map to select MIME types.
+	// All Server objects receive a pointer to the string map initialized here to select MIME types.
 	setMIMEtypes();
 	
 	/*
@@ -16,9 +15,9 @@ ConfigFile::ConfigFile(const char* userConfigPath)
 	Interesting idea, but wouldn't do it again.
 	*/
 	_defaultServerConfig = NULL;
-	configData = loadFile(defaultFile.c_str());
+	configData = loadFile(SYS_DEFAULTCONF);
 	_defaultServerConfig = new ServerConfig(getServerConfigElement(configData), &_mimeTypes);
-	std::cout << I_DEFAULTIMPORT << defaultFile << std::endl;
+	std::cout << I_DEFAULTIMPORT << SYS_DEFAULTCONF << std::endl;
 	
 	// parse intended ServerConfig objects from client supplied config file
 	configData = loadFile(userConfigPath);

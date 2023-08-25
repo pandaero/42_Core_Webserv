@@ -81,7 +81,7 @@ void ServerConfig::applySettings(std::string userConfigStr)
 	if (_configPairs.find(ROOT) != _configPairs.end())
 	{
 		if (*(_configPairs[ROOT].end() - 1) != '/')
-			std::cerr << I_NONDIRROOT << _configPairs[ROOT] << std::endl;
+			std::cerr << I_NONDIRPATH << _configPairs[ROOT] << std::endl;
 	}
 }
 
@@ -200,6 +200,9 @@ void ServerConfig::parseLocation(std::string& locationElement)
 	s_locInfo		locInfo;
 	
 	path = splitEraseTrimChars(locationElement, WHITESPACE);
+	if (path[path.size() - 1] != '/')
+			std::cerr << I_NONDIRPATH << path << std::endl;
+
 	while (!locationElement.empty())
 	{
 		instruction = getInstruction(locationElement);

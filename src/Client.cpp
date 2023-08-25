@@ -48,7 +48,7 @@ void Client::parseHeaders()
 {
 	headers = parseStrMap(buffer, ":", "\r\n", "\r\n");
 	if (headers.find("host") != headers.end())
-		host = headers["host"].substr(0, headers["host"].find_first_of(':'));
+		host = headers["host"].substr(0, headers["host"].find_first_of(':')); //make a substring only up to the potential ":" to get rid of port
 	if (headers.find("content-length") != headers.end())
 		contentLength = atoi(headers["content-length"].c_str());
 	if (headers.find("content-type") != headers.end())
