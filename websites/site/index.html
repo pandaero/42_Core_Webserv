@@ -16,6 +16,7 @@
 			<li>visiting the cookie tracking log</li>
 			<li>checking out directory listing</li>
 			<li>going to the CGI testing page<tiny> via a http redirection omg!</tiny> </li>
+			<li>deleting your text again</li>
 			
 		</ul>
 		<br>
@@ -25,30 +26,44 @@
 			<div class="content_subgroup_01">
 				<div class="input-container_01">
 					<input type="text" id="input" name="input" class="input_01" placeholder="Enter your text">
-					<button class="button_01" onclick="submitText()">Submit Text</button>
+					<button class="button_01" onclick="submitText()">Submit text</button>
 				</div>
 				<div class="input-container_01">
 					<input type="file" id="image" name="image" class="input_01">
-					<button class="button_01" onclick="submitImage()">Submit Image</button>
+					<button class="button_01" onclick="submitImage()">Submit image</button>
 				</div>
 			</div>
+
 			<div class="content_subgroup_01">	
-				<a href="/sessionLog.html">
-					<button class="button_01">Go to session log</button>
-				</a>
-				<a href="/api/">
-					<button class="button_01">Check out dirlisting</button>
+				<div class="input-container_01">
+					<a href="/sessionLog.html">
+						<button class="button_01">Go to session log</button>
+					</a>
+				</div>
+				<div class="input-container_01">
+					<a href="/api/">
+						<button class="button_01">Check out dirlisting</button>
+					</a>
+				</div>
 			</div>
+
 			<div class="content_subgroup_01">	
-				<a href="/fakeLocationThatDoesntExist/">
-					<button class="button_01">Go to CGI page</button>
-				</a>
+				<div class="input-container_01">
+					<a href="/fakeLocationThatDoesntExist/">
+						<button class="button_01">Go to CGI page</button>
+					</a>
+				</div>
+				<div class="input-container_01">
+					<a href="#">
+						<button class="button_01" onclick="deleteText()">Delete the text again</button>
+					</a>
+				</div>
 			</div>
 		</div>
 	</div>
 
-	<img class="img_float_right" src="/img/catFace.jpg">
-	<img src="/img/doge.png" alt="dogewow" style="width: 300px; height: auto; object-fit: cover; border-radius: 10px;">
+	<img class="img_float_right" src="/img/Cat_cutout_01.png">
+	<img src="/img/lurkingDoge.png" alt="dogeLurk" style="width: 300px; height: auto; position: absolute; bottom: 0; right: 10;">
 
 	<script>
 		const textEndpointUrl = '/api/text.txt';
@@ -83,6 +98,18 @@
 				xhr.setRequestHeader('X-File-Name', 'text.txt');
 				xhr.send(data);
 			}
+		}
+
+		function deleteText() {
+			const textDiv = document.getElementById('textToDelete');
+			const xhr = new XMLHttpRequest();
+			xhr.open('DELETE', '/api/upload/text.txt', true);
+			/* xhr.onload = function() {
+				if (this.status === 200) {
+					textDiv.innerHTML = ''; // Remove the text from the DOM
+				}
+			}; */
+ 			xhr.send();
 		}
 	</script>
 </body>
