@@ -224,7 +224,7 @@ bool Server::requestHead()
 	ANNOUNCEME_FD
 	if (!receive())
 		return false;
-	
+
 	// basic format error: request line termination not found
 	if (_clientIt->buffer.find("\r\n") == std::string::npos)
 		return (sendStatusPage(400), false);
@@ -236,7 +236,7 @@ bool Server::requestHead()
 		// check for proper headers termination
 		if (_clientIt->buffer.find("\r\n\r\n") == std::string::npos)
 		{
-			if (_bytesReceived >= MAX_HEADERSIZE) // technically, should consider the request line here and add its size to max headersize.
+			if (_bytesReceived >= MAX_HEADERSIZE) // technically, should consider the request line here and add its size to max headersize. Also, this only makes sense if the readchunk is big enough.
 				return (sendStatusPage(431), false);
 			else
 				return (sendStatusPage(400), false); // we read the entire "headers" but they weren't properly terminated.
@@ -262,7 +262,6 @@ bool Server::requestHead()
 }
 
 /*
-Request-Line   = Method SP Request-URI SP HTTP-Version CRLF
 We don't perform error checking here, because we want to log
 the requests in the next step even if they generate errors.
 */
@@ -273,7 +272,7 @@ void Server::parseRequestLine()
 	_clientIt->httpProtocol = splitEraseStr(_clientIt->buffer, "\r\n");
 
 	// split URL for easy access
-	_clientIt->URL = ifDirappendSlash(_clientIt->URL);
+	_clientIt->URL = ifDirAppendSlash(_clientIt->URL);
 	_clientIt->directory = _clientIt->URL.substr(0, _clientIt->URL.find_last_of("/") + 1);
 	_clientIt->filename = _clientIt->URL.substr(_clientIt->URL.find_last_of("/") + 1);
 
@@ -333,7 +332,8 @@ void Server::handleGet()
 		return;
 	if (cgiRequest())
 	{
-		doTheCGI();
+		handleCGI();
+		//doTheCGI();
 		return;
 	}
 	if (isDirectory(_clientIt->updatedURL))
@@ -431,7 +431,7 @@ bool Server::responseHead()
 		return true;
 	ANNOUNCEME_FD
 
-	std::string header = generateResponseHead();
+	std::string header = buildResponseHead();
 	if (send(_clientIt->fd, header.c_str(), header.size(), 0) <= 0)
 	{
 		closeClient("Server::sendResponseHead: send failure.");
@@ -480,7 +480,7 @@ void Server::sendResponseBody()
 	fileStream.close();
 }
 
-std::string Server::generateResponseHead()
+std::string Server::buildResponseHead()
 {
 	std::stringstream ss_header;
 	size_t contentLength = fileSize(_clientIt->sendPath);
@@ -491,13 +491,13 @@ std::string Server::generateResponseHead()
 		ss_header << "content-type: " << mimeType(_clientIt->sendPath) << "\r\n";
 	ss_header << "content-length: " << contentLength << "\r\n";
 	if (_clientIt->setCookie)
-		ss_header << makeCookie(SESSIONID, _clientIt->sessionId, 3600, "/") << "\r\n";
+		ss_header << buildCookie(SESSIONID, _clientIt->sessionId, 3600, "/") << "\r\n";
 	ss_header << "connection: close" << "\r\n";
 	ss_header << "\r\n";
 	return ss_header.str();
 }
 
-std::string Server::ifDirappendSlash(const std::string& path)
+std::string Server::ifDirAppendSlash(const std::string& path)
 {
 	std::string newPath = path;
 	
@@ -511,7 +511,7 @@ void Server::updateClientVars()
 	// update and split URL for easy access
 	// this would ideally happen in Client, but has no access to root and can't appendForwardSlash
 	// move this in a future refactor
-	_clientIt->URL = ifDirappendSlash(_clientIt->URL);
+	_clientIt->URL = ifDirAppendSlash(_clientIt->URL);
 	_clientIt->directory = _clientIt->URL.substr(0, _clientIt->URL.find_last_of("/") + 1);
 	_clientIt->filename = _clientIt->URL.substr(_clientIt->URL.find_last_of("/") + 1);
 	
@@ -926,7 +926,7 @@ void Server::setDefaultDirListing(std::string input)
 		_defaultDirListing = false;
 }
 
-std::string Server::makeCookie(const std::string& key, const std::string& value, int expiration, const std::string& path)
+std::string Server::buildCookie(const std::string& key, const std::string& value, int expiration, const std::string& path)
 {
 	std::stringstream cookie;
 	cookie << "set-cookie: " << key << "=" << value << ";";
@@ -1003,20 +1003,7 @@ void Server::generateDirListingPage(const std::string& directory)
 }
 
 /*
-Environment Variables: These variables provide information about the request, the server environment, and other relevant details. Some common environment variables include:
 
-QUERY_STRING: The query parameters in the URL for GET requests.
-REQUEST_METHOD: The HTTP request method (e.g., GET, POST).
-CONTENT_TYPE: The type of content in the request body (for POST requests).
-CONTENT_LENGTH: The length of the content in the request body.
-HTTP_COOKIE: Any cookies sent with the request.
-REMOTE_ADDR: The IP address of the client making the request.
-SERVER_NAME: The server's hostname.
-SERVER_PORT: The server's port number.
-
-SCRIPT_NAME: The path of the CGI script.
-PATH_INFO: Additional path information after the script name.
-HTTP_USER_AGENT: The user agent string of the client's browser.
 Standard Input: For POST requests, the content of the request body is passed to the
 CGI script through standard input.
 The script reads this data to process form submissions or other data sent by the client.
@@ -1028,13 +1015,14 @@ Here's a simple example of a Python CGI script that prints the environment varia
 and reads data from standard input:
 
 
-*/
+Because you won’t call the CGI directly, use the full path as PATH_INFO
 
-void Server::buildCGIenv()
+*/
+std::vector<char*> Server::buildCGIenv()
 {
 	// prepare non insta-insertables
 	std::stringstream contentLength;
-	contentLength << _clientIt->contentLength; // best way I found to convert in cpp98
+	contentLength << _clientIt->contentLength; // best way I found to convert numerical to str in cpp98
 
 	std::string cookie;
 	if (_clientIt->headers.find("cookie") != _clientIt->headers.end())
@@ -1045,31 +1033,63 @@ void Server::buildCGIenv()
 	std::stringstream port;
 	port << ntohs(_serverAddress.sin_port);
 
+	std::string userAgent;
+	if (_clientIt->headers.find("user-agent") != _clientIt->headers.end())
+		userAgent = _clientIt->headers["user-agent"];
 
-	// build env vector
-	std::vector<const char*> env =
+	// build env vector (initializer list {} not in cpp98)
+	std::vector<char*> env;
+	env.push_back(const_cast<char*>(("QUERY_STRING=" + _clientIt->queryString).c_str()));
+	env.push_back(const_cast<char*>(("REQUEST_METHOD=" + _clientIt->method).c_str()));
+	env.push_back(const_cast<char*>(("CONTENT_TYPE=" + _clientIt->contentType).c_str()));
+	env.push_back(const_cast<char*>(("CONTENT_LENGTH=" + contentLength.str()).c_str()));
+	env.push_back(const_cast<char*>(("HTTP_COOKIE=" + cookie).c_str()));
+	env.push_back(const_cast<char*>(("REMOTE_ADDR=" + ipAddress).c_str()));
+	env.push_back(const_cast<char*>(("SERVER_NAME=" + _activeServerName).c_str()));
+	env.push_back(const_cast<char*>(("SERVER_PORT=" + port.str()).c_str()));
+	env.push_back(const_cast<char*>(("SCRIPT_NAME=" + _clientIt->filename).c_str()));
+	env.push_back(const_cast<char*>(("PATH_INFO=" + _clientIt->updatedURL).c_str()));
+	env.push_back(const_cast<char*>(("HTTP_USER_AGENT=" + userAgent).c_str()));
+	env.push_back(NULL);
+
+	std::cout << "shmangidy\n" << const_cast<char*>(("QUERY_STRING=" + _clientIt->queryString).c_str()) << std::endl;
+
+	for (size_t i = 0; i < env.size(); ++i)
 	{
-		("QUERY_STRING=" + _clientIt->queryString).c_str(),
-		("REQUEST_METHOD=" + _clientIt->method).c_str(),
-		("CONTENT_TYPE=" + _clientIt->contentType).c_str(),
-		("CONTENT_LENGTH=" + contentLength.str()).c_str(),
-		("HTTP_COOKIE=" + cookie).c_str(),
-		("REMOTE_ADDR=" + ipAddress).c_str(),
-		("SERVER_NAME=" + _activeServerName).c_str(),
-		("SERVER_PORT=" + port.str()).c_str(),
+		std::cout << "env" << i << ": " << env[i] << std::endl;
+	}
 
-
-
-		NULL
-    };
-
-
-
+	return env;
 }
 
 // CGI post -> write directly into cgipipe?
+
+
+// if different CGIs take differnent var structures, still need to handle that
+// for now: python
+// also: assuming the script is the filename in the request
+// which means that a post request is weird, but seems shmangidy for now.
+
+// any file with .bla as extension must answer to POST
+//request by calling the cgi_test executable
+
+
 void Server::handleCGI()
 {
+	std::vector<char*> env = buildCGIenv();
+	char* argv[] = {	const_cast<char*>(_cgiExecPath.c_str()), // name of executable (giving path here but hey)
+						const_cast<char*>(_clientIt->updatedURL.c_str()), // path to script, which is the requested file
+						NULL };
+	
+	std::cout << argv[0] << std::endl;
+	std::cout << argv[1] << std::endl;
+	
+	for (size_t i = 0; i < env.size(); ++i)
+	{
+		std::cout << "env" << i << ": " << env[i] << std::endl;
+	}
+
+
 	int pipeFd[2];
 	if (pipe(pipeFd) == -1)
 	{
@@ -1077,7 +1097,7 @@ void Server::handleCGI()
 		sendStatusPage(500);
 		return;
 	}
-	
+
 	pid_t childPid = fork();
 	if (childPid == -1)
 	{
@@ -1087,39 +1107,28 @@ void Server::handleCGI()
 	}
 	if (childPid == 0)
 	{
-		dup2(pipeFd[1], STDOUT_FILENO);
-		close(pipeFd[0]);
-		close(pipeFd[1]);
-
-		// if different CGIs take differnent var structures, still need to handle that
-		// for now: python
-		// also: assuming the script is the filename in the request
-		// which means that a post request is weird, but seems shmangidy right now.
-
-        // any file with .bla as extension must answer to POST
-		//request by calling the cgi_test executable
-		
-		// build argv
-		// argv takes name of executable (giving path here atm), path to script (the file in the request), null termination
-		char* argv[] = { const_cast<char*>(_cgiExecPath.c_str()), const_cast<char*>(_clientIt->filename.c_str()), NULL };
-		char* env[] = {NULL, NULL};
-		// build env
-
-
-		execve(_cgiExecPath.c_str(), argv, env);
+		close(pipeFd[0]); // read end not needed in child (doing GET now, POST probably does need it)
+		if (dup2(pipeFd[1], STDOUT_FILENO) == -1) // stdout now points to pipe[1] (write end)
+		{
+			std::cerr << E_DUP2 << std::endl;
+			exit(EXIT_FAILURE);
+		}
+		execve(_cgiExecPath.c_str(), argv, env.data());
 		std::cerr << E_EXECVE << std::endl;
+		close(pipeFd[1]);
 		exit(EXIT_FAILURE);
 	}
 	else
 	{
-		close(pipeFd[1]);
+		close(pipeFd[1]); // close write end (probably not for POST tho)
 		int status;
 		waitpid(childPid, &status, 0); //WNOHANG?
 		// terminate in case of child hanging
 		if (!WIFEXITED(status) || WEXITSTATUS(status) == EXIT_FAILURE) // WIFEXITED(status) is only true if child terminated of its own accord
 		{
-			sendStatusPage(500);
+			std::cerr << E_CHILD << std::endl;
 			close(pipeFd[0]);
+			sendStatusPage(500);
 			return;
 		}
 

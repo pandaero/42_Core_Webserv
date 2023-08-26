@@ -9,37 +9,30 @@ class	Server
 		Server(const ServerConfig &);
 		~Server();
 		
-		int				fd();
-		void			whoIsI();
-		void			startListening(std::vector<pollfd>&);
-		void			acceptConnections();
-		void			handleConnections();
+		int	 fd();
+		void whoIsI();
+		void startListening(std::vector<pollfd>&);
+		void acceptConnections();
+		void handleConnections();
 
 	private:
 		// main handlers
-		bool			hangUp();
-		bool			receive();
-		
-		bool			requestHead();
-		void			parseRequestLine();
-		void			parseRequestHeaders();
-		void			handleSession();
-		bool			requestError();
-		void			updateClientVars();
-		void			selectHostConfig();
+		bool hangUp();
+		bool receive();
+		bool requestHead();
+		void parseRequestLine();
+		void parseRequestHeaders();
+		void handleSession();
+		bool requestError();
+		void updateClientVars();
+		void selectHostConfig();
 
-
-	
-	
-	
-	
-		void			handleGet();
-		void			handlePost();
-		void			handleDelete();
-		
-		bool			cgiRequest();
-		void			handleCGI();
-		void			buildCGIenv();
+		// request handlers
+		void handleGet();
+		void handlePost();
+		void handleDelete();
+		bool cgiRequest();
+		void handleCGI();
 		
 		void			doTheCGI();
 		
@@ -54,20 +47,20 @@ class	Server
 		void			sendEmptyStatus(int);
 		void			closeClient(const char*);
 		
-		std::string		generateResponseHead();
 		void			generateStatusPage(int);
 		void			generateSessionLogPage();
 		void			generateDirListingPage(const std::string&);
 
+		std::string			buildResponseHead();
+		std::vector<char*>	buildCGIenv();
+		std::string			buildCookie(const std::string&, const std::string&, int, const std::string&);
 
-		// cookie
-		std::string		makeCookie(const std::string&, const std::string&, int, const std::string&);
 
 
 		// utils
 		void			applyHostConfig(const ServerConfig&);
 		std::string 	prependRoot(const std::string&);
-		std::string		ifDirappendSlash(const std::string&);
+		std::string		ifDirAppendSlash(const std::string&);
 
 		pollfd*			getPollStruct(int);
 		std::string		mimeType(const std::string&);

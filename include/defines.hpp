@@ -101,6 +101,8 @@
 # define E_PIPE					"Error: Server: pipe()."
 # define E_FORK					"Error: Server: fork()."
 # define E_EXECVE				"Error: Server: execve()."
+# define E_DUP2					"Error: Server: dup2()."
+# define E_CHILD				"Error: Server: child exited with error or was terminated."
 
 # define I_CONNECTIONLIMIT		"Info: Server: Connection limit reached."
 # define I_CLOSENODATA			"Info: Server: Connection closed (no data received)."
