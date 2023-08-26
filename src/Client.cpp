@@ -16,19 +16,19 @@ Client::Client()
 void Client::parseRequest()
 {
 	// parse request line
-	method = splitEraseStr(buffer, " ");
+	/* method = splitEraseStr(buffer, " ");
 	path = splitEraseStr(buffer, " ");
-	httpProtocol = splitEraseStr(buffer, "\r\n");
+	httpProtocol = splitEraseStr(buffer, "\r\n"); */
 	
-	// check for CGI query string
+	/* // check for CGI query string
 	size_t questionMarkPos = path.find("?");
 	if (questionMarkPos != std::string::npos)
 	{
 		queryString = path.substr(questionMarkPos + 1);
 		path = path.substr(0, questionMarkPos);
-	}
+	} */
 
-	parseHeaders();
+	/* parseHeaders(); */
 	handleCookieSession();
 	
 	// parse URL for easy access

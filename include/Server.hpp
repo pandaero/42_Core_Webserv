@@ -20,6 +20,8 @@ class	Server
 		bool			hangUp();
 		bool			receive();
 		bool			requestHead();
+		bool			requestLine();
+		bool			requestHeaders();
 		void			handleGet();
 		void			handlePost();
 		void			handleDelete();
@@ -49,7 +51,7 @@ class	Server
 		// utils
 		void			applyHostConfig(const ServerConfig&);
 		std::string 	prependRoot(const std::string&);
-		std::string		appendForwardSlash(const std::string&);
+		std::string		ifDirappendSlash(const std::string&);
 
 		pollfd*			getPollStruct(int);
 		std::string		mimeType(const std::string&);

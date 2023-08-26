@@ -18,9 +18,9 @@
 # define SITE_LOGPAGE		"websites/site/sessionlog.html"
 
 // ===== ===== ===== ===== SIZE Descriptions ===== ===== ===== =====
-# define RECV_CHUNK_SIZE		4096
-# define SEND_CHUNK_SIZE		4096
-# define MAX_MAXCLIENTBODY		4294967295 //2^32 - 1 -> max size_t for 32 bit
+# define RECV_CHUNK_SIZE		8192
+# define SEND_CHUNK_SIZE		8192
+# define MAX_MAXCLIENTBODY		4294967295 //2^32 - 1 -> max size_t @ 32 bit
 # define MAX_MAXCONNECTIONS		1000
 # define MAX_BACKLOG			100
 # define MAX_HEADERSIZE			8192

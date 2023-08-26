@@ -149,6 +149,16 @@ void Server::acceptConnections()
 	}
 }
 
+
+/*
+this structure is meh. The state checking is too elaborate.
+Wrote it before I understood that it's better (and necessary) to not 
+set poll-events to everything you ever want, but only to what you want in the next step.
+So the function could be separated at a higher level and doesnt have to check for the poll event /
+client state so often.
+It works tho.
+Redo this some day. or not. 
+*/
 void Server::handleConnections()
 {
 	for (_index = 0; _index < _clients.size(); ++_index)
@@ -213,11 +223,11 @@ bool Server::requestHead()
 	ANNOUNCEME_FD
 	if (!receive())
 		return false;
-	if (_clientIt->buffer.find("\r\n\r\n") == std::string::npos)
-	{
-		sendStatusPage(431);
+	if (!requestLine())
 		return false;
-	}
+	if (!requestHeaders())
+		return false;
+
 	_clientIt->parseRequest();
 	generateCookieLogPage();
 	if (requestError())
@@ -229,11 +239,88 @@ bool Server::requestHead()
 }
 
 /*
-this structure is bad. It was written before I understood that it's better (and necessary) to not 
-set poll-events to everything you ever want, but only to what you want in the next step.
-It works tho.
-Redo this some day. or not. 
+Request-Line   = Method SP Request-URI SP HTTP-Version CRLF
 */
+bool Server::requestLine()
+{
+	// basic format error
+	if (_clientIt->buffer.find("\r\n") == std::string::npos)
+		return (sendStatusPage(400), false);
+	
+	_clientIt->method = splitEraseStr(_clientIt->buffer, " ");
+	_clientIt->path = splitEraseStr(_clientIt->buffer, " ");
+	_clientIt->httpProtocol = splitEraseStr(_clientIt->buffer, "\r\n");
+
+	// wrong protocol
+	if (_clientIt->httpProtocol != HTTPVERSION)
+		return (sendStatusPage(505), false);
+	
+	// method not supported by our server
+	if (_clientIt->method != GET
+		&& _clientIt->method != POST
+		&& _clientIt->method != DELETE)
+		return (sendStatusPage(501), false);
+
+	// invalid URL for our purposes
+	if (_clientIt->path.find("/") == std::string::npos)
+		return (sendStatusPage(404), false);
+
+	// parse URL for easy access
+	_clientIt->path = ifDirappendSlash(_clientIt->path);
+	_clientIt->directory = _clientIt->path.substr(0, _clientIt->path.find_last_of("/") + 1);
+	_clientIt->filename = _clientIt->path.substr(_clientIt->path.find_last_of("/") + 1);
+
+	// check requested resource
+	strLocMap_it locIt = _locations.find(_clientIt->directory);
+		
+	// access forbidden (have to specifically allow each path in config file)
+	if (locIt == _locations.end())
+		return (sendStatusPage(404), false); // returning 404, not 403, to not leak file structure
+	else
+		std::cout << "\n\n\n\nlocation found:" << locIt->first << std::endl;
+
+	// access granted, but not for the requested method
+	if ((_clientIt->method == GET && !locIt->second.get)
+		|| (_clientIt->method == POST && !locIt->second.post)
+		|| (_clientIt->method == DELETE && !locIt->second.delete_))
+		return (sendStatusPage(405), false);
+
+	// check for CGI query string
+	size_t questionMarkPos = _clientIt->path.find("?");
+	if (questionMarkPos != std::string::npos)
+	{
+		_clientIt->queryString = _clientIt->path.substr(questionMarkPos + 1);
+		_clientIt->path = _clientIt->path.substr(0, questionMarkPos);
+	}
+
+	return true;
+}
+
+bool Server::requestHeaders()
+{
+	// If there is still content to read (request wasn't just the request line), header termination sequence has to be there.
+	// If not, we consider the header too large (standard read chunk is 8192 bytes).
+	if (!_clientIt->buffer.empty() && _clientIt->buffer.find("\r\n\r\n") == std::string::npos)
+		return (sendStatusPage(431), false);
+
+	_clientIt->headers = parseStrMap(_clientIt->buffer, ":", "\r\n", "\r\n");
+	
+	if (_clientIt->headers.find("host") != _clientIt->headers.end())
+		_clientIt->host = _clientIt->headers["host"].substr(0, _clientIt->headers["host"].find_first_of(':')); //make a substring only up to the potential ":" to get rid of port
+	
+	if (_clientIt->headers.find("content-length") != _clientIt->headers.end())
+		_clientIt->contentLength = atoi(_clientIt->headers["content-length"].c_str());
+	
+	if (_clientIt->headers.find("content-type") != _clientIt->headers.end())
+		_clientIt->contentType = _clientIt->headers["content-type"];
+	
+	// body size too large
+	if (_clientIt->contentLength > _clientMaxBody)
+		return (sendStatusPage(413), true);
+
+	return true;
+}
+
 void Server::handleGet()
 {
 	if (_clientIt->state > handleRequest)
@@ -404,7 +491,7 @@ std::string Server::buildResponseHead()
 	return ss_header.str();
 }
 
-std::string Server::appendForwardSlash(const std::string& path)
+std::string Server::ifDirappendSlash(const std::string& path)
 {
 	std::string newPath = path;
 	
@@ -418,7 +505,7 @@ void Server::updateClientVars()
 	// update and split URL for easy access
 	// this would ideally happen in Client, but has no access to root and can't appendForwardSlash
 	// move this in a future refactor
-	_clientIt->path = appendForwardSlash(_clientIt->path);
+	_clientIt->path = ifDirappendSlash(_clientIt->path);
 	_clientIt->directory = _clientIt->path.substr(0, _clientIt->path.find_last_of("/") + 1);
 	_clientIt->filename = _clientIt->path.substr(_clientIt->path.find_last_of("/") + 1);
 	
@@ -540,7 +627,7 @@ void Server::selectHostConfig()
 
 bool Server::requestError()
 {
-	// wrong protocol
+	/* // wrong protocol
 	if (_clientIt->httpProtocol != HTTPVERSION)
 		return (sendStatusPage(505), true);
 	
@@ -552,12 +639,12 @@ bool Server::requestError()
 
 	// invalid URL; but also so we don't have to always guard later when looking for "/"
 	if (_clientIt->path.find("/") == std::string::npos)
-		return (sendStatusPage(404), true);
+		return (sendStatusPage(404), true); */
 
-	// body size too large
+	/* // body size too large
 	if (_clientIt->contentLength > _clientMaxBody)
-		return (sendStatusPage(413), true);
-	else
+		return (sendStatusPage(413), true); 
+	else*/
 	{
 		strLocMap_it locIt = _locations.find(_clientIt->directory);
 		
