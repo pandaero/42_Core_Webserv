@@ -604,14 +604,16 @@ void Server::generateStatusPage(int code)
 
 /*
 A better way to handle this would be to not write the data from the ServerConfig to
-the Server object, but to just point to the currently active ServerConfig and call
+the Server object (applyConfig()), but to just point to the currently active ServerConfig and call
 its getters.
+This requires a bigger refactor, because some stuff would have to be tested before the server constructor
+(in ConfigFile / ServerConfig). Doable, but a bit of work. Maybe some day.
 */
 void Server::selectHostConfig()
 {
 	if (_clientIt->host.empty())
 	{
-		applyHostConfig(_configs[0]);
+		applyHostConfig(_configs[0]); // first config is the default one
 		_activeServerName = _configs[0].getNames()[0];
 		return;
 	}
@@ -937,42 +939,34 @@ std::string Server::makeCookie(const std::string& key, const std::string& value,
 
 void Server::generateSessionLogPage()
 {
-	std::ofstream cookiePage(SITE_LOGPAGE, std::ios::binary | std::ios::trunc);
-	if (cookiePage.fail())
+	std::ofstream sessionLogPage(SITE_LOGPAGE, std::ios::binary | std::ios::trunc);
+	if (sessionLogPage.fail())
 	{
-		cookiePage.close();
+		sessionLogPage.close();
 		throw std::runtime_error(E_TEMPFILE);
 	}
 	
-	std::string cookieLogPath = "system/logs/" + _clientIt->sessionId + ".log";
-	std::ifstream cookieLog(cookieLogPath.c_str());
-	if (cookieLog.fail())
+	std::string path_LogFile = "system/logs/" + _clientIt->sessionId + ".log";
+	std::ifstream logFile(path_LogFile.c_str());
+	if (logFile.fail())
 	{
-		cookieLog.close();
+		logFile.close();
 		throw std::runtime_error(E_TEMPFILE);
 	}
 
-	cookiePage << "<!DOCTYPE html>";
-	cookiePage << "<html>\n";
-	cookiePage << "<head>\n";
-	cookiePage << "<title>webserv - session log</title>\n";
-	cookiePage << "<style>\n";
-	cookiePage << "body {background-color: black; color: white; font-family: Arial, sans-serif; margin: 0; padding: 1% 0 0 0; text-align: left; display: flex;}\n";
-	cookiePage << ".container {white-space: pre; flex: 1; position: relative; z-index: 2;}\n";
-	cookiePage << "h1 {font-size: 42px;}\n";
-	cookiePage << "p {font-size: 16px; line-height: 1.5; margin-right: 300px;}\n";
-	cookiePage << "img {position: absolute; top: 0; right: 0; height: 100%; z-index: 1;}\n";
-	cookiePage << "</style>\n";
-	cookiePage << "</head>\n";
-	cookiePage << "<body>\n";
-	cookiePage << "<div class=\"container\">\n";
-	cookiePage << "<h1>" << "Log for session id " << _clientIt->sessionId << "</h1>\n";
-	cookiePage << "<p>" << cookieLog.rdbuf() << "</p>\n";
-	cookiePage << "</div>";
-	cookiePage << "<img style=\"margin-left: auto;\" src=\"/img/catlockHolmes.png\">\n";
-	cookiePage << "</body>\n";
-	cookiePage << "</html>\n";
-	cookiePage.close();
+	sessionLogPage	<< "<!DOCTYPE html>\n<html>\n"
+					<< "<head>\n"
+					<< "<title>webserv - session log</title>\n"
+					<< "<link rel=\"stylesheet\" type=\"text/css\" href=\"styles.css\"/>\n"
+					<< "</head>\n"
+					<< "<body>\n"
+					<< "<div class=\"logContainer\">\n"
+					<< "<h2>" << "Log for session id " << _clientIt->sessionId << "</h2>\n"
+					<< "<logtext>" << logFile.rdbuf() << "</logtext>\n"
+					<< "</div>\n"
+					<< "<img style=\"margin-left: auto; position: absolute; top: 0; right: 0; height: 100%; z-index: 1;\" src=\"/img/catlockHolmes.png\">\n"
+					<< "</body>\n</html>\n";
+	sessionLogPage.close();
 }
 
 void Server::generateDirListing(const std::string& directory)
