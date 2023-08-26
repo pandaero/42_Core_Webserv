@@ -14,43 +14,45 @@ class	Client
 	public:
 		Client();
 
-		void			parseRequest();
 		void			whoIsI();
 		
 		int				fd;
 		std::string		buffer;
 		int				statusCode;
-		std::string		directory;
-		std::string		updatedDirectory;
-		std::string		filename;
+		
 		std::string		sendPath;
 		bool			dirListing;
 		std::string		standardFile;
 		std::streampos	filePosition;
 		size_t			bytesWritten;
+		std::string		sessionId;
 
 		// request data
-		std::string		httpProtocol;
 		std::string		method;
-		std::string		path;
-		std::string		updatedPath;
+		std::string		URL;
+		std::string		httpProtocol;
 		std::string		queryString;
+		
+		// request data ez access
+		std::string		filename;
+		std::string		directory;
+		std::string		updatedURL;
+		std::string		updatedDirectory;
 		std::string		host;
 		size_t			contentLength;
 		std::string		contentType;
 		strMap			cookies;
 		strMap			headers;
-		std::string		sessionId;
 		
-		// status vars
+		// control vars
 		state_enum		state;
 		bool			append;
 		bool			setCookie;
 	
 	private:
-		void			parseHeaders();
-		void			handleCookieSession();
-		std::string		generateSessionId();
+		// nothing, cause this is a class only in name, it's more of a struct.
+		// It only ever gets instantiated as a private member of the Server class.
+		// In real life, it would have everything private incl. constructor and have Server as friend class.
 
 };
 

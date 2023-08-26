@@ -92,15 +92,15 @@ void Server::startListening(std::vector<pollfd>& pollVector)
 	
 	_server_fd = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP);
 	if (_server_fd == -1)
-		closeAndThrow(_server_fd);
+		closeFdAndThrow(_server_fd);
 	if (setsockopt(_server_fd, SOL_SOCKET, SO_REUSEADDR, (char*)&options, sizeof(options)) == -1)
-		closeAndThrow(_server_fd);;
+		closeFdAndThrow(_server_fd);;
 	if (fcntl(_server_fd, F_SETFL, O_NONBLOCK) == -1)
-		closeAndThrow(_server_fd);
+		closeFdAndThrow(_server_fd);
 	if (bind(_server_fd, (struct sockaddr*) &_serverAddress, sizeof(_serverAddress)) == -1)
-		closeAndThrow(_server_fd);
+		closeFdAndThrow(_server_fd);
 	if (listen(_server_fd, SOMAXCONN) == -1)
-		closeAndThrow(_server_fd);
+		closeFdAndThrow(_server_fd);
 	
 	newPollStruct.fd = _server_fd;
 	newPollStruct.events = POLLIN;
@@ -135,7 +135,7 @@ void Server::acceptConnections()
 		}
 		int flags = fcntl(new_sock, F_GETFL, 0);
 		if (fcntl(new_sock, F_SETFL, flags | O_NONBLOCK) == -1)
-			closeAndThrow(new_sock);
+			closeFdAndThrow(new_sock);
 		
 		Client newClient;
 		newClient.fd = new_sock;
@@ -206,13 +206,13 @@ bool Server::receive()
 		return false;
 	ANNOUNCEME_FD
 	char buffer[RECV_CHUNK_SIZE];
-	int bytesReceived = recv(_clientIt->fd, buffer, RECV_CHUNK_SIZE, 0);
-	if (bytesReceived <= 0)
+	_bytesReceived = recv(_clientIt->fd, buffer, RECV_CHUNK_SIZE, 0);
+	if (_bytesReceived <= 0)
 	{
 		closeClient("Server::receiveData: 0 bytes received or error");
 		throw std::runtime_error(I_CLOSENODATA);
 	}
-	_clientIt->buffer.append(buffer, bytesReceived);
+	_clientIt->buffer.append(buffer, _bytesReceived);
 	return true;
 }
 
@@ -223,15 +223,37 @@ bool Server::requestHead()
 	ANNOUNCEME_FD
 	if (!receive())
 		return false;
-	if (!requestLine())
-		return false;
-	if (!requestHeaders())
-		return false;
-
-	_clientIt->parseRequest();
-	generateCookieLogPage();
+	
+	// basic format error: request line termination not found
+	if (_clientIt->buffer.find("\r\n") == std::string::npos)
+		return (sendStatusPage(400), false);
+	parseRequestLine();
+	
+	// if buffer is empty, the request was only the request line. Not HTTP1.1 compliant, but we will accept it.
+	if (!_clientIt->buffer.empty())
+	{
+		// check for proper headers termination
+		if (_clientIt->buffer.find("\r\n\r\n") == std::string::npos)
+		{
+			if (_bytesReceived >= MAX_HEADERSIZE) // technically, should consider the request line here and add its size to max headersize.
+				return (sendStatusPage(431), false);
+			else
+				return (sendStatusPage(400), false); // we read the entire "headers" but they weren't properly terminated.
+		}
+		parseRequestHeaders();
+	}
+	handleSession();
 	if (requestError())
 		return false;
+	
+	// check for body
+	if (_clientIt->method != POST) // we don't process bodies of GET or DELETE requests
+		_clientIt->state = handleRequest;
+	else if (_clientIt->contentLength <= _clientIt->buffer.size()) // body is already complete in this recv (header content has already been deleted from buffer)
+		_clientIt->state = handleRequest;
+	else
+		_clientIt->state = recv_body;
+
 	selectHostConfig();
 	updateClientVars();
 	_clientIt->whoIsI();
@@ -240,71 +262,56 @@ bool Server::requestHead()
 
 /*
 Request-Line   = Method SP Request-URI SP HTTP-Version CRLF
+We don't perform error checking here, because we want to log
+the requests in the next step even if they generate errors.
 */
-bool Server::requestLine()
+void Server::parseRequestLine()
 {
-	// basic format error
-	if (_clientIt->buffer.find("\r\n") == std::string::npos)
-		return (sendStatusPage(400), false);
-	
 	_clientIt->method = splitEraseStr(_clientIt->buffer, " ");
-	_clientIt->path = splitEraseStr(_clientIt->buffer, " ");
+	_clientIt->URL = splitEraseStr(_clientIt->buffer, " ");
 	_clientIt->httpProtocol = splitEraseStr(_clientIt->buffer, "\r\n");
 
-	// wrong protocol
-	if (_clientIt->httpProtocol != HTTPVERSION)
-		return (sendStatusPage(505), false);
-	
-	// method not supported by our server
-	if (_clientIt->method != GET
-		&& _clientIt->method != POST
-		&& _clientIt->method != DELETE)
-		return (sendStatusPage(501), false);
-
-	// invalid URL for our purposes
-	if (_clientIt->path.find("/") == std::string::npos)
-		return (sendStatusPage(404), false);
-
-	// parse URL for easy access
-	_clientIt->path = ifDirappendSlash(_clientIt->path);
-	_clientIt->directory = _clientIt->path.substr(0, _clientIt->path.find_last_of("/") + 1);
-	_clientIt->filename = _clientIt->path.substr(_clientIt->path.find_last_of("/") + 1);
-
-	// check requested resource
-	strLocMap_it locIt = _locations.find(_clientIt->directory);
-		
-	// access forbidden (have to specifically allow each path in config file)
-	if (locIt == _locations.end())
-		return (sendStatusPage(404), false); // returning 404, not 403, to not leak file structure
-	else
-		std::cout << "\n\n\n\nlocation found:" << locIt->first << std::endl;
-
-	// access granted, but not for the requested method
-	if ((_clientIt->method == GET && !locIt->second.get)
-		|| (_clientIt->method == POST && !locIt->second.post)
-		|| (_clientIt->method == DELETE && !locIt->second.delete_))
-		return (sendStatusPage(405), false);
+	// split URL for easy access
+	_clientIt->URL = ifDirappendSlash(_clientIt->URL);
+	_clientIt->directory = _clientIt->URL.substr(0, _clientIt->URL.find_last_of("/") + 1);
+	_clientIt->filename = _clientIt->URL.substr(_clientIt->URL.find_last_of("/") + 1);
 
 	// check for CGI query string
-	size_t questionMarkPos = _clientIt->path.find("?");
+	size_t questionMarkPos = _clientIt->URL.find("?");
 	if (questionMarkPos != std::string::npos)
 	{
-		_clientIt->queryString = _clientIt->path.substr(questionMarkPos + 1);
-		_clientIt->path = _clientIt->path.substr(0, questionMarkPos);
+		_clientIt->queryString = _clientIt->URL.substr(questionMarkPos + 1);
+		_clientIt->URL = _clientIt->URL.substr(0, questionMarkPos);
 	}
-
-	return true;
 }
 
-bool Server::requestHeaders()
+void Server::handleSession()
 {
-	// If there is still content to read (request wasn't just the request line), header termination sequence has to be there.
-	// If not, we consider the header too large (standard read chunk is 8192 bytes).
-	if (!_clientIt->buffer.empty() && _clientIt->buffer.find("\r\n\r\n") == std::string::npos)
-		return (sendStatusPage(431), false);
+	// take existing session-cookie or create new id and later transmit new session-cookie
+	if (_clientIt->cookies.find(SESSIONID) != _clientIt->cookies.end())
+		_clientIt->sessionId = _clientIt->cookies[SESSIONID];
+	else
+	{
+		_clientIt->sessionId = generateSessionId();
+		_clientIt->setCookie = true;
+	}
+	
+	// write data of interest to the log
+	std::string logPath = "system/logs/" + _clientIt->sessionId + ".log";
+	std::ofstream logFile(logPath.c_str(), std::ios::app);
+	if (logFile.is_open())
+		logFile << currentTime() << " " << _clientIt->method << " " << _clientIt->URL << "\n";
+	else
+		std::cerr << "Could not open log file for tracking of session " << _clientIt->sessionId << std::endl;
+	
+	generateSessionLogPage(); // we are pre-generating a static page here, should do this with CGI upon request.
+}
 
+void Server::parseRequestHeaders()
+{
 	_clientIt->headers = parseStrMap(_clientIt->buffer, ":", "\r\n", "\r\n");
 	
+	// parse important headers into vars for easy access
 	if (_clientIt->headers.find("host") != _clientIt->headers.end())
 		_clientIt->host = _clientIt->headers["host"].substr(0, _clientIt->headers["host"].find_first_of(':')); //make a substring only up to the potential ":" to get rid of port
 	
@@ -313,12 +320,10 @@ bool Server::requestHeaders()
 	
 	if (_clientIt->headers.find("content-type") != _clientIt->headers.end())
 		_clientIt->contentType = _clientIt->headers["content-type"];
-	
-	// body size too large
-	if (_clientIt->contentLength > _clientMaxBody)
-		return (sendStatusPage(413), true);
 
-	return true;
+	// the cookie header contains all cookies. So its return is a string map.
+	if (_clientIt->headers.find("cookie") != _clientIt->headers.end())
+		_clientIt->cookies = parseStrMap(_clientIt->headers["cookie"], "=", ";", "Please parse me to the end!");
 }
 
 void Server::handleGet()
@@ -330,13 +335,13 @@ void Server::handleGet()
 		doTheCGI();
 		return;
 	}
-	if (isDirectory(_clientIt->updatedPath))
+	if (isDirectory(_clientIt->updatedURL))
 	{
-		if (resourceExists(_clientIt->updatedPath + _clientIt->standardFile))
-			sendFile200(_clientIt->updatedPath + _clientIt->standardFile);
+		if (resourceExists(_clientIt->updatedURL + _clientIt->standardFile))
+			sendFile200(_clientIt->updatedURL + _clientIt->standardFile);
 		else if (_clientIt->dirListing)
 		{
-			generateDirListing(_clientIt->updatedPath);
+			generateDirListing(_clientIt->updatedURL);
 			sendFile200(SYS_DIRLISTPAGE);
 		}
 		else
@@ -344,8 +349,8 @@ void Server::handleGet()
 	}
 	else
 	{
-		if (resourceExists(_clientIt->updatedPath))
-			sendFile200(_clientIt->updatedPath);
+		if (resourceExists(_clientIt->updatedURL))
+			sendFile200(_clientIt->updatedURL);
 		else
 			sendStatusPage(404);
 	}
@@ -365,10 +370,10 @@ void Server::handlePost()
 		receive();
 	std::ofstream outputFile;
 	if (_clientIt->append)
-		outputFile.open(_clientIt->updatedPath.c_str(), std::ios::binary | std::ios::app);
+		outputFile.open(_clientIt->updatedURL.c_str(), std::ios::binary | std::ios::app);
 	else
 	{
-		outputFile.open(_clientIt->updatedPath.c_str(), std::ios::binary | std::ios::trunc);
+		outputFile.open(_clientIt->updatedURL.c_str(), std::ios::binary | std::ios::trunc);
 		_clientIt->append = true;
 	}
 	if (!outputFile.is_open())
@@ -394,17 +399,17 @@ void Server::handleDelete()
 {
 	if (_clientIt->state > handleRequest)
 		return;
-	if (isDirectory(_clientIt->updatedPath)) // deleting directories not allowed
+	if (isDirectory(_clientIt->updatedURL)) // deleting directories not allowed
 	{
 		sendStatusPage(405);
 		return;
 	}
-	if (!resourceExists(_clientIt->updatedPath))
+	if (!resourceExists(_clientIt->updatedURL))
 	{
 		sendStatusPage(404);
 		return;
 	}
-	if (remove(_clientIt->updatedPath.c_str()) == 0)
+	if (remove(_clientIt->updatedURL.c_str()) == 0)
 		sendEmptyStatus(204);
 	else
 		sendStatusPage(500);
@@ -505,9 +510,9 @@ void Server::updateClientVars()
 	// update and split URL for easy access
 	// this would ideally happen in Client, but has no access to root and can't appendForwardSlash
 	// move this in a future refactor
-	_clientIt->path = ifDirappendSlash(_clientIt->path);
-	_clientIt->directory = _clientIt->path.substr(0, _clientIt->path.find_last_of("/") + 1);
-	_clientIt->filename = _clientIt->path.substr(_clientIt->path.find_last_of("/") + 1);
+	_clientIt->URL = ifDirappendSlash(_clientIt->URL);
+	_clientIt->directory = _clientIt->URL.substr(0, _clientIt->URL.find_last_of("/") + 1);
+	_clientIt->filename = _clientIt->URL.substr(_clientIt->URL.find_last_of("/") + 1);
 	
 	// set dir listing
 	_clientIt->dirListing = dirListing(_clientIt->directory);
@@ -517,7 +522,7 @@ void Server::updateClientVars()
 	if (_clientIt->standardFile.empty())
 		_clientIt->standardFile = _standardFile;
 	
-	// check for HTTP redirection and upload redirection; if neither: updatedPath is same as path
+	// check for HTTP redirection and upload redirection; if neither: updatedPath is same as URL
 	std::string	http_redir = _locations[_clientIt->directory].http_redir;
 	if (!http_redir.empty())
 		_clientIt->updatedDirectory = http_redir;
@@ -526,11 +531,11 @@ void Server::updateClientVars()
 	else
 		_clientIt->updatedDirectory = _clientIt->directory;
 
-	// prepend the server root if path begins with /
+	// prepend the server root if URL begins with /
 	_clientIt->updatedDirectory = prependRoot(_clientIt->updatedDirectory);
 
-	// build the new request path
-	_clientIt->updatedPath = _clientIt->updatedDirectory + _clientIt->filename;
+	// build the new request URL
+	_clientIt->updatedURL = _clientIt->updatedDirectory + _clientIt->filename;
 }
 
 void Server::sendStatusPage(int code)
@@ -627,7 +632,7 @@ void Server::selectHostConfig()
 
 bool Server::requestError()
 {
-	/* // wrong protocol
+	// wrong protocol
 	if (_clientIt->httpProtocol != HTTPVERSION)
 		return (sendStatusPage(505), true);
 	
@@ -637,27 +642,27 @@ bool Server::requestError()
 		&& _clientIt->method != DELETE)
 		return (sendStatusPage(501), true);
 
-	// invalid URL; but also so we don't have to always guard later when looking for "/"
-	if (_clientIt->path.find("/") == std::string::npos)
-		return (sendStatusPage(404), true); */
+	// invalid URL for our purposes; but also so we don't have to always guard later when looking for "/"
+	if (_clientIt->URL.find("/") == std::string::npos)
+		return (sendStatusPage(404), true);
 
-	/* // body size too large
+	// body size too large
 	if (_clientIt->contentLength > _clientMaxBody)
 		return (sendStatusPage(413), true); 
-	else*/
-	{
-		strLocMap_it locIt = _locations.find(_clientIt->directory);
-		
-		// access forbidden (have to specifically allow each path in config file)
-		if (locIt == _locations.end())
-			return (sendStatusPage(404), true); // returning 404, not 403, to not leak file structure
 	
-		// access granted, but not for the requested method
-		if ((_clientIt->method == GET && !locIt->second.get)
-			|| (_clientIt->method == POST && !locIt->second.post)
-			|| (_clientIt->method == DELETE && !locIt->second.delete_))
-			return (sendStatusPage(405), true);
-	}
+	// check requested resource
+	strLocMap_it locIt = _locations.find(_clientIt->directory);
+		
+	// access forbidden (have to specifically allow each path in config file)
+	if (locIt == _locations.end())
+		return (sendStatusPage(404), true); // returning 404, not 403, to not leak file structure
+
+	// access granted, but not for the requested method
+	if ((_clientIt->method == GET && !locIt->second.get)
+		|| (_clientIt->method == POST && !locIt->second.post)
+		|| (_clientIt->method == DELETE && !locIt->second.delete_))
+		return (sendStatusPage(405), true);
+	
 	return false;
 }
 
@@ -930,7 +935,7 @@ std::string Server::makeCookie(const std::string& key, const std::string& value,
 	return cookie.str();
 }
 
-void Server::generateCookieLogPage()
+void Server::generateSessionLogPage()
 {
 	std::ofstream cookiePage(SITE_LOGPAGE, std::ios::binary | std::ios::trunc);
 	if (cookiePage.fail())

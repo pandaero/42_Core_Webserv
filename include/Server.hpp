@@ -19,9 +19,17 @@ class	Server
 		// main handlers
 		bool			hangUp();
 		bool			receive();
+		
 		bool			requestHead();
-		bool			requestLine();
-		bool			requestHeaders();
+		void			parseRequestLine();
+		void			parseRequestHeaders();
+		void			handleSession();
+
+
+	
+	
+	
+	
 		void			handleGet();
 		void			handlePost();
 		void			handleDelete();
@@ -35,7 +43,7 @@ class	Server
 		void			sendFile200(std::string);
 		void			sendEmptyStatus(int);
 		void			generateStatusPage(int);
-		void			generateCookieLogPage();
+		void			generateSessionLogPage();
 		void			generateDirListing(const std::string&);
 
 		void			selectHostConfig();
@@ -85,6 +93,8 @@ class	Server
 		clientVec_it					_clientIt;
 		std::vector<Client>				_clients;
 		std::vector<pollfd>*			_pollVector;
+
+		int								_bytesReceived;
 };
 
 #endif

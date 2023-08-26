@@ -278,7 +278,7 @@ std::string fileExtension(const std::string& filename)
 	return filename.substr(dotPosition);
 }
 
-void closeAndThrow(int fd)
+void closeFdAndThrow(int fd)
 {
 	if (fd != -1)
 		close(fd);
@@ -315,4 +315,17 @@ std::string currentTime()
 	strftime(timeoutput, 420, timeformat, timeinfo);
 	std::string returnVal(timeoutput);
 	return returnVal;
+}
+
+std::string generateSessionId()
+{
+	char sessionId[17];
+	const char charset[] = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ";
+	size_t i = 0;
+	
+	srand(time(NULL));
+	for (; i < sizeof(sessionId) - 1; ++i)
+		sessionId[i] = charset[rand() % (sizeof(charset) - 1)];
+	sessionId[i] = 0;
+	return sessionId;
 }

@@ -43,7 +43,7 @@ void			sigHandler(int);
 bool			poll_(std::vector<pollfd>&);
 
 // ===== ===== ===== ===== GLOBAL FUNCTIONS ===== ===== ===== =====
-// Determines whether a string contains purely alphanumerical characters.
+// Determines whether a string contains only alphanumerical characters.
 bool 			isAlnumStr(const std::string &);
 // Determines whether strings are the same (case-insensitive).
 bool			isSameNoCase(std::string, std::string);
@@ -67,17 +67,17 @@ bool			isDirectory(const std::string&);
 size_t			fileSize(const std::string&);
 // Returns the message string associated with an HTTP status code.
 std::string		getHttpMsg(int);
-// Create a directory listing HTML file for a given path.
-std::string		createDirList(const std::string &);
 // Checks whether a string is present in a string vector.
 bool			stringInVec(const std::string&, const strVec&);
 // From the passed string, returns the last '.' and the characters behind it, e.g. ".html".
 std::string		fileExtension(const std::string&);
 // Throws a runtime error with the message contained in errnum and closes the passed fd if it is not -1.
-void			closeAndThrow(int);
-// Operates on a string ref that represents a string map. 1st arg is the string to be parsed. 2nd is end of key, 3rd is end of value, 4th is end of region to parse in 1st arg.
+void			closeFdAndThrow(int);
+// Operates on a string ref that contains key-value pairs. 1st arg is the string ref. 2nd is end of key, 3rd is end of value, 4th is end of region to parse in 1st arg. Erases parsed region from the string ref.
 strMap			parseStrMap(std::string&, const std::string&, const std::string&, const std::string&);
 // Returns the current time in a pleasant format without using modern CPP.
 std::string 	currentTime();
+// Generates a random string to represent a session.
+std::string		generateSessionId();
 
 #endif
