@@ -241,6 +241,8 @@ void ServerConfig::parseLocation(std::string& locationElement)
 	_locations.insert(std::make_pair(path, locInfo));
 }
 
+// could get rid of this in a future refactor. just take everything the user inputs.
+// just take care of execve fails, but that should already be handled by the normal execve error handling
 void ServerConfig::parseDefaultCgi(std::string& defaultCgiElement)
 {
 	std::string	instruction, key;
@@ -253,6 +255,7 @@ void ServerConfig::parseDefaultCgi(std::string& defaultCgiElement)
 	}
 }
 
+// modified this to accept any new user configs - makes sense once you understand CGI
 void ServerConfig::parseUserCgi(std::string& userCgiElement)
 {
 	std::string	instruction, key;
@@ -266,7 +269,7 @@ void ServerConfig::parseUserCgi(std::string& userCgiElement)
 		if (iter != _cgiPaths.end())
 			iter->second = instruction;
 		else
-			std::cerr << I_INVALIDKEY << key << std::endl;
+			_cgiPaths.insert(std::make_pair(key, instruction));
 	}
 }
 

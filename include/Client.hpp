@@ -19,6 +19,7 @@ class	Client
 		int				fd;
 		std::string		buffer;
 		int				statusCode;
+		sockaddr_in		address;
 		
 		std::string		sendPath;
 		bool			dirListing;

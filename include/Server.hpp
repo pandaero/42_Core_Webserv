@@ -24,6 +24,9 @@ class	Server
 		void			parseRequestLine();
 		void			parseRequestHeaders();
 		void			handleSession();
+		bool			requestError();
+		void			updateClientVars();
+		void			selectHostConfig();
 
 
 	
@@ -33,24 +36,29 @@ class	Server
 		void			handleGet();
 		void			handlePost();
 		void			handleDelete();
+		
+		bool			cgiRequest();
+		void			handleCGI();
+		void			buildCGIenv();
+		
+		void			doTheCGI();
+		
+		
+		
 		bool			sendData();
 		bool			responseHead();
 		void			sendResponseBody();
 		
-		std::string		buildResponseHead();
-		void			updateClientVars();
 		void			sendStatusPage(int);
 		void			sendFile200(std::string);
 		void			sendEmptyStatus(int);
+		void			closeClient(const char*);
+		
+		std::string		generateResponseHead();
 		void			generateStatusPage(int);
 		void			generateSessionLogPage();
-		void			generateDirListing(const std::string&);
+		void			generateDirListingPage(const std::string&);
 
-		void			selectHostConfig();
-		bool			requestError();
-		void			closeClient(const char*);
-		bool			cgiRequest();
-		void			doTheCGI();
 
 		// cookie
 		std::string		makeCookie(const std::string&, const std::string&, int, const std::string&);
@@ -84,7 +92,7 @@ class	Server
 		size_t							_maxConns;
 		bool							_defaultDirListing;
 		strMap							_cgiPaths;
-		std::string						_cgiExtension;
+		std::string						_cgiExecPath;
 		strMap*							_mimeTypes;
 		sockaddr_in						_serverAddress;
 

@@ -10,11 +10,13 @@
 # define ANNOUNCEME_FD	//std::cout << "Announcer: " << __FUNCTION__ << " on fd " << _clientIt->fd << std::endl;
 # define SESSIONID		"sessionid"
 
-// ===== ===== ===== ===== Directories ===== ===== ===== =====
+// paths
 # define SYS_CGIPAGE		"system/cgi.html"
 # define SYS_DIRLISTPAGE	"system/dirListing.html"
 # define SYS_ERRPAGE		"system/errorPage.html"
 # define SYS_DEFAULTCONF	"system/default.conf"
+# define SYS_SCRIPT_PY		"system/cgi/python"
+# define SYS_SCRIPT_PHP		"system/cgi/php"
 # define SITE_LOGPAGE		"websites/site/sessionlog.html"
 
 // ===== ===== ===== ===== SIZE Descriptions ===== ===== ===== =====
@@ -96,6 +98,9 @@
 # define E_LISTEN				"Error: Server: listen()"
 # define E_SEND					"Error: Server: send()"
 # define E_TEMPFILE				"Error: Server: Could not create temporary file."
+# define E_PIPE					"Error: Server: pipe()."
+# define E_FORK					"Error: Server: fork()."
+# define E_EXECVE				"Error: Server: execve()."
 
 # define I_CONNECTIONLIMIT		"Info: Server: Connection limit reached."
 # define I_CLOSENODATA			"Info: Server: Connection closed (no data received)."

@@ -126,7 +126,10 @@ void Server::acceptConnections()
 		return;
 	while (true)
 	{
-		int new_sock = accept(_server_fd, NULL, NULL); // don't need client info, so pass NULL
+		Client newClient;
+		socklen_t clientAddrSize = sizeof(newClient.address);
+	
+		int new_sock = accept(_server_fd, (sockaddr*)&newClient.address, &clientAddrSize);
 		if (new_sock == -1)
 		{
 			if (errno != EWOULDBLOCK)
@@ -137,7 +140,6 @@ void Server::acceptConnections()
 		if (fcntl(new_sock, F_SETFL, flags | O_NONBLOCK) == -1)
 			closeFdAndThrow(new_sock);
 		
-		Client newClient;
 		newClient.fd = new_sock;
 		_clients.push_back(newClient);
 
@@ -148,7 +150,6 @@ void Server::acceptConnections()
 		_pollVector->push_back(new_pollStruct);
 	}
 }
-
 
 /*
 this structure is meh. The state checking is too elaborate.
@@ -341,7 +342,7 @@ void Server::handleGet()
 			sendFile200(_clientIt->updatedURL + _clientIt->standardFile);
 		else if (_clientIt->dirListing)
 		{
-			generateDirListing(_clientIt->updatedURL);
+			generateDirListingPage(_clientIt->updatedURL);
 			sendFile200(SYS_DIRLISTPAGE);
 		}
 		else
@@ -430,7 +431,7 @@ bool Server::responseHead()
 		return true;
 	ANNOUNCEME_FD
 
-	std::string header = buildResponseHead();
+	std::string header = generateResponseHead();
 	if (send(_clientIt->fd, header.c_str(), header.size(), 0) <= 0)
 	{
 		closeClient("Server::sendResponseHead: send failure.");
@@ -479,7 +480,7 @@ void Server::sendResponseBody()
 	fileStream.close();
 }
 
-std::string Server::buildResponseHead()
+std::string Server::generateResponseHead()
 {
 	std::stringstream ss_header;
 	size_t contentLength = fileSize(_clientIt->sendPath);
@@ -690,12 +691,10 @@ void Server::closeClient(const char* msg)
 bool Server::cgiRequest()
 {
 	std::string extension = fileExtension(_clientIt->filename);
-	if (extension == ".py" || extension == ".php")
-	{
-		_cgiExtension = extension;
-		return true;
-	}
-	return false;
+	if (_cgiPaths.find(extension) == _cgiPaths.end())
+		return false;
+	_cgiExecPath = _cgiPaths[extension];
+	return true;
 }
 
 void	Server::doTheCGI()
@@ -969,10 +968,8 @@ void Server::generateSessionLogPage()
 	sessionLogPage.close();
 }
 
-void Server::generateDirListing(const std::string& directory)
+void Server::generateDirListingPage(const std::string& directory)
 {
-	DIR* dir;
-	struct dirent* ent;
 	std::ofstream dirListPage(SYS_DIRLISTPAGE);
 
 	if (dirListPage.fail())
@@ -981,17 +978,19 @@ void Server::generateDirListing(const std::string& directory)
 		throw std::runtime_error(E_TEMPFILE);
 	}
 
-	dirListPage << "<head><title>Test Website for 42 Project: webserv</title><link rel=\"stylesheet\" type=\"text/css\" href=\"/styles.css\"/></head>";
-	dirListPage << "<html><body><h1>Directory Listing</h1><ul>";
+	dirListPage	<< "<head><title>Test Website for 42 Project: webserv</title><link rel=\"stylesheet\" type=\"text/css\" href=\"/styles.css\"/></head>"
+				<< "<html><body><h1>Directory Listing</h1><ul>";
 
-	dir = opendir(directory.c_str());
+	struct dirent* ent;
+	DIR* dir = opendir(directory.c_str());
+	
 	if (dir)
 	{
 		while ((ent = readdir(dir)) != NULL)
 		{
 			if (strcmp(ent->d_name, ".") == 0)
 				continue;
-			if (ent->d_type == DT_DIR)
+			if (ent->d_type == DT_DIR) // append a slash if it's a directory
 				dirListPage << "<li><a href=\"" << _clientIt->directory + ent->d_name << "/\">" << ent->d_name << "/</a></li>";
 			else
 				dirListPage << "<li><a href=\"" << _clientIt->directory + ent->d_name << "\">" << ent->d_name << "</a></li>";
@@ -1002,3 +1001,136 @@ void Server::generateDirListing(const std::string& directory)
 	dirListPage << "</ul></body></html>";
 	dirListPage.close();
 }
+
+/*
+Environment Variables: These variables provide information about the request, the server environment, and other relevant details. Some common environment variables include:
+
+QUERY_STRING: The query parameters in the URL for GET requests.
+REQUEST_METHOD: The HTTP request method (e.g., GET, POST).
+CONTENT_TYPE: The type of content in the request body (for POST requests).
+CONTENT_LENGTH: The length of the content in the request body.
+HTTP_COOKIE: Any cookies sent with the request.
+REMOTE_ADDR: The IP address of the client making the request.
+SERVER_NAME: The server's hostname.
+SERVER_PORT: The server's port number.
+
+SCRIPT_NAME: The path of the CGI script.
+PATH_INFO: Additional path information after the script name.
+HTTP_USER_AGENT: The user agent string of the client's browser.
+Standard Input: For POST requests, the content of the request body is passed to the
+CGI script through standard input.
+The script reads this data to process form submissions or other data sent by the client.
+
+The CGI script processes these inputs to generate an appropriate HTTP response,
+which is then sent back to the web server for delivery to the client's browser.
+
+Here's a simple example of a Python CGI script that prints the environment variables
+and reads data from standard input:
+
+
+*/
+
+void Server::buildCGIenv()
+{
+	// prepare non insta-insertables
+	std::stringstream contentLength;
+	contentLength << _clientIt->contentLength; // best way I found to convert in cpp98
+
+	std::string cookie;
+	if (_clientIt->headers.find("cookie") != _clientIt->headers.end())
+		cookie = _clientIt->headers["cookie"];
+
+	std::string ipAddress = inet_ntoa(_clientIt->address.sin_addr);
+
+	std::stringstream port;
+	port << ntohs(_serverAddress.sin_port);
+
+
+	// build env vector
+	std::vector<const char*> env =
+	{
+		("QUERY_STRING=" + _clientIt->queryString).c_str(),
+		("REQUEST_METHOD=" + _clientIt->method).c_str(),
+		("CONTENT_TYPE=" + _clientIt->contentType).c_str(),
+		("CONTENT_LENGTH=" + contentLength.str()).c_str(),
+		("HTTP_COOKIE=" + cookie).c_str(),
+		("REMOTE_ADDR=" + ipAddress).c_str(),
+		("SERVER_NAME=" + _activeServerName).c_str(),
+		("SERVER_PORT=" + port.str()).c_str(),
+
+
+
+		NULL
+    };
+
+
+
+}
+
+// CGI post -> write directly into cgipipe?
+void Server::handleCGI()
+{
+	int pipeFd[2];
+	if (pipe(pipeFd) == -1)
+	{
+		std::cerr << E_PIPE << std::endl;
+		sendStatusPage(500);
+		return;
+	}
+	
+	pid_t childPid = fork();
+	if (childPid == -1)
+	{
+		std::cerr << E_FORK << std::endl;
+		sendStatusPage(500);
+		return;
+	}
+	if (childPid == 0)
+	{
+		dup2(pipeFd[1], STDOUT_FILENO);
+		close(pipeFd[0]);
+		close(pipeFd[1]);
+
+		// if different CGIs take differnent var structures, still need to handle that
+		// for now: python
+		// also: assuming the script is the filename in the request
+		// which means that a post request is weird, but seems shmangidy right now.
+
+        // any file with .bla as extension must answer to POST
+		//request by calling the cgi_test executable
+		
+		// build argv
+		// argv takes name of executable (giving path here atm), path to script (the file in the request), null termination
+		char* argv[] = { const_cast<char*>(_cgiExecPath.c_str()), const_cast<char*>(_clientIt->filename.c_str()), NULL };
+		char* env[] = {NULL, NULL};
+		// build env
+
+
+		execve(_cgiExecPath.c_str(), argv, env);
+		std::cerr << E_EXECVE << std::endl;
+		exit(EXIT_FAILURE);
+	}
+	else
+	{
+		close(pipeFd[1]);
+		int status;
+		waitpid(childPid, &status, 0); //WNOHANG?
+		// terminate in case of child hanging
+		if (!WIFEXITED(status) || WEXITSTATUS(status) == EXIT_FAILURE) // WIFEXITED(status) is only true if child terminated of its own accord
+		{
+			sendStatusPage(500);
+			close(pipeFd[0]);
+			return;
+		}
+
+		char buffer[4096];
+		size_t bytesRead;
+		while ((bytesRead = read(pipeFd[0], buffer, sizeof(buffer))) > 0)
+			std::cout.write(buffer, bytesRead);
+		close(pipeFd[0]);
+        
+
+	}
+	
+}
+
