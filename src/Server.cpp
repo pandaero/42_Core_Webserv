@@ -271,11 +271,6 @@ void Server::parseRequestLine()
 	_clientIt->URL = splitEraseStr(_clientIt->buffer, " ");
 	_clientIt->httpProtocol = splitEraseStr(_clientIt->buffer, "\r\n");
 
-	// split URL for easy access
-	_clientIt->URL = ifDirAppendSlash(_clientIt->URL);
-	_clientIt->directory = _clientIt->URL.substr(0, _clientIt->URL.find_last_of("/") + 1);
-	_clientIt->filename = _clientIt->URL.substr(_clientIt->URL.find_last_of("/") + 1);
-
 	// check for CGI query string
 	size_t questionMarkPos = _clientIt->URL.find("?");
 	if (questionMarkPos != std::string::npos)
@@ -283,6 +278,11 @@ void Server::parseRequestLine()
 		_clientIt->queryString = _clientIt->URL.substr(questionMarkPos + 1);
 		_clientIt->URL = _clientIt->URL.substr(0, questionMarkPos);
 	}
+	
+	// split URL for easy access
+	_clientIt->URL = ifDirAppendSlash(_clientIt->URL);
+	_clientIt->directory = _clientIt->URL.substr(0, _clientIt->URL.find_last_of("/") + 1);
+	_clientIt->filename = _clientIt->URL.substr(_clientIt->URL.find_last_of("/") + 1);
 }
 
 void Server::handleSession()
@@ -1115,7 +1115,7 @@ void Server::handleCGI()
 		int status;
 		waitpid(childPid, &status, 0); //WNOHANG?
 		// terminate in case of child hanging
-		if (!WIFEXITED(status) || WEXITSTATUS(status) == EXIT_FAILURE) // WIFEXITED(status) is only true if child terminated of its own accord
+		if (!WIFEXITED(status) || WEXITSTATUS(status) != 0) // WIFEXITED(status) is only true if child terminated of its own accord
 		{
 			std::cerr << E_CHILD << std::endl;
 			close(pipeFd[0]);
