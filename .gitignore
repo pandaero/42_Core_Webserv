@@ -11,6 +11,7 @@ test/url
 *.out
 
 .vscode/
+.DS_Store
 
 ubuntu_tester
 tester
