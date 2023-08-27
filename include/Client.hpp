@@ -49,6 +49,9 @@ class	Client
 		state_enum		state;
 		bool			append;
 		bool			setCookie;
+
+		// temp files
+		std::string		path_CGItempFile;
 	
 	private:
 		// nothing, cause this is a class only in name, it's more of a struct.

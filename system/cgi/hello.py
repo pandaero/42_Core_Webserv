@@ -1,7 +1,7 @@
 #!/usr/bin/python3
 
 # Import modules for CGI handling 
-import cgi, cgitb 
+import cgi, cgitb, os
 
 # Create instance of FieldStorage 
 form = cgi.FieldStorage() 
@@ -9,6 +9,9 @@ form = cgi.FieldStorage()
 # Get data from fields
 first_name = form.getvalue('first_name')
 last_name  = form.getvalue('last_name')
+last_name  = form.getvalue('last_name')
+
+request_method = os.environ.get("REQUEST_METHOD", "N/A")
 
 html_content = """
 <!DOCTYPE html>
@@ -20,11 +23,11 @@ html_content = """
 </head>
 
 <body>
-	<h1>Python CGI:<br>GET with query string</h1>
+	<h1>Python CGI:<br>{}</h1>
 	<p>Hello {} {}!</p>
 </body>
 
 </html>
 """
 
-print(html_content.format(first_name, last_name))
+print(html_content.format(request_method, first_name, last_name))

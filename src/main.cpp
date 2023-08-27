@@ -44,7 +44,7 @@ int main()
 bool poll_(std::vector<pollfd>& pollVector)
 {
 	ANNOUNCEME
-	if (poll(&pollVector[0], pollVector.size(), -1) == -1)
+	if (poll(pollVector.data(), pollVector.size(), -1) == -1)
 	{
 		if (!sigInt)
 			std::cerr << E_POLL;

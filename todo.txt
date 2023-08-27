@@ -14,3 +14,4 @@ For a rainy day post eval:
 - refactor main loop due and server::handleconns to poll event ordering
 - refactor serverconfig to complete all steps
 - server class becomes just one big server that deals with all connections and loads serverconfigs depending on port and hostname
+- tempfiles create problems if not sent in one go: the next client might overwrite it with their data.

@@ -210,8 +210,8 @@ bool Server::receive()
 	_bytesReceived = recv(_clientIt->fd, buffer, RECV_CHUNK_SIZE, 0);
 	if (_bytesReceived <= 0)
 	{
-		closeClient("Server::receiveData: 0 bytes received or error");
-		throw std::runtime_error(I_CLOSENODATA);
+		closeClient("Server::receiveData: Connection closed (no data received).");
+		//throw std::runtime_error(I_CLOSENODATA);
 	}
 	_clientIt->buffer.append(buffer, _bytesReceived);
 	return true;
@@ -278,7 +278,7 @@ void Server::parseRequestLine()
 		_clientIt->queryString = _clientIt->URL.substr(questionMarkPos + 1);
 		_clientIt->URL = _clientIt->URL.substr(0, questionMarkPos);
 	}
-	
+
 	// split URL for easy access
 	_clientIt->URL = ifDirAppendSlash(_clientIt->URL);
 	_clientIt->directory = _clientIt->URL.substr(0, _clientIt->URL.find_last_of("/") + 1);
@@ -364,23 +364,38 @@ void Server::handlePost()
 	if (_clientIt->state > handleRequest)
 		return;
 	ANNOUNCEME_FD
-	if (!resourceExists(_clientIt->updatedDirectory))
-	{
-		sendStatusPage(500);
-		return;		
-	}
 	if (_clientIt->state == recv_body)
 		receive();
+	
 	std::ofstream outputFile;
+	std::string selectedPath;
+	
+	if (cgiRequest())
+	{
+		std::stringstream temp;
+		temp << SYS_TEMPCGIPOST << _clientIt->fd; // cant use to_str in cpp98
+		_clientIt->path_CGItempFile = temp.str();
+		selectedPath = _clientIt->path_CGItempFile;
+	}
+	else 
+	{
+		if (!resourceExists(_clientIt->updatedDirectory))
+		{
+			sendStatusPage(500);
+			return;
+		}
+		selectedPath = _clientIt->updatedURL;
+	}
 	if (_clientIt->append)
-		outputFile.open(_clientIt->updatedURL.c_str(), std::ios::binary | std::ios::app);
+		outputFile.open(selectedPath.c_str(), std::ios::binary | std::ios::app);
 	else
 	{
-		outputFile.open(_clientIt->updatedURL.c_str(), std::ios::binary | std::ios::trunc);
+		outputFile.open(selectedPath.c_str(), std::ios::binary | std::ios::trunc);
 		_clientIt->append = true;
 	}
-	if (!outputFile.is_open())
+	if (!outputFile)
 	{
+		std::cerr << E_POSTFILE << std::endl;
 		sendStatusPage(500);
 		return;		
 	}
@@ -392,7 +407,11 @@ void Server::handlePost()
 	if (_clientIt->bytesWritten >= _clientIt->contentLength)
 	{
 		if (cgiRequest())
-			doTheCGI();
+		{
+			handleCGI();
+			if (unlink(_clientIt->path_CGItempFile.c_str()) != 0)
+				std::cerr << E_TEMPFILEREMOVAL << std::endl;
+		}
 		else
 			sendEmptyStatus(201);
 	}
@@ -1052,22 +1071,44 @@ strVec Server::buildCGIenv()
 	return env;
 }
 
-// CGI post -> write directly into cgipipe?
+void Server::manageCGIpipes_child(int pipeFd[2])
+{
+	// GET and POST both want stdout on pipe[1] (write end)
+	if (dup2(pipeFd[1], STDOUT_FILENO) == -1)
+	{
+		std::cerr << E_DUP2 << std::endl;
+		exit(EXIT_FAILURE);
+	}
+	
+	// GET doesn't need to read from pipe, but POST needs stdin on read end of pipe
+	if (_clientIt->method == GET)
+		close(pipeFd[0]);
+	else
+	{
+		if (dup2(pipeFd[0], STDIN_FILENO) == -1)
+		{
+			std::cerr << E_DUP2 << std::endl;
+			exit(EXIT_FAILURE);
+		}
+	}
+}
 
+void Server::closePipes(pid_t cgiPid, int pipeFd[2])
+{
+	if (cgiPid == 0)
+	{
+		close(pipeFd[1]);
+		if (_clientIt->method == POST)
+			close(pipeFd[0]);
+	}
+	else
+	{
+		close(pipeFd[0]);
+		if (_clientIt->method == POST && pipeFd[1] != -1) // when finished writing, gets closed and set to -1. Simplest control structure.
+			close(pipeFd[1]);
+	}
+}
 
-// if different CGIs take differnent var structures, still need to handle that
-// for now: python
-// also: assuming the script is the filename in the request
-// which means that a post request is weird, but seems shmangidy for now.
-
-// any file with .bla as extension must answer to POST request by calling the cgi_test executable
-
-/*
-std::cout << "argv0: " << argv[0] << std::endl;
-std::cout << "argv1: " << argv[1] << std::endl;
-for (size_t i = 0; i < env.size() - 1; ++i)
-std::cout << "env" << i << ": "<< env[i] << std::endl;
-*/
 void Server::handleCGI()
 {
 	char* argv[3];
@@ -1089,36 +1130,50 @@ void Server::handleCGI()
 		return;
 	}
 
-	pid_t childPid = fork();
-	if (childPid == -1)
+	pid_t cgiPid = fork();
+	if (cgiPid == -1)
 	{
 		std::cerr << E_FORK << std::endl;
 		sendStatusPage(500);
 		return;
 	}
-	if (childPid == 0)
+	if (cgiPid == 0)
 	{
-		close(pipeFd[0]); // read end not needed in child (doing GET now, POST probably does need it)
-		if (dup2(pipeFd[1], STDOUT_FILENO) == -1) // child stdout now points to pipe[1] (write end)
-		{
-			std::cerr << E_DUP2 << std::endl;
-			exit(EXIT_FAILURE);
-		}
+		manageCGIpipes_child(pipeFd);
 		execve(_cgiExecPath.c_str(), argv, env.data());
+		
 		std::cerr << E_EXECVE << std::endl;
-		close(pipeFd[1]);
+		closePipes(cgiPid, pipeFd);
 		exit(EXIT_FAILURE);
 	}
 	else
 	{
-		close(pipeFd[1]); // close write end (probably not for POST tho)
+		// write end of pipe not needed if GET
+		if (_clientIt->method == GET)
+			close(pipeFd[1]);
+		else
+		{
+			std::ifstream cgiFile(_clientIt->path_CGItempFile.c_str());
+			if (!cgiFile)
+			{
+				std::cerr << E_TEMPFILEOPEN << std::endl;
+				closePipes(cgiPid, pipeFd);
+				sendStatusPage(500);
+				return;
+			}
+			std::stringstream fileContent;
+			fileContent << cgiFile.rdbuf();
+			write(pipeFd[1], fileContent.str().c_str(), fileContent.str().size()); // Write POST data to child's stdin 
+			close(pipeFd[1]);
+			pipeFd[1] = -1; // because later calls to closePipes() might close stuff if that fd was already reassigned.
+		}
 		int status;
-		waitpid(childPid, &status, 0); //WNOHANG?
+		waitpid(cgiPid, &status, 0); //WNOHANG?
 		// terminate in case of child hanging
 		if (!WIFEXITED(status) || WEXITSTATUS(status) != 0) // WIFEXITED(status) is only true if child terminated of its own accord
 		{
 			std::cerr << E_CHILD << std::endl;
-			close(pipeFd[0]);
+			closePipes(cgiPid, pipeFd);
 			sendStatusPage(500);
 			return;
 		}
@@ -1126,8 +1181,9 @@ void Server::handleCGI()
 		std::ofstream cgiPage(SYS_CGIPAGE, std::ios::binary | std::ios::trunc);
 		if (!cgiPage)
 		{
-			cgiPage.close();
 			std::cerr << E_TEMPFILE << std::endl;
+			cgiPage.close();
+			closePipes(cgiPid, pipeFd);
 			sendStatusPage(500);
 			return;
 		}
@@ -1136,7 +1192,7 @@ void Server::handleCGI()
 		size_t bytesRead;
 		while ((bytesRead = read(pipeFd[0], buffer, sizeof(buffer))) > 0)
 			cgiPage.write(buffer, bytesRead);
-		close(pipeFd[0]);
+		closePipes(cgiPid, pipeFd);
 		sendFile200(SYS_CGIPAGE);
 	}
 }

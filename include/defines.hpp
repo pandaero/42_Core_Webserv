@@ -12,6 +12,7 @@
 
 // paths
 # define SYS_CGIPAGE		"system/cgi.html"
+# define SYS_TEMPCGIPOST	"system/temp/cgiPost_fd"
 # define SYS_DIRLISTPAGE	"system/dirListing.html"
 # define SYS_ERRPAGE		"system/errorPage.html"
 # define SYS_DEFAULTCONF	"system/default.conf"
@@ -98,11 +99,14 @@
 # define E_LISTEN				"Error: Server: listen()"
 # define E_SEND					"Error: Server: send()"
 # define E_TEMPFILE				"Error: Server: Could not create temporary file."
+# define E_POSTFILE				"Error: Server: Could not create / open POST file."
 # define E_PIPE					"Error: Server: pipe()."
 # define E_FORK					"Error: Server: fork()."
 # define E_EXECVE				"Error: Server: execve()."
 # define E_DUP2					"Error: Server: dup2()."
 # define E_CHILD				"Error: Server: child exited with error or was terminated."
+# define E_TEMPFILEREMOVAL		"Error: Server: Could not remove temporary file."
+# define E_TEMPFILEOPEN			"Error: Server: Could not open temporary file."
 
 # define I_CONNECTIONLIMIT		"Info: Server: Connection limit reached."
 # define I_CLOSENODATA			"Info: Server: Connection closed (no data received)."
