@@ -51,9 +51,9 @@ class	Server
 		void			generateSessionLogPage();
 		void			generateDirListingPage(const std::string&);
 
-		std::string			buildResponseHead();
-		std::vector<char*>	buildCGIenv();
-		std::string			buildCookie(const std::string&, const std::string&, int, const std::string&);
+		std::string		buildResponseHead();
+		strVec			buildCGIenv();
+		std::string		buildCookie(const std::string&, const std::string&, int, const std::string&);
 
 
 

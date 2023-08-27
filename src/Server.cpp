@@ -321,9 +321,12 @@ void Server::parseRequestHeaders()
 	if (_clientIt->headers.find("content-type") != _clientIt->headers.end())
 		_clientIt->contentType = _clientIt->headers["content-type"];
 
-	// the cookie header contains all cookies. So its return is a string map.
+	// the cookie header contains all cookie key-value pairs. So its return is a string map.
 	if (_clientIt->headers.find("cookie") != _clientIt->headers.end())
-		_clientIt->cookies = parseStrMap(_clientIt->headers["cookie"], "=", ";", "Please parse me to the end!");
+	{
+		std::string temp = _clientIt->headers["cookie"]; // parseStrMap erases from the input string. We want to preserve the cookie header to be able to pass it to CGI
+		_clientIt->cookies = parseStrMap(temp, "=", ";", "Please parse me to the end!");
+	}
 }
 
 void Server::handleGet()
@@ -333,7 +336,6 @@ void Server::handleGet()
 	if (cgiRequest())
 	{
 		handleCGI();
-		//doTheCGI();
 		return;
 	}
 	if (isDirectory(_clientIt->updatedURL))
@@ -454,7 +456,7 @@ void Server::sendResponseBody()
 		return;
 	}
 	std::ifstream fileStream(_clientIt->sendPath.c_str(), std::ios::binary);
-	if (fileStream.fail())
+	if (!fileStream)
 	{
 		fileStream.close();
 		closeClient("Server::sendResponseBody: ifstream failure.");
@@ -485,15 +487,16 @@ std::string Server::buildResponseHead()
 	std::stringstream ss_header;
 	size_t contentLength = fileSize(_clientIt->sendPath);
 	
-	ss_header << HTTPVERSION << ' ' << _clientIt->statusCode << ' ' << getHttpMsg(_clientIt->statusCode) << "\r\n";
-	ss_header << "Server: " << SERVERVERSION << "\r\n";
+	ss_header	<< HTTPVERSION << ' ' << _clientIt->statusCode << ' ' << getHttpMsg(_clientIt->statusCode) << "\r\n"
+				<< "Server: " << SERVERVERSION << "\r\n"
+				<< "connection: close" << "\r\n"
+				<< "content-length: " << contentLength << "\r\n";
 	if (contentLength != 0)
 		ss_header << "content-type: " << mimeType(_clientIt->sendPath) << "\r\n";
-	ss_header << "content-length: " << contentLength << "\r\n";
 	if (_clientIt->setCookie)
 		ss_header << buildCookie(SESSIONID, _clientIt->sessionId, 3600, "/") << "\r\n";
-	ss_header << "connection: close" << "\r\n";
-	ss_header << "\r\n";
+	
+	ss_header	<< "\r\n";
 	return ss_header.str();
 }
 
@@ -576,7 +579,7 @@ void Server::sendEmptyStatus(int code)
 void Server::generateStatusPage(int code)
 {
 	std::ofstream errorPage(SYS_ERRPAGE, std::ios::binary | std::ios::trunc);
-	if (errorPage.fail())
+	if (!errorPage)
 	{
 		errorPage.close();
 		throw std::runtime_error(E_TEMPFILE);
@@ -584,21 +587,18 @@ void Server::generateStatusPage(int code)
 
 	std::string httpMsg = getHttpMsg(code);
 
-	errorPage << "<!DOCTYPE html>";
-	errorPage << "<html>\n";
-	errorPage << "<head>\n";
-	errorPage << "<title>webserv - " << code << ": " << httpMsg << "</title>\n";
-	errorPage << "<style>\n";
-	errorPage << "body {background-color: black; color: white; font-family: Arial, sans-serif; margin: 0; padding: 5% 0 0 0; text-align: center;}\n";
-	errorPage << "h1 {font-size: 42px;}\n";
-	errorPage << "p {font-size: 16px; line-height: 1.5;}\n";
-	errorPage << "</style>\n";
-	errorPage << "</head>\n";
-	errorPage << "<body>\n";
-	errorPage << "<h1>" << code << ": " << httpMsg << "</h1>\n";
-	errorPage << "<img style=\"margin-left: auto;\" src=\"https://http.cat/" << code << "\" alt=\"" << httpMsg << "\">\n";
-	errorPage << "</body>\n";
-	errorPage << "</html>\n";
+	errorPage	<< "<!DOCTYPE html><html><head>\n"
+				<< "<title>webserv - " << code << ": " << httpMsg << "</title>\n"
+				<< "<style>\n"
+				<< "body {background-color: black; color: white; font-family: Arial, sans-serif; margin: 0; padding: 5% 0 0 0; text-align: center;}\n"
+				<< "h1 {font-size: 42px;}\n"
+				<< "p {font-size: 16px; line-height: 1.5;}\n"
+				<< "</style></head>\n"
+				<< "<body>\n"
+				<< "<h1>" << code << ": " << httpMsg << "</h1>\n"
+				<< "<img style=\"margin-left: auto;\" src=\"https://http.cat/" << code << "\" alt=\"" << httpMsg << "\">\n"
+				<< "</body>\n"
+				<< "</html>\n";
 	errorPage.close();
 	_clientIt->sendPath = SYS_ERRPAGE;
 }
@@ -939,7 +939,7 @@ std::string Server::buildCookie(const std::string& key, const std::string& value
 void Server::generateSessionLogPage()
 {
 	std::ofstream sessionLogPage(SITE_LOGPAGE, std::ios::binary | std::ios::trunc);
-	if (sessionLogPage.fail())
+	if (!sessionLogPage)
 	{
 		sessionLogPage.close();
 		throw std::runtime_error(E_TEMPFILE);
@@ -947,7 +947,7 @@ void Server::generateSessionLogPage()
 	
 	std::string path_LogFile = "system/logs/" + _clientIt->sessionId + ".log";
 	std::ifstream logFile(path_LogFile.c_str());
-	if (logFile.fail())
+	if (!logFile)
 	{
 		logFile.close();
 		throw std::runtime_error(E_TEMPFILE);
@@ -972,7 +972,7 @@ void Server::generateDirListingPage(const std::string& directory)
 {
 	std::ofstream dirListPage(SYS_DIRLISTPAGE);
 
-	if (dirListPage.fail())
+	if (!dirListPage)
 	{
 		dirListPage.close();
 		throw std::runtime_error(E_TEMPFILE);
@@ -1018,7 +1018,7 @@ and reads data from standard input:
 Because you won’t call the CGI directly, use the full path as PATH_INFO
 
 */
-std::vector<char*> Server::buildCGIenv()
+strVec Server::buildCGIenv()
 {
 	// prepare non insta-insertables
 	std::stringstream contentLength;
@@ -1037,28 +1037,18 @@ std::vector<char*> Server::buildCGIenv()
 	if (_clientIt->headers.find("user-agent") != _clientIt->headers.end())
 		userAgent = _clientIt->headers["user-agent"];
 
-	// build env vector (initializer list {} not in cpp98)
-	std::vector<char*> env;
-	env.push_back(const_cast<char*>(("QUERY_STRING=" + _clientIt->queryString).c_str()));
-	env.push_back(const_cast<char*>(("REQUEST_METHOD=" + _clientIt->method).c_str()));
-	env.push_back(const_cast<char*>(("CONTENT_TYPE=" + _clientIt->contentType).c_str()));
-	env.push_back(const_cast<char*>(("CONTENT_LENGTH=" + contentLength.str()).c_str()));
-	env.push_back(const_cast<char*>(("HTTP_COOKIE=" + cookie).c_str()));
-	env.push_back(const_cast<char*>(("REMOTE_ADDR=" + ipAddress).c_str()));
-	env.push_back(const_cast<char*>(("SERVER_NAME=" + _activeServerName).c_str()));
-	env.push_back(const_cast<char*>(("SERVER_PORT=" + port.str()).c_str()));
-	env.push_back(const_cast<char*>(("SCRIPT_NAME=" + _clientIt->filename).c_str()));
-	env.push_back(const_cast<char*>(("PATH_INFO=" + _clientIt->updatedURL).c_str()));
-	env.push_back(const_cast<char*>(("HTTP_USER_AGENT=" + userAgent).c_str()));
-	env.push_back(NULL);
-
-	std::cout << "shmangidy\n" << const_cast<char*>(("QUERY_STRING=" + _clientIt->queryString).c_str()) << std::endl;
-
-	for (size_t i = 0; i < env.size(); ++i)
-	{
-		std::cout << "env" << i << ": " << env[i] << std::endl;
-	}
-
+	strVec env;
+	env.push_back("QUERY_STRING=" + _clientIt->queryString);
+	env.push_back("REQUEST_METHOD=" + _clientIt->method);
+	env.push_back("CONTENT_TYPE=" + _clientIt->contentType);
+	env.push_back("CONTENT_LENGTH=" + contentLength.str());
+	env.push_back("HTTP_COOKIE=" + cookie);
+	env.push_back("REMOTE_ADDR=" + ipAddress);
+	env.push_back("SERVER_NAME=" + _activeServerName);
+	env.push_back("SERVER_PORT=" + port.str());
+	env.push_back("SCRIPT_NAME=" + _clientIt->filename);
+	env.push_back("PATH_INFO=" + _clientIt->updatedURL);
+	env.push_back("HTTP_USER_AGENT=" + userAgent);
 	return env;
 }
 
@@ -1070,25 +1060,26 @@ std::vector<char*> Server::buildCGIenv()
 // also: assuming the script is the filename in the request
 // which means that a post request is weird, but seems shmangidy for now.
 
-// any file with .bla as extension must answer to POST
-//request by calling the cgi_test executable
+// any file with .bla as extension must answer to POST request by calling the cgi_test executable
 
-
+/*
+std::cout << "argv0: " << argv[0] << std::endl;
+std::cout << "argv1: " << argv[1] << std::endl;
+for (size_t i = 0; i < env.size() - 1; ++i)
+std::cout << "env" << i << ": "<< env[i] << std::endl;
+*/
 void Server::handleCGI()
 {
-	std::vector<char*> env = buildCGIenv();
-	char* argv[] = {	const_cast<char*>(_cgiExecPath.c_str()), // name of executable (giving path here but hey)
-						const_cast<char*>(_clientIt->updatedURL.c_str()), // path to script, which is the requested file
-						NULL };
+	char* argv[3];
+	argv[0] = const_cast<char*>(_cgiExecPath.c_str()), // name of executable (giving path here but hey)
+	argv[1] = const_cast<char*>(_clientIt->updatedURL.c_str()), // path to script, which is the requested file
+	argv[2] = NULL;
 	
-	std::cout << argv[0] << std::endl;
-	std::cout << argv[1] << std::endl;
-	
-	for (size_t i = 0; i < env.size(); ++i)
-	{
-		std::cout << "env" << i << ": " << env[i] << std::endl;
-	}
-
+	strVec envVec = buildCGIenv(); // this vector allocates for the strings
+	std::vector<char*>env; // this will hold the char* to the strings and can be passed to execve
+	for (size_t i = 0; i < envVec.size(); ++i)
+		env.push_back(const_cast<char*>(envVec[i].c_str()));
+	env.push_back(NULL);
 
 	int pipeFd[2];
 	if (pipe(pipeFd) == -1)
@@ -1108,7 +1099,7 @@ void Server::handleCGI()
 	if (childPid == 0)
 	{
 		close(pipeFd[0]); // read end not needed in child (doing GET now, POST probably does need it)
-		if (dup2(pipeFd[1], STDOUT_FILENO) == -1) // stdout now points to pipe[1] (write end)
+		if (dup2(pipeFd[1], STDOUT_FILENO) == -1) // child stdout now points to pipe[1] (write end)
 		{
 			std::cerr << E_DUP2 << std::endl;
 			exit(EXIT_FAILURE);
@@ -1132,14 +1123,20 @@ void Server::handleCGI()
 			return;
 		}
 
+		std::ofstream cgiPage(SYS_CGIPAGE, std::ios::binary | std::ios::trunc);
+		if (!cgiPage)
+		{
+			cgiPage.close();
+			std::cerr << E_TEMPFILE << std::endl;
+			sendStatusPage(500);
+			return;
+		}
+		
 		char buffer[4096];
 		size_t bytesRead;
 		while ((bytesRead = read(pipeFd[0], buffer, sizeof(buffer))) > 0)
-			std::cout.write(buffer, bytesRead);
+			cgiPage.write(buffer, bytesRead);
 		close(pipeFd[0]);
-        
-
+		sendFile200(SYS_CGIPAGE);
 	}
-	
 }
-

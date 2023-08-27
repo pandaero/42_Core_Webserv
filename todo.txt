@@ -1,11 +1,10 @@
 - cgi
-- remove CGI paths from config file?
 
 testing:
 - check eval sheet questions
-- intra tester
 - host redirections
 - multiple servers running smoothly
+- check throws. maybe just senderror. but at least close client in some cases
 
 Copy Paste for testing with curl / siege
 curl -H "host: shmang.co" -X DELETE http://localhost:8080/api/upload/text.txt
