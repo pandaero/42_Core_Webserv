@@ -1,0 +1,11 @@
+version: '3.3'
+
+services:
+  webserv:
+    build:
+      context: .
+    volumes:
+      - .:/usr/myApp
+    ports:
+      - 8000:8000
+      - 8080:8080
