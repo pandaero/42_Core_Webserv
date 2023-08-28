@@ -211,7 +211,7 @@ bool Server::receive()
 	if (_bytesReceived <= 0)
 	{
 		closeClient("Server::receiveData: Connection closed (no data received).");
-		//throw std::runtime_error(I_CLOSENODATA);
+		throw std::runtime_error(I_CLOSENODATA);
 	}
 	_clientIt->buffer.append(buffer, _bytesReceived);
 	return true;
