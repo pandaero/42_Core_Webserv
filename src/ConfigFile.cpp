@@ -71,12 +71,15 @@ std::string ConfigFile::loadFile(const char* path)
 		std::string invalidpath(path);
 		throw std::runtime_error(E_FILEOPEN + invalidpath + '\n');
 	}
+
 	while (std::getline(infile, line))
 	{
-		if (line[line.find_first_not_of(WHITESPACE)] == '#')
+		size_t firstParseChar = line.find_first_not_of(WHITESPACE);
+		if (firstParseChar == std::string::npos || line[firstParseChar] == '#')
 			continue;
 		buffer << line;
 	}
+
 	infile.close();
 	line = buffer.str();
 	trim(line);
