@@ -128,10 +128,8 @@ void Server::acceptConnections()
 				std::cerr << E_ACCEPT << std::endl;
 			return;
 		}
-		int flags = fcntl(new_sock, F_GETFL, 0);
-		if (fcntl(new_sock, F_SETFL, flags | O_NONBLOCK) == -1)
+		if (fcntl(new_sock, F_SETFL, O_NONBLOCK) == -1)
 			closeFdAndThrow(new_sock);
-		
 		newClient.fd = new_sock;
 		_clients.push_back(newClient);
 
@@ -1016,22 +1014,6 @@ void Server::generateDirListingPage(const std::string& directory)
 	dirListPage.close();
 }
 
-/*
-
-Standard Input: For POST requests, the content of the request body is passed to the
-CGI script through standard input.
-The script reads this data to process form submissions or other data sent by the client.
-
-The CGI script processes these inputs to generate an appropriate HTTP response,
-which is then sent back to the web server for delivery to the client's browser.
-
-Here's a simple example of a Python CGI script that prints the environment variables
-and reads data from standard input:
-
-
-Because you won’t call the CGI directly, use the full path as PATH_INFO
-
-*/
 strVec Server::buildCGIenv()
 {
 	// prepare non insta-insertables
@@ -1052,6 +1034,7 @@ strVec Server::buildCGIenv()
 		userAgent = _clientIt->headers["user-agent"];
 
 	strVec env;
+	env.push_back("SCRIPT_NAME=" + _clientIt->filename);
 	env.push_back("QUERY_STRING=" + _clientIt->queryString);
 	env.push_back("REQUEST_METHOD=" + _clientIt->method);
 	env.push_back("CONTENT_TYPE=" + _clientIt->contentType);
@@ -1060,7 +1043,6 @@ strVec Server::buildCGIenv()
 	env.push_back("REMOTE_ADDR=" + ipAddress);
 	env.push_back("SERVER_NAME=" + _activeServerName);
 	env.push_back("SERVER_PORT=" + port.str());
-	env.push_back("SCRIPT_NAME=" + _clientIt->filename);
 	env.push_back("PATH_INFO=" + _clientIt->updatedURL);
 	env.push_back("HTTP_USER_AGENT=" + userAgent);
 	return env;
