@@ -41,6 +41,7 @@
 void			acceptConnections(std::vector<Server>&, std::vector<pollfd>&);
 void			sigHandler(int);
 bool			poll_(std::vector<pollfd>&);
+void 			shutdown(std::vector<pollfd>&);
 
 // ===== ===== ===== ===== GLOBAL FUNCTIONS ===== ===== ===== =====
 // Determines whether a string contains only alphanumerical characters.

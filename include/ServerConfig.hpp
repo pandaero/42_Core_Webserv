@@ -16,7 +16,7 @@ class ServerConfig
 		void	whoIsI();
 		
 		strMap		getConfigPairs() const;
-		intStrMap	getErrorPaths() const;
+		intStrMap	getStatusPagePaths() const;
 		strLocMap	getLocations() const;
 		strMap		getCgiPaths() const;
 		strMap*		getMIMETypes() const;
@@ -28,7 +28,7 @@ class ServerConfig
 	private:
 		void		parseDefaultErrorPages(std::string&);
 		void 		parseUserErrorPages(std::string&);
-		void		parseLocation(std::string&);
+		void		parseLocations(std::string&);
 		void		parseDefaultCgi(std::string&);
 		void		parseUserCgi(std::string&);
 		void		parseNames(std::string&);
@@ -36,7 +36,7 @@ class ServerConfig
 		strVec						_names;
 		std::vector<ServerConfig>	_altConfigs;
 		strMap						_configPairs;
-		intStrMap					_errorPages;
+		intStrMap					_statusPagePaths;
 		strLocMap					_locations;
 		strMap						_cgiPaths;
 		strMap*						_mimeTypes;

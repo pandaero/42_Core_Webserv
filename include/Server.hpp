@@ -81,9 +81,9 @@ class	Server
 		std::string						_root;
 		std::string						_standardFile;
 		strLocMap						_locations;
-		intStrMap						_errorPagesPaths;
+		intStrMap						_statusPagePaths;
 		size_t							_clientMaxBody;
-		size_t							_maxConns;
+		size_t							_maxConnections;
 		bool							_defaultDirListing;
 		strMap							_cgiPaths;
 		std::string						_cgiExecPath;

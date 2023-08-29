@@ -2,9 +2,13 @@
 
 volatile sig_atomic_t sigInt = 0;
 
-int main()
+int main(int argc, char** argv)
 {
-	ConfigFile configfile("system/configs/example.conf");
+	std::string path = "system/configs/example.conf";
+	if (argc > 1)
+		path = argv[1];
+		
+	ConfigFile configfile(path.c_str());
 	std::vector<Server>& servers = configfile.getServers();
 	std::vector<pollfd> pollVector;
 	
@@ -39,6 +43,7 @@ int main()
 			}
 		}
 	}
+	shutdown(pollVector);
 }
 
 bool poll_(std::vector<pollfd>& pollVector)
@@ -56,9 +61,14 @@ bool poll_(std::vector<pollfd>& pollVector)
 
 void sigHandler(int sig)
 {
-	if (sig == SIGINT)
-	{
-		std::cout << "\nShutdown." << std::endl;
+	if (sig == SIGINT) // can only be SIGINT but nicer than voiding it
 		sigInt = 1;
-	}
+}
+
+void shutdown(std::vector<pollfd>& pollVector)
+{
+	std::cout << "\nShutdown." << std::endl;
+	
+	for (std::vector<pollfd>::iterator it = pollVector.begin(); it != pollVector.end(); ++it)
+		close(it->fd);
 }

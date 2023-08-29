@@ -23,7 +23,7 @@ void Server::applyHostConfig(const ServerConfig& config)
 	_root = configPairs[ROOT];
 	_standardFile = configPairs[STDFILE];
 	_names = config.getNames();
-	_errorPagesPaths = config.getErrorPaths();
+	_statusPagePaths = config.getStatusPagePaths();
 	_locations = config.getLocations();
 	_cgiPaths = config.getCgiPaths();
 	_mimeTypes = config.getMIMETypes();
@@ -37,15 +37,7 @@ int Server::fd()
 Server::~Server()
 {
 	if (_server_fd != -1)
-	{
 		std::cout << "Server destructor on listening fd " << _server_fd << "." << std::endl;
-		close(_server_fd);
-	}
-	while (!_clients.empty())
-	{
-		_clientIt = _clients.begin();
-		closeClient("Server::~Server(): Server Object shutting down");
-	}
 }
 
 void Server::whoIsI()
@@ -62,12 +54,12 @@ void Server::whoIsI()
 				<< "Root:\t\t" << _root << '\n'
 				<< "Dflt. dir_list:\t" << (_defaultDirListing ? "yes" : "no") << '\n'
 				<< "Cl. max body:\t" << _clientMaxBody << '\n'
-				<< "Max Conns:\t" << _maxConns << '\n'
+				<< "Max Conns:\t" << _maxConnections << '\n'
 				<< "standardfile:\t" << _standardFile << '\n';
-				if (!_errorPagesPaths.empty())
+				if (!_statusPagePaths.empty())
 				{
-					std::cout << "Error Pages:\t" << _errorPagesPaths.begin()->first << '\t' << _errorPagesPaths.begin()->second << '\n';
-					for (intStrMap_it it = ++_errorPagesPaths.begin(); it != _errorPagesPaths.end(); it++)
+					std::cout << "Error Pages:\t" << _statusPagePaths.begin()->first << '\t' << _statusPagePaths.begin()->second << '\n';
+					for (intStrMap_it it = ++_statusPagePaths.begin(); it != _statusPagePaths.end(); it++)
 						std::cout << "\t\t" << it->first << '\t' << it->second << std::endl;
 				}
 				if (!_locations.empty())
@@ -567,12 +559,12 @@ void Server::sendStatusPage(int code)
 	_clientIt->state = send_head;
 	_pollStruct->events = POLLOUT | POLLHUP;
 
-	if (_errorPagesPaths.find(code) == _errorPagesPaths.end())
+	if (_statusPagePaths.find(code) == _statusPagePaths.end())
 	{
 		generateStatusPage(code);
 		return;
 	}
-	std::string path = prependRoot(_errorPagesPaths[code]);
+	std::string path = prependRoot(_statusPagePaths[code]);
 	if (resourceExists(path))
 		_clientIt->sendPath = path;
 	else
@@ -693,15 +685,18 @@ void Server::closeClient(const char* msg)
 	if (msg)
 		std::cout << "closeClient on fd " << _clientIt->fd << ": " << msg << std::endl;
 	close(_clientIt->fd);
-	
+
 	// erase corresponding pollStruct
 	std::vector<pollfd>::iterator it = _pollVector->begin();
+	
+	
+	
 	while (it != _pollVector->end() && it->fd != _clientIt->fd)
 		++it;
 	if (it == _pollVector->end())
 		throw std::runtime_error("Server::closeClient: fd to close not found in pollVector");
 	_pollVector->erase(it);
-	
+
 	// erase client and decrement _index to not skip the next client in the for loop
 	_clients.erase(_clientIt);
 	--_index;
@@ -923,7 +918,7 @@ void Server::setClientMaxBody(std::string input)
 {
 	if (input.find_first_not_of("0123456789") != std::string::npos)
 			throw std::runtime_error(E_MAXCLIENTBODYINPUT + input + '\n');
-	_clientMaxBody = atoi(input.c_str());
+	_clientMaxBody = atol(input.c_str());
 	if (_clientMaxBody > MAX_MAXCLIENTBODY)
 		throw std::runtime_error(E_MAXCLIENTBODYVAL + input + '\n');
 }
@@ -932,8 +927,8 @@ void Server::setMaxConnections(std::string input)
 {
 	if (input.find_first_not_of("0123456789") != std::string::npos)
 			throw std::runtime_error(E_MAXCONNINPUT + input + '\n');
-	_maxConns = atoi(input.c_str());
-	if (_maxConns > MAX_MAXCONNECTIONS)
+	_maxConnections = atoi(input.c_str());
+	if (_maxConnections > MAX_MAXCONNECTIONS)
 		throw std::runtime_error(E_MAXCONNVAL + input + '\n');
 }
 

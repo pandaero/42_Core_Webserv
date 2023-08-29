@@ -25,7 +25,7 @@ ServerConfig::ServerConfig(std::string defaultConfigStr, strMap* mimeTypes)
 		if (key == ERRORPAGETITLE)
 			parseDefaultErrorPages(instruction);
 		else if (key == LOCATIONTITLE)
-			parseLocation(instruction);
+			parseLocations(instruction);
 		else if (key == CGITITLE)
 			parseDefaultCgi(instruction);
 		else
@@ -45,7 +45,7 @@ ServerConfig& ServerConfig::operator=(const ServerConfig& src)
 	_names = src._names;
 	_altConfigs = src._altConfigs;
 	_configPairs = src._configPairs;
-	_errorPages = src._errorPages;
+	_statusPagePaths = src._statusPagePaths;
 	_locations = src._locations;
 	_cgiPaths = src._cgiPaths;
 	_mimeTypes = src._mimeTypes;
@@ -64,7 +64,7 @@ void ServerConfig::applySettings(std::string userConfigStr)
 		if (key == ERRORPAGETITLE)
 			parseUserErrorPages(instruction);
 		else if (key == LOCATIONTITLE)
-			parseLocation(instruction);
+			parseLocations(instruction);
 		else if (key == CGITITLE)
 			parseUserCgi(instruction);
 		else if (key == SERVERNAME)
@@ -94,9 +94,9 @@ void ServerConfig::whoIsI()
 			std::cout << it->first << "\t\t" << it->second << '\n';
 	}
 	std::cout << "*****_errorPages*****\n";
-	if (!_errorPages.empty())
+	if (!_statusPagePaths.empty())
 	{
-		for (intStrMap_it it = _errorPages.begin(); it != _errorPages.end(); it++)
+		for (intStrMap_it it = _statusPagePaths.begin(); it != _statusPagePaths.end(); it++)
 			std::cout << it->first << "\t\t" << it->second << '\n';
 	}
 	if (!_locations.empty())
@@ -118,9 +118,9 @@ strMap ServerConfig::getConfigPairs() const
 	return _configPairs;
 }
 
-intStrMap ServerConfig::getErrorPaths() const
+intStrMap ServerConfig::getStatusPagePaths() const
 {
-	return _errorPages;
+	return _statusPagePaths;
 }
 
 strLocMap ServerConfig::getLocations() const
@@ -162,7 +162,7 @@ void ServerConfig::parseDefaultErrorPages(std::string& defaultErrorPages)
 		{
 			key = lineStrings.back();
 			lineStrings.pop_back();
-			_errorPages.insert(std::make_pair(atoi(key.c_str()), value));	
+			_statusPagePaths.insert(std::make_pair(atoi(key.c_str()), value));	
 		}
 	}	
 }
@@ -182,10 +182,10 @@ void ServerConfig::parseUserErrorPages(std::string& userErrorPages)
 		{
 			key = lineStrings.back();
 			code = atoi(key.c_str());
-			if (_errorPages.find(code) != _errorPages.end())
-				_errorPages[code] = value;
+			if (_statusPagePaths.find(code) != _statusPagePaths.end())
+				_statusPagePaths[code] = value;
 			else if (code > 99 && code < 600)
-				_errorPages.insert(std::make_pair(code, value));
+				_statusPagePaths.insert(std::make_pair(code, value));
 			else
 				std::cerr << I_INVALIDKEY << key << std::endl;
 			lineStrings.pop_back();
@@ -193,7 +193,7 @@ void ServerConfig::parseUserErrorPages(std::string& userErrorPages)
 	}
 }
 
-void ServerConfig::parseLocation(std::string& locationElement)
+void ServerConfig::parseLocations(std::string& locationElement)
 {
 	std::string		path, instruction, key;
 	strLocMap_it	iter;
