@@ -49,15 +49,25 @@ class	Client
 		state_enum		state;
 		bool			append;
 		bool			setCookie;
+		bool			cgiRequest;
 
-		// temp files
-		std::string		path_CGItempFile;
+		// CGI helpers
+		strVec				envVec;
+		std::vector<char*>	env;
+		strVec				argvVec;
+		std::vector<char*>	argv;
+		pid_t				cgiPid;
+		int 				parentToChild[2];
+		int 				childToParent[2];
+		bool				childLaunched;
+
+
+		std::string			path_CGItempFile;
 	
 	private:
 		// nothing, cause this is a class only in name, it's more of a struct.
 		// It only ever gets instantiated as a private member of the Server class.
 		// In real life, it would have everything private incl. constructor and have Server as friend class.
-
 };
 
 #endif

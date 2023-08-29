@@ -247,6 +247,7 @@ bool Server::requestHead()
 
 	selectHostConfig();
 	updateClientVars();
+	_clientIt->cgiRequest = cgiRequest();
 	_clientIt->whoIsI();
 	return true;
 }
@@ -349,6 +350,55 @@ void Server::handleGet()
 	}
 }
 
+void Server::cgiPost_launchChild()
+{
+	buildCGIvars();
+
+	if (pipe(_clientIt->parentToChild) == -1	// need two pipes because we are sending and receiving in both child and parent. Parent would read its own sent data before the child has a chance to.
+		|| pipe(_clientIt->childToParent) == -1)
+	{
+		std::cerr << E_PIPE << std::endl;
+		sendStatusPage(500);
+		return;
+	}
+
+	pid_t cgiPid = fork();
+	if (cgiPid == -1)
+	{
+		std::cerr << E_FORK << std::endl;
+		sendStatusPage(500);
+		return;
+	}
+	if (cgiPid == 0)
+	{
+		std::cout << "child argv0: " << _clientIt->argv[0] << std::endl;
+		// close socket fds that the child inherited 
+		for (std::vector<pollfd>::iterator it = _pollVector->begin(); it != _pollVector->end(); ++it)
+			close(it->fd);
+
+		if (dup2(_clientIt->parentToChild[0], STDIN_FILENO) == -1 // move stdin to read end of pipe on which the parent will send
+			|| dup2(_clientIt->childToParent[1], STDOUT_FILENO) == -1) // move stdout to write end of pipe on which the child will send
+		{
+			std::cerr << E_DUP2 << std::endl;
+			exit(EXIT_FAILURE);
+		}
+		close(_clientIt->parentToChild[1]); // the parent will write here, the child doesn't need it
+		close(_clientIt->childToParent[0]); // the parent will read here, the child doesn't need it
+
+		execve(_cgiExecPath.c_str(), _clientIt->argv.data(), _clientIt->env.data());
+		std::cerr << E_EXECVE << std::endl;
+		close(_clientIt->parentToChild[0]);
+		close(_clientIt->childToParent[1]);
+		exit(EXIT_FAILURE);
+	}
+	else
+	{
+		close(_clientIt->parentToChild[0]);
+		close(_clientIt->childToParent[1]);
+		_clientIt->childLaunched = true;
+	}
+}
+
 void Server::handlePost()
 {
 	if (_clientIt->state > handleRequest)
@@ -357,16 +407,52 @@ void Server::handlePost()
 	if (_clientIt->state == recv_body)
 		receive();
 	
-	std::ofstream outputFile;
-	std::string selectedPath;
 	
-	if (cgiRequest())
+	if (_clientIt->cgiRequest)
 	{
-		std::stringstream temp;
-		temp << SYS_TEMPCGIPOST << _clientIt->fd; // cant use to_str in cpp98
-		_clientIt->path_CGItempFile = temp.str();
-		selectedPath = _clientIt->path_CGItempFile;
+		if (!_clientIt->childLaunched)
+			cgiPost_launchChild();
+		// write received chunk to child's pipe
+		std::cout << "before writing to pipe parenttochild_1. buffer: " << _clientIt->buffer << std::endl;
+		int bytesWritten = write(_clientIt->parentToChild[1], _clientIt->buffer.c_str(), _clientIt->buffer.size());
+		if (bytesWritten == -1)
+		{
+			// terminate child
+			
+			close(_clientIt->parentToChild[1]);
+			close(_clientIt->childToParent[0]);
+			closeClient("Server::handlePost: write() to child pipe failed.");
+			throw std::runtime_error("Error: Server::handlePost");
+		}
+		_clientIt->bytesWritten += bytesWritten;
+		_clientIt->buffer.erase(0, bytesWritten);
+		if (_clientIt->bytesWritten >= _clientIt->contentLength)
+		{
+			std::cout << "byteswritten >= clientbody in CGIPost to pipe" << std::endl;
+			close(_clientIt->parentToChild[1]);
+
+			/*
+			we are not waiting for the child - we might have more data to chunkreceive first
+			int status;
+			waitpid(cgiPid, &status, 0); //WNOHANG?
+			// terminate in case of child hanging
+			if (!WIFEXITED(status) || WEXITSTATUS(status) != 0) // WIFEXITED(status) is only true if child terminated of its own accord
+			{
+				std::cerr << E_CHILD << std::endl;
+				closePipes(cgiPid, pipeFd);
+				sendStatusPage(500);
+				return;
+			}
+			*/
+
+
+			sendFile200(""); //send function will redirect to reading from pipe by itself
+		}
+		
+		
 	}
+	
+	// normal Post
 	else 
 	{
 		if (!resourceExists(_clientIt->updatedDirectory))
@@ -374,35 +460,26 @@ void Server::handlePost()
 			sendStatusPage(500);
 			return;
 		}
-		selectedPath = _clientIt->updatedURL;
-	}
-	if (_clientIt->append)
-		outputFile.open(selectedPath.c_str(), std::ios::binary | std::ios::app);
-	else
-	{
-		outputFile.open(selectedPath.c_str(), std::ios::binary | std::ios::trunc);
-		_clientIt->append = true;
-	}
-	if (!outputFile)
-	{
-		std::cerr << E_POSTFILE << std::endl;
-		sendStatusPage(500);
-		return;		
-	}
-	outputFile.write(_clientIt->buffer.c_str(), _clientIt->buffer.size());
-	_clientIt->bytesWritten += _clientIt->buffer.size();
-	_clientIt->buffer.clear();
-	outputFile.close();
-
-	if (_clientIt->bytesWritten >= _clientIt->contentLength)
-	{
-		if (cgiRequest())
-		{
-			handleCGI();
-			if (unlink(_clientIt->path_CGItempFile.c_str()) != 0)
-				std::cerr << E_TEMPFILEREMOVAL << std::endl;
-		}
+		std::ofstream outputFile;
+		if (_clientIt->append)
+			outputFile.open(_clientIt->updatedURL.c_str(), std::ios::binary | std::ios::app);
 		else
+		{
+			outputFile.open(_clientIt->updatedURL.c_str(), std::ios::binary | std::ios::trunc);
+			_clientIt->append = true;
+		}
+		if (!outputFile)
+		{
+			std::cerr << E_POSTFILE << std::endl;
+			sendStatusPage(500);
+			return;		
+		}
+		outputFile.write(_clientIt->buffer.c_str(), _clientIt->buffer.size());
+		_clientIt->bytesWritten += _clientIt->buffer.size();
+		_clientIt->buffer.clear();
+		outputFile.close();
+
+		if (_clientIt->bytesWritten >= _clientIt->contentLength)
 			sendEmptyStatus(201);
 	}
 }
@@ -442,23 +519,74 @@ bool Server::responseHead()
 		return true;
 	ANNOUNCEME_FD
 
-	std::string header = buildResponseHead();
-	if (send(_clientIt->fd, header.c_str(), header.size(), 0) <= 0)
+	std::string head = buildResponseHead();
+	if (send(_clientIt->fd, head.c_str(), head.size(), 0) <= 0)
 	{
 		closeClient("Server::sendResponseHead: send failure.");
 		throw std::runtime_error(E_SEND);
 	}
-	std::cout << "responseHead sent to fd: " << _clientIt->fd << "\n" << header << std::endl;
+	std::cout << "responseHead sent to fd: " << _clientIt->fd << "\n" << head << std::endl;
 	_clientIt->state = send_body;
 	return false;
 }
+
+
+
+
+void Server::sendResponseBody_CGI()
+{
+		char buffer[SEND_CHUNK_SIZE];
+		
+		int bytesRead = read(_clientIt->childToParent[0], buffer, SEND_CHUNK_SIZE);
+		if (bytesRead == -1)
+		{
+			//terminate child
+			close(_clientIt->childToParent[0]);
+			closeClient("Server::sendResponseBody: read() from child pipe failed.");
+			throw std::runtime_error(E_SEND);
+		}
+		if (bytesRead == 0) // pipe is finished, send termination chunk
+		{
+			std::cout << "read = 0 from pipe in send cgi" << std::endl;
+
+			if (send(_clientIt->fd, "0\r\n", 3, 0) <= 0)
+			{
+				//terminate child
+				close(_clientIt->childToParent[0]);
+				closeClient("Server::sendResponseBody: send failure.");
+				throw std::runtime_error(E_SEND);
+			}
+			close(_clientIt->childToParent[0]);
+			closeClient("Server::sendResponseBody: sending complete (chunked transfer from pipe).");
+			return;
+		}
+
+		std::stringstream message;
+    	message << std::hex << bytesRead + 2; // we are adding \r\n at the end of our message, so + 2
+		message << "\r\n" << buffer << "\r\n";
+
+		std::cout << "message:\n" << message.str() << std::endl;
+
+		if (send(_clientIt->fd, message.str().c_str(), message.str().size(), 0) <= 0)
+		{
+			//terminate child
+			close(_clientIt->childToParent[0]);
+			closeClient("Server::sendResponseBody: send failure.");
+			throw std::runtime_error(E_SEND);
+		}
+	}
 
 void Server::sendResponseBody()
 {
 	if (_clientIt->state < send_body)
 		return;
 	ANNOUNCEME_FD
-	
+	if (_clientIt->cgiRequest)
+	{
+		sendResponseBody_CGI();
+		return;
+	}
+
 	if (_clientIt->sendPath.empty())
 	{
 		closeClient("Server::sendResponseBody: nothing to send.");
@@ -496,16 +624,23 @@ std::string Server::buildResponseHead()
 	std::stringstream ss_header;
 	size_t contentLength = fileSize(_clientIt->sendPath);
 	
-	ss_header	<< HTTPVERSION << ' ' << _clientIt->statusCode << ' ' << getHttpMsg(_clientIt->statusCode) << "\r\n"
-				<< "Server: " << SERVERVERSION << "\r\n"
-				<< "connection: close" << "\r\n"
-				<< "content-length: " << contentLength << "\r\n";
-	if (contentLength != 0)
-		ss_header << "content-type: " << mimeType(_clientIt->sendPath) << "\r\n";
+	ss_header		<< HTTPVERSION << ' ' << _clientIt->statusCode << ' ' << getHttpMsg(_clientIt->statusCode) << "\r\n"
+					<< "Server: " << SERVERVERSION << "\r\n"
+					<< "connection: close" << "\r\n";
+	if (_clientIt->cgiRequest)
+	{
+		ss_header	<< "transfer-encoding: chunked\r\n"
+					<< "content-type: " << mimeType(".html") << "\r\n"; // we only return html when it is a CGI request. 
+	}
+	else
+	{
+		ss_header << "content-length: " << contentLength << "\r\n";
+		if (contentLength != 0)
+			ss_header << "content-type: " << mimeType(_clientIt->sendPath) << "\r\n";
+	}
 	if (_clientIt->setCookie)
 		ss_header << buildCookie(SESSIONID, _clientIt->sessionId, 3600, "/") << "\r\n";
-	
-	ss_header	<< "\r\n";
+	ss_header << "\r\n";
 	return ss_header.str();
 }
 
@@ -1033,6 +1168,22 @@ strVec Server::buildCGIenv()
 	if (_clientIt->headers.find("user-agent") != _clientIt->headers.end())
 		userAgent = _clientIt->headers["user-agent"];
 
+	std::stringstream ss_cgiOutfile;
+	std::stringstream ss_cgiInfile;
+	char buffer[PATH_MAX];
+	if (!getcwd(buffer, sizeof(buffer)))
+	{
+		std::cerr << E_S_GETCWD << std::endl;
+		
+	}
+	else
+	{
+		ss_cgiInfile << buffer << "/" << _clientIt->path_CGItempFile;
+		ss_cgiOutfile << buffer << "/" << SYS_CGIPAGE;
+	}
+	std::cout << "cgiOutfile:" << ss_cgiOutfile.str() << std::endl;
+	std::cout << "cgiInfile:" << ss_cgiInfile.str() << std::endl;
+
 	strVec env;
 	env.push_back("SCRIPT_NAME=" + _clientIt->filename);
 	env.push_back("QUERY_STRING=" + _clientIt->queryString);
@@ -1045,6 +1196,8 @@ strVec Server::buildCGIenv()
 	env.push_back("SERVER_PORT=" + port.str());
 	env.push_back("PATH_INFO=" + _clientIt->updatedURL);
 	env.push_back("HTTP_USER_AGENT=" + userAgent);
+	env.push_back("CGI_INFILE=" + ss_cgiInfile.str());
+	env.push_back("CGI_OUTFILE=" + ss_cgiOutfile.str());
 	return env;
 }
 
@@ -1086,18 +1239,60 @@ void Server::closePipes(pid_t cgiPid, int pipeFd[2])
 	}
 }
 
+void Server::buildCGIvars()
+{
+	// argv
+	
+	// allocate for argv
+	_clientIt->argvVec.push_back(_cgiExecPath.c_str()); // name of executable (giving path here but hey)
+	_clientIt->argvVec.push_back(_clientIt->updatedURL.c_str()); // path to script, which is the requested file
+	
+	// store pointers to allocated strings in 2d-char compatible format
+	for (size_t i = 0; i < _clientIt->argvVec.size(); ++i)
+		_clientIt->argv.push_back(const_cast<char*>(_clientIt->argvVec[i].c_str()));
+	_clientIt->argv.push_back(NULL);
+
+	// env
+	
+	// prepare non insta-insertables
+	std::stringstream contentLength;
+	contentLength << _clientIt->contentLength; // best way I found to convert numerical to str in cpp98
+
+	std::string cookie;
+	if (_clientIt->headers.find("cookie") != _clientIt->headers.end())
+		cookie = _clientIt->headers["cookie"];
+
+	std::string ipAddress = inet_ntoa(_clientIt->address.sin_addr);
+
+	std::stringstream port;
+	port << ntohs(_serverAddress.sin_port);
+
+	std::string userAgent;
+	if (_clientIt->headers.find("user-agent") != _clientIt->headers.end())
+		userAgent = _clientIt->headers["user-agent"];
+
+	// allocate for env
+	_clientIt->envVec.push_back("SCRIPT_NAME=" + _clientIt->filename);
+	_clientIt->envVec.push_back("QUERY_STRING=" + _clientIt->queryString);
+	_clientIt->envVec.push_back("REQUEST_METHOD=" + _clientIt->method);
+	_clientIt->envVec.push_back("CONTENT_TYPE=" + _clientIt->contentType);
+	_clientIt->envVec.push_back("CONTENT_LENGTH=" + contentLength.str());
+	_clientIt->envVec.push_back("HTTP_COOKIE=" + cookie);
+	_clientIt->envVec.push_back("REMOTE_ADDR=" + ipAddress);
+	_clientIt->envVec.push_back("SERVER_NAME=" + _activeServerName);
+	_clientIt->envVec.push_back("SERVER_PORT=" + port.str());
+	_clientIt->envVec.push_back("PATH_INFO=" + _clientIt->updatedURL);
+	_clientIt->envVec.push_back("HTTP_USER_AGENT=" + userAgent);
+	
+	// store pointers to allocated strings in 2d-char compatible format
+	for (size_t i = 0; i < _clientIt->envVec.size(); ++i)
+		_clientIt->env.push_back(const_cast<char*>(_clientIt->envVec[i].c_str()));
+	_clientIt->env.push_back(NULL);
+}
+
 void Server::handleCGI()
 {
-	char* argv[3];
-	argv[0] = const_cast<char*>(_cgiExecPath.c_str()), // name of executable (giving path here but hey)
-	argv[1] = const_cast<char*>(_clientIt->updatedURL.c_str()), // path to script, which is the requested file
-	argv[2] = NULL;
-	
-	strVec envVec = buildCGIenv(); // this vector allocates for the strings
-	std::vector<char*>env; // this will hold the char* to the strings and can be passed to execve
-	for (size_t i = 0; i < envVec.size(); ++i)
-		env.push_back(const_cast<char*>(envVec[i].c_str()));
-	env.push_back(NULL);
+	buildCGIvars();
 
 	int pipeFd[2];
 	if (pipe(pipeFd) == -1)
@@ -1117,7 +1312,7 @@ void Server::handleCGI()
 	if (cgiPid == 0)
 	{
 		manageCGIpipes_child(pipeFd);
-		execve(_cgiExecPath.c_str(), argv, env.data());
+		execve(_cgiExecPath.c_str(), _clientIt->argv.data(), _clientIt->env.data());
 		
 		std::cerr << E_EXECVE << std::endl;
 		closePipes(cgiPid, pipeFd);

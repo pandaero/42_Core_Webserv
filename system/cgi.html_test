@@ -1,0 +1,15 @@
+
+<!DOCTYPE html>
+<html>
+
+<head>
+	<title>Python CGI Example</title>
+	<link rel="stylesheet" type="text/css" href="/styles.css"/>
+</head>
+
+<body>
+	<h1>Python CGI:<br>POST</h1>
+	<p>Hello df shmangtu!</p>
+</body>
+
+</html>

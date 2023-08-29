@@ -1,16 +1,10 @@
 #!/usr/bin/python3
 
-# Import modules for CGI handling 
-import cgi, cgitb, os
+import os, sys, cgi
 
-# Create instance of FieldStorage 
-form = cgi.FieldStorage() 
-
-# Get data from fields
+form = cgi.FieldStorage() # python will automatically read from stdin if no param is given
 first_name = form.getvalue('first_name')
 last_name  = form.getvalue('last_name')
-last_name  = form.getvalue('last_name')
-
 request_method = os.environ.get("REQUEST_METHOD", "N/A")
 
 html_content = """

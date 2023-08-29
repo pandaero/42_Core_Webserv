@@ -11,6 +11,8 @@ Client::Client()
 	dirListing = false;
 	append = false;
 	setCookie = false;
+	childLaunched = false;
+	cgiRequest = false;
 }
 
 void Client::whoIsI()

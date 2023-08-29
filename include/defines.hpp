@@ -5,7 +5,6 @@
 # define SERVERVERSION	"webserv v0.69"
 # define WHITESPACE		" \t\v\r\n"
 # define HTTPVERSION	"HTTP/1.1"
-# define NOTFOUND		"_____TARGETSTRINGNOTFOUND_____"
 # define ANNOUNCEME		//std::cout << "Announcer: " << __FUNCTION__ << std::endl;
 # define ANNOUNCEME_FD	//std::cout << "Announcer: " << __FUNCTION__ << " on fd " << _clientIt->fd << std::endl;
 # define SESSIONID		"sessionid"
@@ -107,6 +106,7 @@
 # define E_CHILD				"Error: Server: child exited with error or was terminated."
 # define E_TEMPFILEREMOVAL		"Error: Server: Could not remove temporary file."
 # define E_TEMPFILEOPEN			"Error: Server: Could not open temporary file."
+# define E_S_GETCWD				"Error: Server: getcwd()"
 
 # define I_CONNECTIONLIMIT		"Info: Server: Connection limit reached."
 # define I_CLOSENODATA			"Info: Server: Connection closed (no data received)."

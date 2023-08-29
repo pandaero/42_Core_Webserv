@@ -33,6 +33,8 @@ class	Server
 		void handleDelete();
 		bool cgiRequest();
 		void handleCGI();
+		void cgiPost_launchChild();
+		void buildCGIvars();
 		
 		void			doTheCGI();
 		
@@ -41,9 +43,12 @@ class	Server
 		bool			sendData();
 		bool			responseHead();
 		void			sendResponseBody();
+		void			sendResponseBody_CGI();
 		
 		void			sendStatusPage(int);
 		void			sendFile200(std::string);
+		void			sendCGI200();
+
 		void			sendEmptyStatus(int);
 		void			closeClient(const char*);
 		
