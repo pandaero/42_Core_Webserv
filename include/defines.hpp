@@ -106,6 +106,7 @@
 # define E_FORK					"Error: Server: fork()."
 # define E_EXECVE				"Error: Server: execve()."
 # define E_DUP2					"Error: Server: dup2()."
+# define E_FCNTL				"Error: Server: fcntl()."
 # define E_CHILD				"Error: Server: child exited with error or was terminated."
 # define E_IFSTREAM				"Error: Server: ifstream object"
 

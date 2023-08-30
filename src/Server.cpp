@@ -133,11 +133,12 @@ void Server::acceptConnections()
 		newClient.fd = new_sock;
 		_clients.push_back(newClient);
 
-		pollfd new_pollStruct;
+		addPollStruct(new_sock, true);
+		/* pollfd new_pollStruct;
 		new_pollStruct.fd = new_sock;
 		new_pollStruct.events = POLLIN | POLLHUP;
 		new_pollStruct.revents = 0;
-		_pollVector->push_back(new_pollStruct);
+		_pollVector->push_back(new_pollStruct); */
 	}
 }
 
@@ -324,7 +325,7 @@ void Server::handleGet()
 		return;
 	if (cgiRequest())
 	{
-		cgiGet_launchChild();
+		cgiChildGET();
 		return;
 	}
 	if (isDirectory(_clientIt->updatedURL))
@@ -526,14 +527,19 @@ void Server::cgiSendError(const char* msg)
 {
 	kill(_clientIt->cgiPid, SIGKILL);
 	close(_clientIt->childToParent[0]);
+
 	closeClient(msg);
 	throw std::runtime_error(__FUNCTION__);
 }
 
 void Server::sendResponseBody_CGI()
 {
-	std::cout << "sendResponseBody_CGI" << std::endl;
 	char buffer[SEND_CHUNK_SIZE];
+	
+	pollfd* pollStruct = getPollStruct(_clientIt->childToParent[0]);
+
+	if (!(pollStruct->revents & POLLIN))
+		return;
 	
 	int bytesRead = read(_clientIt->childToParent[0], buffer, SEND_CHUNK_SIZE);
 	if (bytesRead == -1)
@@ -546,7 +552,7 @@ void Server::sendResponseBody_CGI()
 		message << "\r\n";
 		message.write(buffer, bytesRead);
 		message << "\r\n";
-		std::cout << "message:'" << message.str() << "'" << std::endl;
+
 		if (send(_clientIt->fd, message.str().c_str(), message.str().size(), 0) <= 0)
 			cgiSendError(E_SEND);
 	}
@@ -784,22 +790,32 @@ bool Server::requestError()
 	return false;
 }
 
+void Server::removePollStruct(int fd)
+{
+	std::vector<pollfd>::iterator it = _pollVector->begin();
+	
+	while (it != _pollVector->end() && it->fd != fd)
+		++it;
+	if (it == _pollVector->end())
+		throw std::runtime_error(__FUNCTION__);
+	_pollVector->erase(it);
+}
+
 void Server::closeClient(const char* msg)
 {
 	if (msg)
 		std::cout << "closeClient on fd " << _clientIt->fd << ": " << msg << std::endl;
 	close(_clientIt->fd);
 
-	// erase corresponding pollStruct
-	std::vector<pollfd>::iterator it = _pollVector->begin();
-	
-	
+	removePollStruct(int fd)
+
+	/* std::vector<pollfd>::iterator it = _pollVector->begin();
 	
 	while (it != _pollVector->end() && it->fd != _clientIt->fd)
 		++it;
 	if (it == _pollVector->end())
 		throw std::runtime_error(__FUNCTION__);
-	_pollVector->erase(it);
+	_pollVector->erase(it); */
 
 	// erase client and decrement _index to not skip the next client in the for loop
 	_clients.erase(_clientIt);
@@ -1187,7 +1203,25 @@ void Server::buildCGIvars()
 	_clientIt->env.push_back(NULL);
 }
 
-void Server::cgiGet_launchChild()
+void Server::addPollinStruct(int fd)
+{
+	pollfd new_pollStruct;
+	new_pollStruct.fd = fd;
+	new_pollStruct.events = POLLIN | POLLHUP;
+	new_pollStruct.revents = 0;
+	_pollVector->push_back(new_pollStruct);
+}
+
+void Server::addPolloutStruct(int fd)
+{
+	pollfd new_pollStruct;
+	new_pollStruct.fd = fd;
+	new_pollStruct.events = POLLOUT | POLLHUP;
+	new_pollStruct.revents = 0;
+	_pollVector->push_back(new_pollStruct);
+}
+
+void Server::cgiChildGET()
 {
 	buildCGIvars();
 
@@ -1197,6 +1231,17 @@ void Server::cgiGet_launchChild()
 		sendStatusPage(500);
 		return;
 	}
+	if (fcntl(_clientIt->childToParent[0], F_SETFL, O_NONBLOCK) == -1
+		|| fcntl(_clientIt->childToParent[1], F_SETFL, O_NONBLOCK) == -1)
+	{
+		close(_clientIt->childToParent[0]);
+		close(_clientIt->childToParent[1]);
+		std::cerr << E_FCNTL << std::endl;
+		sendStatusPage(500);
+		return;
+	}
+	
+	addPollinStruct(_clientIt->childToParent[0]);
 
 	_clientIt->cgiPid = fork();
 	if (_clientIt->cgiPid == -1)
@@ -1205,7 +1250,7 @@ void Server::cgiGet_launchChild()
 		sendStatusPage(500);
 		return;
 	}
-	if (_clientIt->cgiPid == 0) // for explanations see cgiPost_launchChild()
+	if (_clientIt->cgiPid == 0) // for explanations see cgiChildPOST()
 	{
 		for (std::vector<pollfd>::iterator it = _pollVector->begin(); it != _pollVector->end(); ++it)
 			close(it->fd);
@@ -1216,7 +1261,7 @@ void Server::cgiGet_launchChild()
 			exit(EXIT_FAILURE);
 		}
 		close(_clientIt->childToParent[0]);
-
+		
 		execve(_cgiExecPath.c_str(), _clientIt->argv.data(), _clientIt->env.data());
 		std::cerr << E_EXECVE << std::endl;
 		close(_clientIt->childToParent[1]);

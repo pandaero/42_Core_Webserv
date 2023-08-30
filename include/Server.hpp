@@ -38,7 +38,7 @@ class	Server
 
 		// CGI 
 		bool cgiRequest();
-		void cgiGet_launchChild();
+		void cgiChildGET();
 		void cgiPost_launchChild();
 		void cgiSendError(const char*);
 		void buildCGIvars();
@@ -73,6 +73,11 @@ class	Server
 		std::string		ifDirAppendSlash(const std::string&);
 
 		pollfd*			getPollStruct(int);
+		void			addPollinStruct(int);
+		void			addPolloutStruct(int);
+		void			removePollStruct(int);
+
+
 		std::string		mimeType(const std::string&);
 		bool			dirListing(const std::string&);
 
