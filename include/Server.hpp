@@ -19,51 +19,55 @@ class	Server
 		// main handlers
 		bool hangUp();
 		bool receive();
+		void closeClient(const char*);
+		
+		
+		// receive, parse, errorcheck request
 		bool requestHead();
 		void parseRequestLine();
 		void parseRequestHeaders();
-		void handleSession();
 		bool requestError();
 		void updateClientVars();
-		void selectHostConfig();
-
+		
 		// request handlers
+		void selectHostConfig();
+		void handleSession();
 		void handleGet();
 		void handlePost();
 		void handleDelete();
+
+		// CGI 
 		bool cgiRequest();
-		void handleCGI();
+		void cgiGet_launchChild();
 		void cgiPost_launchChild();
+		void cgiSendError(const char*);
 		void buildCGIvars();
-		
-		void			doTheCGI();
-		
-		
-		
-		bool			sendData();
-		bool			responseHead();
-		void			sendResponseBody();
-		void			sendResponseBody_CGI();
-		
-		void			sendStatusPage(int);
-		void			sendFile200(std::string);
-		void			sendCGI200();
+		bool childSuccess();
+		void doTheCGI();
 
-		void			sendEmptyStatus(int);
-		void			closeClient(const char*);
-		
-		void			generateStatusPage(int);
-		void			generateSessionLogPage();
-		void			generateDirListingPage(const std::string&);
-
-		std::string		buildResponseHead();
-		strVec			buildCGIenv();
-		std::string		buildCookie(const std::string&, const std::string&, int, const std::string&);
-
-		void			manageCGIpipes_child(int[2]);
 		void			closePipes(pid_t, int[2]);
 
+		
+		// send functions		
+		bool sendData();
+		bool responseHead();
+		void sendResponseBody();
+		void sendResponseBody_CGI();
+		void recvResponseBody_CGI();
+
+		// send handlers
+		void sendStatusPage(int);
+		void sendFile_200(std::string);
+		void sendEmptyStatus(int);
+		
+		void generateStatusPage(int);
+		void generateSessionLogPage();
+		void generateDirListingPage(const std::string&);
+
 		// utils
+		std::string		buildResponseHead();
+		std::string		buildCookie(const std::string&, const std::string&, int, const std::string&);
+
 		void			applyHostConfig(const ServerConfig&);
 		std::string 	prependRoot(const std::string&);
 		std::string		ifDirAppendSlash(const std::string&);

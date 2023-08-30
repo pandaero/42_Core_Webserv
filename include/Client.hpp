@@ -18,6 +18,7 @@ class	Client
 		
 		int				fd;
 		std::string		buffer;
+		std::string		bufferCopy;
 		int				statusCode;
 		sockaddr_in		address;
 		

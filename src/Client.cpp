@@ -33,5 +33,6 @@ void Client::whoIsI()
 				<< "dirlisting: " << (dirListing ? "yes" : "no") << "\n"
 				<< "updatedURL: " << updatedURL << "\n"
 				<< "updatedDirectory: " << updatedDirectory << "\n"
+				<< "query string: " << queryString << "\n"
 				<< separator << "\n" << std::endl;
 }

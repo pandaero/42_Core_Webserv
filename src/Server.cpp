@@ -200,10 +200,11 @@ bool Server::receive()
 	_bytesReceived = recv(_clientIt->fd, buffer, RECV_CHUNK_SIZE, 0);
 	if (_bytesReceived <= 0)
 	{
-		closeClient("Server::receiveData: Connection closed (no data received).");
-		throw std::runtime_error(I_CLOSENODATA);
+		closeClient("Connection closed (no data received).");
+		return false;
 	}
 	_clientIt->buffer.append(buffer, _bytesReceived);
+	_clientIt->bufferCopy = buffer;
 	return true;
 }
 
@@ -260,9 +261,9 @@ void Server::parseRequestLine()
 {
 	_clientIt->method = splitEraseStr(_clientIt->buffer, " ");
 	_clientIt->URL = splitEraseStr(_clientIt->buffer, " ");
+	_clientIt->URL = ifDirAppendSlash(_clientIt->URL);
 	_clientIt->httpProtocol = splitEraseStr(_clientIt->buffer, "\r\n");
 
-	// check for CGI query string
 	size_t questionMarkPos = _clientIt->URL.find("?");
 	if (questionMarkPos != std::string::npos)
 	{
@@ -270,8 +271,6 @@ void Server::parseRequestLine()
 		_clientIt->URL = _clientIt->URL.substr(0, questionMarkPos);
 	}
 
-	// split URL for easy access
-	_clientIt->URL = ifDirAppendSlash(_clientIt->URL);
 	_clientIt->directory = _clientIt->URL.substr(0, _clientIt->URL.find_last_of("/") + 1);
 	_clientIt->filename = _clientIt->URL.substr(_clientIt->URL.find_last_of("/") + 1);
 }
@@ -291,7 +290,7 @@ void Server::handleSession()
 	std::string logPath = "system/logs/" + _clientIt->sessionId + ".log";
 	std::ofstream logFile(logPath.c_str(), std::ios::app);
 	if (logFile.is_open())
-		logFile << currentTime() << " " << _clientIt->method << " " << _clientIt->URL << "\n";
+		logFile << currentTime() << "\t" << inet_ntoa(_clientIt->address.sin_addr) << "\t" << _clientIt->method << " " << _clientIt->URL << "\n";
 	else
 		std::cerr << "Could not open log file for tracking of session " << _clientIt->sessionId << std::endl;
 	
@@ -312,7 +311,6 @@ void Server::parseRequestHeaders()
 	if (_clientIt->headers.find("content-type") != _clientIt->headers.end())
 		_clientIt->contentType = _clientIt->headers["content-type"];
 
-	// the cookie header contains all cookie key-value pairs. So its return is a string map.
 	if (_clientIt->headers.find("cookie") != _clientIt->headers.end())
 	{
 		std::string temp = _clientIt->headers["cookie"]; // parseStrMap erases from the input string. We want to preserve the cookie header to be able to pass it to CGI
@@ -326,17 +324,17 @@ void Server::handleGet()
 		return;
 	if (cgiRequest())
 	{
-		handleCGI();
+		cgiGet_launchChild();
 		return;
 	}
 	if (isDirectory(_clientIt->updatedURL))
 	{
 		if (resourceExists(_clientIt->updatedURL + _clientIt->standardFile))
-			sendFile200(_clientIt->updatedURL + _clientIt->standardFile);
+			sendFile_200(_clientIt->updatedURL + _clientIt->standardFile);
 		else if (_clientIt->dirListing)
 		{
 			generateDirListingPage(_clientIt->updatedURL);
-			sendFile200(SYS_DIRLISTPAGE);
+			sendFile_200(SYS_DIRLISTPAGE);
 		}
 		else
 			sendStatusPage(404);
@@ -344,7 +342,7 @@ void Server::handleGet()
 	else
 	{
 		if (resourceExists(_clientIt->updatedURL))
-			sendFile200(_clientIt->updatedURL);
+			sendFile_200(_clientIt->updatedURL);
 		else
 			sendStatusPage(404);
 	}
@@ -354,24 +352,24 @@ void Server::cgiPost_launchChild()
 {
 	buildCGIvars();
 
-	if (pipe(_clientIt->parentToChild) == -1	// need two pipes because we are sending and receiving in both child and parent. Parent would read its own sent data before the child has a chance to.
-		|| pipe(_clientIt->childToParent) == -1)
+	// Need two pipes because we are sending and receiving in both child and parent.
+	// Parent would read its own sent data before the child has a chance to if using only one pipe
+	if (pipe(_clientIt->parentToChild) == -1 || pipe(_clientIt->childToParent) == -1)
 	{
 		std::cerr << E_PIPE << std::endl;
 		sendStatusPage(500);
 		return;
 	}
 
-	pid_t cgiPid = fork();
-	if (cgiPid == -1)
+	_clientIt->cgiPid = fork();
+	if (_clientIt->cgiPid == -1)
 	{
 		std::cerr << E_FORK << std::endl;
 		sendStatusPage(500);
 		return;
 	}
-	if (cgiPid == 0)
+	if (_clientIt->cgiPid == 0)
 	{
-		std::cout << "child argv0: " << _clientIt->argv[0] << std::endl;
 		// close socket fds that the child inherited 
 		for (std::vector<pollfd>::iterator it = _pollVector->begin(); it != _pollVector->end(); ++it)
 			close(it->fd);
@@ -396,7 +394,48 @@ void Server::cgiPost_launchChild()
 		close(_clientIt->parentToChild[0]);
 		close(_clientIt->childToParent[1]);
 		_clientIt->childLaunched = true;
+		// not waiting for child because we might have to go through another loop to finish sending
 	}
+}
+
+// prolly also test for bigger files. Only tested with single loop completion
+void Server::recvResponseBody_CGI()
+{
+	if (!_clientIt->childLaunched)
+		cgiPost_launchChild();
+	int bytesWritten = write(_clientIt->parentToChild[1], _clientIt->buffer.c_str(), _clientIt->buffer.size());
+	if (bytesWritten == -1)
+	{
+		kill(_clientIt->cgiPid, SIGKILL);
+		close(_clientIt->parentToChild[1]);
+		close(_clientIt->childToParent[0]);
+		closeClient(E_WRITE_CHPIPE);
+		throw std::runtime_error(__FUNCTION__);
+	}
+	_clientIt->bytesWritten += bytesWritten;
+	_clientIt->buffer.erase(0, bytesWritten);
+	if (_clientIt->bytesWritten >= _clientIt->contentLength)
+	{
+		close(_clientIt->parentToChild[1]);
+		
+		if (childSuccess())
+			sendFile_200("");
+		else
+			sendStatusPage(500);
+	}
+}
+
+bool Server::childSuccess()
+{
+	int status;
+	waitpid(_clientIt->cgiPid, &status, 0); //WNOHANG terminate in case of child hanging
+	if (!WIFEXITED(status) || WEXITSTATUS(status) != 0) // WIFEXITED(status) is only true if child terminated of its own accord
+	{
+		std::cerr << E_CHILD << std::endl;
+		close(_clientIt->childToParent[0]);
+		return false;
+	}
+	return true;
 }
 
 void Server::handlePost()
@@ -404,84 +443,42 @@ void Server::handlePost()
 	if (_clientIt->state > handleRequest)
 		return;
 	ANNOUNCEME_FD
+	
 	if (_clientIt->state == recv_body)
 		receive();
 	
-	
 	if (_clientIt->cgiRequest)
 	{
-		if (!_clientIt->childLaunched)
-			cgiPost_launchChild();
-		// write received chunk to child's pipe
-		std::cout << "before writing to pipe parenttochild_1. buffer: " << _clientIt->buffer << std::endl;
-		int bytesWritten = write(_clientIt->parentToChild[1], _clientIt->buffer.c_str(), _clientIt->buffer.size());
-		if (bytesWritten == -1)
-		{
-			// terminate child
-			
-			close(_clientIt->parentToChild[1]);
-			close(_clientIt->childToParent[0]);
-			closeClient("Server::handlePost: write() to child pipe failed.");
-			throw std::runtime_error("Error: Server::handlePost");
-		}
-		_clientIt->bytesWritten += bytesWritten;
-		_clientIt->buffer.erase(0, bytesWritten);
-		if (_clientIt->bytesWritten >= _clientIt->contentLength)
-		{
-			std::cout << "byteswritten >= clientbody in CGIPost to pipe" << std::endl;
-			close(_clientIt->parentToChild[1]);
-
-			/*
-			we are not waiting for the child - we might have more data to chunkreceive first
-			int status;
-			waitpid(cgiPid, &status, 0); //WNOHANG?
-			// terminate in case of child hanging
-			if (!WIFEXITED(status) || WEXITSTATUS(status) != 0) // WIFEXITED(status) is only true if child terminated of its own accord
-			{
-				std::cerr << E_CHILD << std::endl;
-				closePipes(cgiPid, pipeFd);
-				sendStatusPage(500);
-				return;
-			}
-			*/
-
-
-			sendFile200(""); //send function will redirect to reading from pipe by itself
-		}
-		
-		
+		recvResponseBody_CGI();
+		return;
 	}
 	
-	// normal Post
-	else 
+	if (!resourceExists(_clientIt->updatedDirectory))
 	{
-		if (!resourceExists(_clientIt->updatedDirectory))
-		{
-			sendStatusPage(500);
-			return;
-		}
-		std::ofstream outputFile;
-		if (_clientIt->append)
-			outputFile.open(_clientIt->updatedURL.c_str(), std::ios::binary | std::ios::app);
-		else
-		{
-			outputFile.open(_clientIt->updatedURL.c_str(), std::ios::binary | std::ios::trunc);
-			_clientIt->append = true;
-		}
-		if (!outputFile)
-		{
-			std::cerr << E_POSTFILE << std::endl;
-			sendStatusPage(500);
-			return;		
-		}
-		outputFile.write(_clientIt->buffer.c_str(), _clientIt->buffer.size());
-		_clientIt->bytesWritten += _clientIt->buffer.size();
-		_clientIt->buffer.clear();
-		outputFile.close();
-
-		if (_clientIt->bytesWritten >= _clientIt->contentLength)
-			sendEmptyStatus(201);
+		sendStatusPage(500);
+		return;
 	}
+	std::ofstream outputFile;
+	if (_clientIt->append)
+		outputFile.open(_clientIt->updatedURL.c_str(), std::ios::binary | std::ios::app);
+	else
+	{
+		outputFile.open(_clientIt->updatedURL.c_str(), std::ios::binary | std::ios::trunc);
+		_clientIt->append = true;
+	}
+	if (!outputFile)
+	{
+		std::cerr << E_POSTFILE << std::endl;
+		sendStatusPage(500);
+		return;		
+	}
+	outputFile.write(_clientIt->buffer.c_str(), _clientIt->buffer.size());
+	_clientIt->bytesWritten += _clientIt->buffer.size();
+	_clientIt->buffer.clear();
+	outputFile.close();
+
+	if (_clientIt->bytesWritten >= _clientIt->contentLength)
+		sendEmptyStatus(201);
 }
 
 void Server::handleDelete()
@@ -489,16 +486,10 @@ void Server::handleDelete()
 	if (_clientIt->state > handleRequest)
 		return;
 	if (isDirectory(_clientIt->updatedURL)) // deleting directories not allowed
-	{
 		sendStatusPage(405);
-		return;
-	}
-	if (!resourceExists(_clientIt->updatedURL))
-	{
+	else if (!resourceExists(_clientIt->updatedURL))
 		sendStatusPage(404);
-		return;
-	}
-	if (remove(_clientIt->updatedURL.c_str()) == 0)
+	else if (remove(_clientIt->updatedURL.c_str()) == 0)
 		sendEmptyStatus(204);
 	else
 		sendStatusPage(500);
@@ -508,7 +499,7 @@ bool Server::sendData() // this is shit. rethink entire structure now that we KN
 {
 	if (!(_pollStruct->revents & POLLOUT))
 		return false;
-	if (_clientIt->state == recv_body)
+	if (_clientIt->state < send_head)
 		return false;
 	return true;
 }
@@ -520,6 +511,7 @@ bool Server::responseHead()
 	ANNOUNCEME_FD
 
 	std::string head = buildResponseHead();
+
 	if (send(_clientIt->fd, head.c_str(), head.size(), 0) <= 0)
 	{
 		closeClient("Server::sendResponseHead: send failure.");
@@ -530,51 +522,43 @@ bool Server::responseHead()
 	return false;
 }
 
-
-
+void Server::cgiSendError(const char* msg)
+{
+	kill(_clientIt->cgiPid, SIGKILL);
+	close(_clientIt->childToParent[0]);
+	closeClient(msg);
+	throw std::runtime_error(__FUNCTION__);
+}
 
 void Server::sendResponseBody_CGI()
 {
-		char buffer[SEND_CHUNK_SIZE];
-		
-		int bytesRead = read(_clientIt->childToParent[0], buffer, SEND_CHUNK_SIZE);
-		if (bytesRead == -1)
-		{
-			//terminate child
-			close(_clientIt->childToParent[0]);
-			closeClient("Server::sendResponseBody: read() from child pipe failed.");
-			throw std::runtime_error(E_SEND);
-		}
-		if (bytesRead == 0) // pipe is finished, send termination chunk
-		{
-			std::cout << "read = 0 from pipe in send cgi" << std::endl;
-
-			if (send(_clientIt->fd, "0\r\n", 3, 0) <= 0)
-			{
-				//terminate child
-				close(_clientIt->childToParent[0]);
-				closeClient("Server::sendResponseBody: send failure.");
-				throw std::runtime_error(E_SEND);
-			}
-			close(_clientIt->childToParent[0]);
-			closeClient("Server::sendResponseBody: sending complete (chunked transfer from pipe).");
-			return;
-		}
-
+	std::cout << "sendResponseBody_CGI" << std::endl;
+	char buffer[SEND_CHUNK_SIZE];
+	
+	int bytesRead = read(_clientIt->childToParent[0], buffer, SEND_CHUNK_SIZE);
+	if (bytesRead == -1)
+		cgiSendError(E_READ);
+	if (bytesRead != 0)
+	{
+		// chunk encoding needs the size of the data first
 		std::stringstream message;
-    	message << std::hex << bytesRead + 2; // we are adding \r\n at the end of our message, so + 2
-		message << "\r\n" << buffer << "\r\n";
-
-		std::cout << "message:\n" << message.str() << std::endl;
-
+		message << std::hex << bytesRead; 
+		message << "\r\n";
+		message.write(buffer, bytesRead);
+		message << "\r\n";
+		std::cout << "message:'" << message.str() << "'" << std::endl;
 		if (send(_clientIt->fd, message.str().c_str(), message.str().size(), 0) <= 0)
-		{
-			//terminate child
-			close(_clientIt->childToParent[0]);
-			closeClient("Server::sendResponseBody: send failure.");
-			throw std::runtime_error(E_SEND);
-		}
+			cgiSendError(E_SEND);
 	}
+	else
+	{
+		if (send(_clientIt->fd, "0\r\n\r\n", 5, 0) <= 0) // send chunk transfer end chunk
+			cgiSendError(E_SEND);
+		close(_clientIt->childToParent[0]);
+		closeClient("Sending complete (chunked transfer from pipe).");
+		return;
+	}
+}
 
 void Server::sendResponseBody()
 {
@@ -586,18 +570,18 @@ void Server::sendResponseBody()
 		sendResponseBody_CGI();
 		return;
 	}
-
 	if (_clientIt->sendPath.empty())
 	{
-		closeClient("Server::sendResponseBody: nothing to send.");
+		closeClient("Sending complete (nothing to send).");
 		return;
 	}
+
 	std::ifstream fileStream(_clientIt->sendPath.c_str(), std::ios::binary);
 	if (!fileStream)
 	{
 		fileStream.close();
-		closeClient("Server::sendResponseBody: ifstream failure.");
-		throw std::runtime_error("sendResponseBody: Could not open file to send. Client closed.");
+		closeClient(E_IFSTREAM);
+		throw std::runtime_error(__FUNCTION__);
 	}
 	char buffer[SEND_CHUNK_SIZE];
 	fileStream.seekg(_clientIt->filePosition);
@@ -606,13 +590,13 @@ void Server::sendResponseBody()
 	if (send(_clientIt->fd, buffer, fileStream.gcount(), 0) <= 0)
 	{
 		fileStream.close();
-		closeClient("Server::sendResponseBody: send failure.");
-		throw std::runtime_error(E_SEND);
+		closeClient(E_SEND);
+		throw std::runtime_error(__FUNCTION__);
 	}
 	if (fileStream.eof())
 	{
 		fileStream.close();
-		closeClient("Server::sendResponseBody: sending complete.");
+		closeClient("Sending complete.");
 		return;
 	}
 	_clientIt->filePosition = fileStream.tellg();
@@ -628,10 +612,8 @@ std::string Server::buildResponseHead()
 					<< "Server: " << SERVERVERSION << "\r\n"
 					<< "connection: close" << "\r\n";
 	if (_clientIt->cgiRequest)
-	{
 		ss_header	<< "transfer-encoding: chunked\r\n"
-					<< "content-type: " << mimeType(".html") << "\r\n"; // we only return html when it is a CGI request. 
-	}
+					<< "content-type: " << mimeType(".html") << "\r\n"; // we only return html when it is a CGI request 
 	else
 	{
 		ss_header << "content-length: " << contentLength << "\r\n";
@@ -655,14 +637,6 @@ std::string Server::ifDirAppendSlash(const std::string& path)
 
 void Server::updateClientVars()
 {
-	// update and split URL for easy access
-	// this would ideally happen in Client, but has no access to root and can't appendForwardSlash
-	// move this in a future refactor
-	_clientIt->URL = ifDirAppendSlash(_clientIt->URL);
-	_clientIt->directory = _clientIt->URL.substr(0, _clientIt->URL.find_last_of("/") + 1);
-	_clientIt->filename = _clientIt->URL.substr(_clientIt->URL.find_last_of("/") + 1);
-	
-	// set dir listing
 	_clientIt->dirListing = dirListing(_clientIt->directory);
 	
 	// select the file to try to serve in case of directory
@@ -670,7 +644,7 @@ void Server::updateClientVars()
 	if (_clientIt->standardFile.empty())
 		_clientIt->standardFile = _standardFile;
 	
-	// check for HTTP redirection and upload redirection; if neither: updatedPath is same as URL
+	// check for HTTP redirection and upload redirection
 	std::string	http_redir = _locations[_clientIt->directory].http_redir;
 	if (!http_redir.empty())
 		_clientIt->updatedDirectory = http_redir;
@@ -679,10 +653,7 @@ void Server::updateClientVars()
 	else
 		_clientIt->updatedDirectory = _clientIt->directory;
 
-	// prepend the server root if URL begins with /
 	_clientIt->updatedDirectory = prependRoot(_clientIt->updatedDirectory);
-
-	// build the new request URL
 	_clientIt->updatedURL = _clientIt->updatedDirectory + _clientIt->filename;
 }
 
@@ -704,7 +675,7 @@ void Server::sendStatusPage(int code)
 		generateStatusPage(code);
 }
 
-void Server::sendFile200(std::string sendPath)
+void Server::sendFile_200(std::string sendPath)
 {
 	_clientIt->statusCode = 200;
 	_clientIt-> state = send_head;
@@ -726,7 +697,7 @@ void Server::generateStatusPage(int code)
 	if (!errorPage)
 	{
 		errorPage.close();
-		throw std::runtime_error(E_TEMPFILE);
+		throw std::runtime_error(__FUNCTION__);
 	}
 
 	std::string httpMsg = getHttpMsg(code);
@@ -827,7 +798,7 @@ void Server::closeClient(const char* msg)
 	while (it != _pollVector->end() && it->fd != _clientIt->fd)
 		++it;
 	if (it == _pollVector->end())
-		throw std::runtime_error("Server::closeClient: fd to close not found in pollVector");
+		throw std::runtime_error(__FUNCTION__);
 	_pollVector->erase(it);
 
 	// erase client and decrement _index to not skip the next client in the for loop
@@ -992,7 +963,7 @@ pollfd* Server::getPollStruct(int fd)
 	while (it != _pollVector->end() && it->fd != fd)
 		++it;
 	if (it == _pollVector->end())
-		throw std::runtime_error("Server::handleConnections: fd to handle not found in pollVector");
+		throw std::runtime_error(__FUNCTION__);
 	return &*it;
 }
 
@@ -1110,7 +1081,7 @@ void Server::generateSessionLogPage()
 					<< "<h2>" << "Log for session id " << _clientIt->sessionId << "</h2>\n"
 					<< "<logtext>" << logFile.rdbuf() << "</logtext>\n"
 					<< "</div>\n"
-					<< "<img style=\"margin-left: auto; position: absolute; top: 0; right: 0; height: 100%; z-index: 1;\" src=\"/img/catlockHolmes.png\">\n"
+					<< "<img style=\"margin-left: auto; position: fixed; top: 0; right: 0; height: 70%; z-index: 1;\" src=\"/img/catlockHolmes.png\">\n"
 					<< "</body>\n</html>\n";
 	sessionLogPage.close();
 }
@@ -1147,80 +1118,6 @@ void Server::generateDirListingPage(const std::string& directory)
 
 	dirListPage << "</ul></body></html>";
 	dirListPage.close();
-}
-
-strVec Server::buildCGIenv()
-{
-	// prepare non insta-insertables
-	std::stringstream contentLength;
-	contentLength << _clientIt->contentLength; // best way I found to convert numerical to str in cpp98
-
-	std::string cookie;
-	if (_clientIt->headers.find("cookie") != _clientIt->headers.end())
-		cookie = _clientIt->headers["cookie"];
-
-	std::string ipAddress = inet_ntoa(_clientIt->address.sin_addr);
-
-	std::stringstream port;
-	port << ntohs(_serverAddress.sin_port);
-
-	std::string userAgent;
-	if (_clientIt->headers.find("user-agent") != _clientIt->headers.end())
-		userAgent = _clientIt->headers["user-agent"];
-
-	std::stringstream ss_cgiOutfile;
-	std::stringstream ss_cgiInfile;
-	char buffer[PATH_MAX];
-	if (!getcwd(buffer, sizeof(buffer)))
-	{
-		std::cerr << E_S_GETCWD << std::endl;
-		
-	}
-	else
-	{
-		ss_cgiInfile << buffer << "/" << _clientIt->path_CGItempFile;
-		ss_cgiOutfile << buffer << "/" << SYS_CGIPAGE;
-	}
-	std::cout << "cgiOutfile:" << ss_cgiOutfile.str() << std::endl;
-	std::cout << "cgiInfile:" << ss_cgiInfile.str() << std::endl;
-
-	strVec env;
-	env.push_back("SCRIPT_NAME=" + _clientIt->filename);
-	env.push_back("QUERY_STRING=" + _clientIt->queryString);
-	env.push_back("REQUEST_METHOD=" + _clientIt->method);
-	env.push_back("CONTENT_TYPE=" + _clientIt->contentType);
-	env.push_back("CONTENT_LENGTH=" + contentLength.str());
-	env.push_back("HTTP_COOKIE=" + cookie);
-	env.push_back("REMOTE_ADDR=" + ipAddress);
-	env.push_back("SERVER_NAME=" + _activeServerName);
-	env.push_back("SERVER_PORT=" + port.str());
-	env.push_back("PATH_INFO=" + _clientIt->updatedURL);
-	env.push_back("HTTP_USER_AGENT=" + userAgent);
-	env.push_back("CGI_INFILE=" + ss_cgiInfile.str());
-	env.push_back("CGI_OUTFILE=" + ss_cgiOutfile.str());
-	return env;
-}
-
-void Server::manageCGIpipes_child(int pipeFd[2])
-{
-	// GET and POST both want stdout on pipe[1] (write end)
-	if (dup2(pipeFd[1], STDOUT_FILENO) == -1)
-	{
-		std::cerr << E_DUP2 << std::endl;
-		exit(EXIT_FAILURE);
-	}
-	
-	// GET doesn't need to read from pipe, but POST needs stdin on read end of pipe
-	if (_clientIt->method == GET)
-		close(pipeFd[0]);
-	else
-	{
-		if (dup2(pipeFd[0], STDIN_FILENO) == -1)
-		{
-			std::cerr << E_DUP2 << std::endl;
-			exit(EXIT_FAILURE);
-		}
-	}
 }
 
 void Server::closePipes(pid_t cgiPid, int pipeFd[2])
@@ -1290,81 +1187,48 @@ void Server::buildCGIvars()
 	_clientIt->env.push_back(NULL);
 }
 
-void Server::handleCGI()
+void Server::cgiGet_launchChild()
 {
 	buildCGIvars();
 
-	int pipeFd[2];
-	if (pipe(pipeFd) == -1)
+	if (pipe(_clientIt->childToParent) == -1)
 	{
 		std::cerr << E_PIPE << std::endl;
 		sendStatusPage(500);
 		return;
 	}
 
-	pid_t cgiPid = fork();
-	if (cgiPid == -1)
+	_clientIt->cgiPid = fork();
+	if (_clientIt->cgiPid == -1)
 	{
 		std::cerr << E_FORK << std::endl;
 		sendStatusPage(500);
 		return;
 	}
-	if (cgiPid == 0)
+	if (_clientIt->cgiPid == 0) // for explanations see cgiPost_launchChild()
 	{
-		manageCGIpipes_child(pipeFd);
-		execve(_cgiExecPath.c_str(), _clientIt->argv.data(), _clientIt->env.data());
+		for (std::vector<pollfd>::iterator it = _pollVector->begin(); it != _pollVector->end(); ++it)
+			close(it->fd);
 		
+		if (dup2(_clientIt->childToParent[1], STDOUT_FILENO) == -1)
+		{
+			std::cerr << E_DUP2 << std::endl;
+			exit(EXIT_FAILURE);
+		}
+		close(_clientIt->childToParent[0]);
+
+		execve(_cgiExecPath.c_str(), _clientIt->argv.data(), _clientIt->env.data());
 		std::cerr << E_EXECVE << std::endl;
-		closePipes(cgiPid, pipeFd);
+		close(_clientIt->childToParent[1]);
 		exit(EXIT_FAILURE);
 	}
 	else
 	{
-		// write end of pipe not needed if GET
-		if (_clientIt->method == GET)
-			close(pipeFd[1]);
+		close(_clientIt->childToParent[1]);
+		_clientIt->childLaunched = true;
+		if (childSuccess())
+			sendFile_200("");
 		else
-		{
-			std::ifstream cgiFile(_clientIt->path_CGItempFile.c_str());
-			if (!cgiFile)
-			{
-				std::cerr << E_TEMPFILEOPEN << std::endl;
-				closePipes(cgiPid, pipeFd);
-				sendStatusPage(500);
-				return;
-			}
-			std::stringstream fileContent;
-			fileContent << cgiFile.rdbuf();
-			write(pipeFd[1], fileContent.str().c_str(), fileContent.str().size()); // Write POST data to child's stdin 
-			close(pipeFd[1]);
-			pipeFd[1] = -1; // because later calls to closePipes() might close stuff if that fd was already reassigned.
-		}
-		int status;
-		waitpid(cgiPid, &status, 0); //WNOHANG?
-		// terminate in case of child hanging
-		if (!WIFEXITED(status) || WEXITSTATUS(status) != 0) // WIFEXITED(status) is only true if child terminated of its own accord
-		{
-			std::cerr << E_CHILD << std::endl;
-			closePipes(cgiPid, pipeFd);
 			sendStatusPage(500);
-			return;
-		}
-
-		std::ofstream cgiPage(SYS_CGIPAGE, std::ios::binary | std::ios::trunc);
-		if (!cgiPage)
-		{
-			std::cerr << E_TEMPFILE << std::endl;
-			cgiPage.close();
-			closePipes(cgiPid, pipeFd);
-			sendStatusPage(500);
-			return;
-		}
-		
-		char buffer[4096];
-		size_t bytesRead;
-		while ((bytesRead = read(pipeFd[0], buffer, sizeof(buffer))) > 0)
-			cgiPage.write(buffer, bytesRead);
-		closePipes(cgiPid, pipeFd);
-		sendFile200(SYS_CGIPAGE);
 	}
 }
