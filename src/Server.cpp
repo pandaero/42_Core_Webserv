@@ -108,7 +108,7 @@ if (pollVector.size() > 420)
 		return;
 	}
 */
-void Server::acceptConnections(int pollfd)
+/* void Server::acceptConnections(int pollfd)
 {
 	ANNOUNCEME
 	
@@ -142,7 +142,7 @@ void Server::acceptConnections(int pollfd)
 		_pollVector->push_back(new_pollStruct); */
 	}
 }
-
+ */
 /*
 this structure is meh. The state checking is too elaborate.
 Wrote it before I understood that it's better (and necessary) to not 
@@ -183,7 +183,7 @@ void Server::handleConnections()
 	}
 }
 
-bool Server::hangUp()
+/* bool Server::hangUp()
 {
 	if (_pollStruct->revents & POLLHUP)
 	{
@@ -208,11 +208,11 @@ bool Server::receive()
 	_clientIt->buffer.append(buffer, bytesReceived);
 	_clientIt->bufferCopy = buffer;
 	return true;
-}
-
+} */
+/* 
 bool Server::requestHead()
 {
-	if (_clientIt->state > recv_head) // done receiving request head
+	if (_clientIt->state > recv_reqHead) // done receiving request head
 		return true;
 	ANNOUNCEME_FD
 	if (!receive())
@@ -246,19 +246,17 @@ bool Server::requestHead()
 	else if (_clientIt->contentLength <= _clientIt->buffer.size()) // body is already complete in this recv (header content has already been deleted from buffer)
 		_clientIt->state = handleRequest;
 	else
-		_clientIt->state = recv_body;
+		_clientIt->state = recv_reqBody;
 
 	selectHostConfig();
 	updateClientVars();
 	_clientIt->cgiRequest = cgiRequest();
 	_clientIt->whoIsI();
 	return true;
-}
+} */
+/* 
 
-/*
-We don't perform error checking here, because we want to log
-the requests in the next step even if they generate errors.
-*/
+
 void Server::parseRequestLine()
 {
 	_clientIt->method = splitEraseStr(_clientIt->buffer, " ");
@@ -276,8 +274,8 @@ void Server::parseRequestLine()
 	_clientIt->directory = _clientIt->URL.substr(0, _clientIt->URL.find_last_of("/") + 1);
 	_clientIt->filename = _clientIt->URL.substr(_clientIt->URL.find_last_of("/") + 1);
 }
-
-void Server::handleSession()
+ */
+/* void Server::handleSession()
 {
 	// take existing session-cookie or create new id and later transmit new session-cookie
 	if (_clientIt->cookies.find(SESSIONID) != _clientIt->cookies.end())
@@ -300,9 +298,9 @@ void Server::handleSession()
 		std::cerr << "Could not open log file for tracking of session " << _clientIt->sessionId << std::endl;
 	
 	generateSessionLogPage(); // we are pre-generating a static page here, should do this with CGI upon request.
-}
+} */
 
-void Server::parseRequestHeaders()
+/* void Server::parseRequestHeaders()
 {
 	_clientIt->headers = parseStrMap(_clientIt->buffer, ":", "\r\n", "\r\n");
 	
@@ -322,7 +320,7 @@ void Server::parseRequestHeaders()
 		_clientIt->cookies = parseStrMap(temp, "=", ";", "Please parse me to the end!");
 	}
 }
-
+ */
 void Server::handleGet()
 {
 	if (_clientIt->state > handleRequest)
@@ -465,7 +463,7 @@ void Server::handlePost()
 		return;
 	ANNOUNCEME_FD
 	
-	if (_clientIt->state == recv_body)
+	if (_clientIt->state == recv_reqBody)
 		receive();
 	
 	if (_clientIt->cgiRequest)
@@ -502,7 +500,7 @@ void Server::handlePost()
 		sendEmptyStatus(201);
 }
 
-void Server::handleDelete()
+/* void Server::handleDelete()
 {
 	if (_clientIt->state > handleRequest)
 		return;
@@ -514,20 +512,20 @@ void Server::handleDelete()
 		sendEmptyStatus(204);
 	else
 		sendStatusPage(500);
-}
+} */
 
 bool Server::sendData() // this is shit. rethink entire structure now that we KNOW we have pollstatus
 {
 	if (!(_pollStruct->revents & POLLOUT))
 		return false;
-	if (_clientIt->state < send_head)
+	if (_clientIt->state < send_respHead)
 		return false;
 	return true;
 }
 
 bool Server::responseHead()
 {
-	if (_clientIt->state > send_head)
+	if (_clientIt->state > send_respHead)
 		return true;
 	ANNOUNCEME_FD
 
@@ -545,7 +543,7 @@ bool Server::responseHead()
 		throw std::runtime_error(E_SEND);
 	}
 	std::cout << "responseHead sent to fd: " << _clientIt->fd << "\n" << head << std::endl;
-	_clientIt->state = send_body;
+	_clientIt->state = send_respBody;
 	return false;
 }
 
@@ -593,7 +591,7 @@ void Server::sendResponseBody_CGI()
 
 void Server::sendResponseBody()
 {
-	if (_clientIt->state < send_body)
+	if (_clientIt->state < send_respBody)
 		return;
 	ANNOUNCEME_FD
 	if (_clientIt->cgiRequest)
@@ -657,16 +655,16 @@ std::string Server::buildResponseHead()
 	return ss_header.str();
 }
 
-std::string Server::ifDirAppendSlash(const std::string& path)
+/* std::string Server::ifDirAppendSlash(const std::string& path)
 {
 	std::string newPath = path;
 	
 	if (isDirectory(prependRoot(newPath)) && newPath[newPath.size() - 1] != '/')
 		newPath.append("/");
 	return newPath;
-}
+} */
 
-void Server::updateClientVars()
+/* void Server::updateClientVars()
 {
 	_clientIt->dirListing = dirListing(_clientIt->directory);
 	
@@ -686,12 +684,12 @@ void Server::updateClientVars()
 
 	_clientIt->updatedDirectory = prependRoot(_clientIt->updatedDirectory);
 	_clientIt->updatedURL = _clientIt->updatedDirectory + _clientIt->filename;
-}
+} */
 
-void Server::sendStatusPage(int code)
+/* void Server::sendStatusPage(int code)
 {
 	_clientIt->statusCode = code;
-	_clientIt->state = send_head;
+	_clientIt->state = send_respHead;
 	_pollStruct->events = POLLOUT | POLLHUP;
 
 	if (_statusPagePaths.find(code) == _statusPagePaths.end())
@@ -704,25 +702,25 @@ void Server::sendStatusPage(int code)
 		_clientIt->sendPath = path;
 	else
 		generateStatusPage(code);
-}
+} */
 
-void Server::sendFile_200(std::string sendPath)
+/* void Server::sendFile_200(std::string sendPath)
 {
 	_clientIt->statusCode = 200;
-	_clientIt-> state = send_head;
+	_clientIt-> state = send_respHead;
 	_pollStruct->events = POLLOUT | POLLHUP;
 	_clientIt->sendPath = sendPath;
-}
+} */
 
-void Server::sendEmptyStatus(int code)
+/* void Server::sendEmptyStatus(int code)
 {
 	_clientIt->statusCode = code;
-	_clientIt-> state = send_head;
+	_clientIt-> state = send_respHead;
 	_pollStruct->events = POLLOUT | POLLHUP;
 	_clientIt->sendPath.clear(); // should be empty anyway, but structural symmetry
 }
-
-void Server::generateStatusPage(int code)
+ */
+/* void Server::generateStatusPage(int code)
 {
 	std::ofstream errorPage(SYS_ERRPAGE, std::ios::binary | std::ios::trunc);
 	if (!errorPage)
@@ -748,7 +746,7 @@ void Server::generateStatusPage(int code)
 	errorPage.close();
 	_clientIt->sendPath = SYS_ERRPAGE;
 }
-
+ */
 /*
 A better way to handle this would be to not write the data from the ServerConfig to
 the Server object (applyConfig()), but to just point to the currently active ServerConfig and call
@@ -756,7 +754,7 @@ its getters.
 This requires a bigger refactor, because some stuff would have to be tested before the server constructor
 (in ConfigFile / ServerConfig). Doable, but a bit of work. Maybe some day.
 */
-void Server::selectHostConfig()
+/* void Server::selectHostConfig()
 {
 	if (_clientIt->host.empty())
 	{
@@ -777,9 +775,9 @@ void Server::selectHostConfig()
 	std::cout << "Hostname '" << _clientIt->host << "' not found. Running default ServerConfig." << std::endl;
 	applyHostConfig(_configs[0]);
 	_activeServerName = _configs[0].getNames()[0];
-}
+} */
 
-bool Server::requestError()
+/* bool Server::requestError()
 {
 	// wrong protocol
 	if (_clientIt->httpProtocol != HTTPVERSION)
@@ -814,8 +812,8 @@ bool Server::requestError()
 	
 	return false;
 }
-
-void Server::removePollStruct(int fd)
+ */
+/* void Server::removePollStruct(int fd)
 {
 	std::vector<pollfd>::iterator it = _pollVector->begin();
 	
@@ -825,8 +823,8 @@ void Server::removePollStruct(int fd)
 		throw std::runtime_error(__FUNCTION__);
 	_pollVector->erase(it);
 }
-
-void Server::closeClient(const char* msg)
+ */
+/* void Server::closeClient(const char* msg)
 {
 	if (msg)
 		std::cout << "closeClient on fd " << _clientIt->fd << ": " << msg << std::endl;
@@ -834,27 +832,21 @@ void Server::closeClient(const char* msg)
 
 	removePollStruct(_clientIt->fd);
 
-	/* std::vector<pollfd>::iterator it = _pollVector->begin();
 	
-	while (it != _pollVector->end() && it->fd != _clientIt->fd)
-		++it;
-	if (it == _pollVector->end())
-		throw std::runtime_error(__FUNCTION__);
-	_pollVector->erase(it); */
 
 	// erase client and decrement _index to not skip the next client in the for loop
 	_clients.erase(_clientIt);
 	--_index;
-}
+} */
 
-bool Server::cgiRequest()
+/* bool Server::cgiRequest()
 {
 	std::string extension = fileExtension(_clientIt->filename);
 	if (_cgiPaths.find(extension) == _cgiPaths.end())
 		return false;
 	_cgiExecPath = _cgiPaths[extension];
 	return true;
-}
+} */
 
 void	Server::doTheCGI()
 {
@@ -989,13 +981,13 @@ void	Server::doTheCGI()
 	}
 }
 
-std::string Server::prependRoot(const std::string& path)
+/* std::string Server::prependRoot(const std::string& path)
 {
 	if (path.find('/') == 0)
 		return _root + path.substr(1);
 	else
 		return path;
-}
+} */
 
 pollfd* Server::getPollStruct(int fd)
 {
@@ -1021,7 +1013,7 @@ std::string	Server::mimeType(const std::string& filepath)
 	return defaultType;
 }
 	
-bool Server::dirListing(const std::string& path)
+/* bool Server::dirListing(const std::string& path)
 {
 	strLocMap_it	locIt =_locations.find(path);
 	
@@ -1034,7 +1026,7 @@ bool Server::dirListing(const std::string& path)
 	if (!_defaultDirListing)
 		return false;
 	return true;
-}
+} */
 
 std::string Server::buildCookie(const std::string& key, const std::string& value, int expiration, const std::string& path)
 {
@@ -1046,7 +1038,7 @@ std::string Server::buildCookie(const std::string& key, const std::string& value
 	return cookie.str();
 }
 
-void Server::generateSessionLogPage()
+/* void Server::generateSessionLogPage()
 {
 	std::ofstream sessionLogPage(SITE_LOGPAGE, std::ios::binary | std::ios::trunc);
 	if (!sessionLogPage)
@@ -1077,8 +1069,8 @@ void Server::generateSessionLogPage()
 					<< "</body>\n</html>\n";
 	sessionLogPage.close();
 }
-
-void Server::generateDirListingPage(const std::string& directory)
+ */
+/* void Server::generateDirListingPage(const std::string& directory)
 {
 	std::ofstream dirListPage(SYS_DIRLISTPAGE);
 
@@ -1110,9 +1102,9 @@ void Server::generateDirListingPage(const std::string& directory)
 
 	dirListPage << "</ul></body></html>";
 	dirListPage.close();
-}
+} */
 
-void Server::closePipes(pid_t cgiPid, int pipeFd[2])
+/* void Server::closePipes(pid_t cgiPid, int pipeFd[2])
 {
 	if (cgiPid == 0)
 	{
@@ -1126,7 +1118,7 @@ void Server::closePipes(pid_t cgiPid, int pipeFd[2])
 		if (_clientIt->method == POST && pipeFd[1] != -1) // when finished writing, gets closed and set to -1. Simplest control structure.
 			close(pipeFd[1]);
 	}
-}
+} */
 
 void Server::buildCGIvars()
 {

@@ -2,7 +2,7 @@
 
 void Client::requestHead()
 {
-	if (_state > recv_head) // done receiving request head CHANGE LATER
+	if (_state > recv_reqHead) // done receiving request head CHANGE LATER
 		return;
 
 	if (_buffer.find("\r\n") == std::string::npos)
@@ -151,5 +151,7 @@ void Client::requestHeadError()
 			|| (_method == POST && !loc->second.post)
 			|| (_method == DELETE && !loc->second.delete_))
 			sendStatusPage(405);
+		else if (_method == POST && !resourceExists(_updatedDirectory)) // upload dir doesn't exist
+			sendStatusPage(500);
 	}
 }

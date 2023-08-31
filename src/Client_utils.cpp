@@ -91,17 +91,17 @@ void Client::generateSessionLogPage(std::string logPath)
 
 void Client::generateStatusPage(int code)
 {
-	std::ofstream errorPage(SYS_ERRPAGE, std::ios::binary | std::ios::trunc);
+/* 	std::ofstream errorPage(SYS_ERRPAGE, std::ios::binary | std::ios::trunc);
 	if (!errorPage)
 	{
 		errorPage.close();
 		std::cerr << E_C_OFSTREAM << std::endl;
 		return;
-	}
+	} */
 
 	std::string httpMsg = getHttpMsg(code);
 
-	errorPage	<< "<!DOCTYPE html><html><head>\n"
+	_sendStream	<< "<!DOCTYPE html><html><head>\n"
 				<< "<title>webserv - " << code << ": " << httpMsg << "</title>\n"
 				<< "<style>\n"
 				<< "body {background-color: black; color: white; font-family: Arial, sans-serif; margin: 0; padding: 5% 0 0 0; text-align: center;}\n"
@@ -113,8 +113,9 @@ void Client::generateStatusPage(int code)
 				<< "<img style=\"margin-left: auto;\" src=\"https://http.cat/" << code << "\" alt=\"" << httpMsg << "\">\n"
 				<< "</body>\n"
 				<< "</html>\n";
-	errorPage.close();
-	_sendPath = SYS_ERRPAGE;
+	//errorPage.close();
+	//_sendPath = SYS_ERRPAGE;
+	_sendFile = false;
 }
 
 void Client::generateDirListingPage(const std::string& directory)
@@ -162,4 +163,17 @@ void Client::isCgiRequest()
 		_cgiExecPath = _activeConfig->getCgiPaths()[extension];
 		_cgiRequest = true;
 	}
+}
+
+std::string Client::mimeType(const std::string& filepath)
+{
+	std::string extension;
+	strMap_it	it;
+	std::string defaultType = "application/octet-stream";
+
+	extension = fileExtension(filepath);
+	it = _activeConfig->getMIMETypes()->find(extension);
+	if (it != _activeConfig->getMIMETypes()->end())
+		return it->second;
+	return defaultType;
 }

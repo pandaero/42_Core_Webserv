@@ -43,8 +43,6 @@ volatile sig_atomic_t sigInt;
 
 // main.cpp
 void		sigHandler(int);
-bool		poll_(std::vector<pollfd>&);
-void		shutdown(std::vector<pollfd>&);
 
 // Determines whether a string contains only alphanumerical characters.
 bool isAlnumStr(const std::string &);

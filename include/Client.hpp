@@ -10,10 +10,11 @@ class	Client
 		Client(const ServerConfig&, pollfd&, sockaddr_in);
 
 		void	incomingData();
-		void	appendToBuf(char*, int);
+		void	outgoingData();
 		int		getFd();
 
-		
+		void		appendToBuf(char*, int);
+		std::string	dataToSend();
 	
 	private:
 		// Client.cpp
@@ -23,7 +24,12 @@ class	Client
 
 		// _handlers.cpp
 		void	handleGet();
+		void	handleGetCGI();
 		void	handleDelete();
+		void	handlePost();
+		void	handlePostCGI();
+
+
 
 		
 		// _requestHead.cpp
@@ -45,6 +51,10 @@ class	Client
 		void		generateSessionLogPage(std::string);
 		void		generateStatusPage(int);
 		void		generateDirListingPage(const std::string&);
+		std::string mimeType(const std::string&);
+
+		std::string	buildResponseHead();
+
 
 		void		isCgiRequest();
 
@@ -59,7 +69,9 @@ class	Client
 		int				_fd; // delete?
 		sockaddr_in		_address;
 		
-		std::string		_buffer;
+		std::string			_buffer;
+		std::stringstream	_sendStream;
+		bool				_sendFile;
 		
 		int				_statusCode;
 		std::string		_sendPath;

@@ -50,7 +50,7 @@ void Matriarch::acceptClients()
 	for (size_t i = 0; i < _servers.size(); ++i)
 	{
 		if (_servers[i].fd() != _pollVector[i].fd)
-			std::cout << "Mismatch between server fd and pollvector fd. Returning from acceptConnections._____________________________________________________________________________________________________" std::endl;
+			std::cout << MMMMMEGAERROR << std::endl;
 		
 		if (!(_pollVector[i].revents & POLLIN))
 			continue;
@@ -82,7 +82,7 @@ void Matriarch::handleClients()
 	while (i < _pollVector.size())
 	{
 		_client = getClient(_pollVector[i].fd);
-		_pollStruct = getPollStruct(_pollVector[i].fd);
+		_pollStruct = getPollStruct(_pollVector[i].fd); // pollvectorbegin + i
 
 		if (_pollStruct->revents & POLLHUP)
 		{
@@ -95,8 +95,13 @@ void Matriarch::handleClients()
 			if (!receive())
 				continue;
 			_client->incomingData();
-			
+		}
 
+		if (_pollStruct->revents & POLLOUT)
+		{
+			if (!send())
+				continue;
+			_client->outgoingData();
 		}
 		++i;
 	}
@@ -154,6 +159,17 @@ bool Matriarch::receive()
 	return true;
 }
 
+bool Matriarch::send()
+{
+	if (::send(_pollStruct->fd, _client->dataToSend().c_str(), _client->dataToSend().size(), 0) <= 0)
+	{
+		closeClient(E_M_SEND);
+		return false;
+	}
+	return true;
+}
+
+
 void Matriarch::addPollStruct(int fd, short flags)
 {
 	pollfd new_pollStruct;
@@ -161,4 +177,12 @@ void Matriarch::addPollStruct(int fd, short flags)
 	new_pollStruct.events = flags;
 	new_pollStruct.revents = 0;
 	_pollVector.push_back(new_pollStruct);
+}
+
+void Matriarch::shutdown()
+{
+	std::cout << "\nShutdown." << std::endl;
+	
+	for (std::vector<pollfd>::iterator it = _pollVector.begin(); it != _pollVector.end(); ++it)
+		close(it->fd);
 }

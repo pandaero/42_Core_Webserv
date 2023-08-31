@@ -12,18 +12,13 @@ class	Matriarch
 		void launchServers();
 		bool poll();
 		void acceptClients();
-
-
-
-
-
-
+		void shutdown();
 
 	private:
 		void handleClients();
 		void closeClient(std::string);
 		bool receive();
-		bool requestHead();
+		bool send();
 
 		//utils
 		std::vector<Client>::iterator	getClient(int);
@@ -32,10 +27,10 @@ class	Matriarch
 
 
 
-		ConfigFile*				_configFile;
-		std::vector<pollfd> 	_pollVector;
-		std::vector<Server>		_servers;
-		std::vector<Client>		_clientVector;
+		ConfigFile*						_configFile;
+		std::vector<pollfd> 			_pollVector;
+		std::vector<Server>				_servers;
+		std::vector<Client>				_clientVector;
 		std::vector<Client>::iterator	_client;
 		std::vector<pollfd>::iterator	_pollStruct;
 };

@@ -20,12 +20,10 @@ typedef struct
 
 typedef enum
 {
-	recv_head,
-	recv_body,
-	handleRequest,
-	send_head,
-	send_body,
-	rdyToClose
+	recv_reqHead,
+	recv_reqBody,
+	send_respHead,
+	send_respBody
 }	state_enum;
 
 typedef std::map<std::string, std::string> 				strMap;

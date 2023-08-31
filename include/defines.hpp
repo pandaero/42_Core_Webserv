@@ -8,6 +8,7 @@
 # define ANNOUNCEME		//std::cout << "Announcer: " << __FUNCTION__ << std::endl;
 # define ANNOUNCEME_FD	//std::cout << "Announcer: " << __FUNCTION__ << " on fd " << _clientIt->fd << std::endl;
 # define SESSIONID		"sessionid"
+# define MMMMMEGAERROR	"_________________________________________MMMMMULTIFAIL__________________________________________"
 
 // paths
 # define SYS_CGIPAGE		"system/cgi.html"
@@ -60,6 +61,7 @@
 // Matriarch
 # define E_M_CLIENTNOTFOUND	"Error: Matriarch: Client fd not found in poll vector."
 # define E_M_PSTRUCNOTFOUND	"Error: Matriarch: Pollstruct fd not found in pollstruct vector."
+# define E_M_SEND			"Error: Matriarch: send()"
 
 // close messages
 # define CLOSEPOLLHUP		"POLLHUP."
