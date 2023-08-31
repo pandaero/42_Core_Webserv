@@ -103,13 +103,13 @@ if (pollVector.size() > 420)
 		return;
 	}
 */
-void Server::acceptConnections()
+void Server::acceptConnections(int pollfd)
 {
 	ANNOUNCEME
 	
-	if (!(getPollStruct(_server_fd)->revents & POLLIN))
+	if (pollfd != _server_fd)
 	{
-		std::cout << "Mismatch between server fd and pollvector fd. Returning from acceptConnections." std::endl;
+		std::cout << "Mismatch between server fd and pollvector fd. Returning from acceptConnections._____________________________________________________________________________________________________" std::endl;
 		return;
 	}
 	while (true)
@@ -194,13 +194,13 @@ bool Server::receive()
 		return false;
 	ANNOUNCEME_FD
 	char buffer[RECV_CHUNK_SIZE];
-	_bytesReceived = recv(_clientIt->fd, buffer, RECV_CHUNK_SIZE, 0);
-	if (_bytesReceived <= 0)
+	int bytesReceived = recv(_clientIt->fd, buffer, RECV_CHUNK_SIZE, 0);
+	if (bytesReceived <= 0)
 	{
 		closeClient("Connection closed (no data received).");
 		return false;
 	}
-	_clientIt->buffer.append(buffer, _bytesReceived);
+	_clientIt->buffer.append(buffer, bytesReceived);
 	_clientIt->bufferCopy = buffer;
 	return true;
 }
@@ -224,7 +224,7 @@ bool Server::requestHead()
 		// check for proper headers termination
 		if (_clientIt->buffer.find("\r\n\r\n") == std::string::npos)
 		{
-			if (_bytesReceived >= MAX_HEADERSIZE) // technically, should consider the request line here and add its size to max headersize. Also, this only makes sense if the readchunk is big enough.
+			if (_clientIt->buffer.size() >= MAX_HEADERSIZE) //This only makes sense if the readchunk is big enough.
 				return (sendStatusPage(431), false);
 			else
 				return (sendStatusPage(400), false); // we read the entire "headers" but they weren't properly terminated.

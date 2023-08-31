@@ -15,12 +15,13 @@
 # define SYS_DIRLISTPAGE	"system/dirListing.html"
 # define SYS_ERRPAGE		"system/errorPage.html"
 # define SYS_DEFAULTCONF	"system/default.conf"
+# define SYS_LOGS			"system/logs/"
 # define SYS_SCRIPT_PY		"system/cgi/python"
 # define SYS_SCRIPT_PHP		"system/cgi/php"
 # define SITE_LOGPAGE		"websites/site/sessionlog.html"
 
 // numericals
-# define RECV_CHUNK_SIZE		8192
+# define RECV_CHUNK_SIZE		16384
 # define SEND_CHUNK_SIZE		8192
 # define MAX_MAXCLIENTBODY		4294967295 //2^32 - 1 -> max size_t @ 32 bit
 # define MAX_MAXCONNECTIONS		1000
@@ -55,6 +56,14 @@
 // global functions
 # define E_INVALIDBRACE		"Error: webserv: getInstruction: Invalid use of curly brace: "
 # define E_INVALIDENDTOKEN	"Error: webserv: getInstruction: Missing end token ('{', '}' or ';'): "
+
+// Matriarch
+# define E_M_CLIENTNOTFOUND	"Error: Matriarch: Client fd not found in poll vector."
+# define E_M_PSTRUCNOTFOUND	"Error: Matriarch: Pollstruct fd not found in pollstruct vector."
+
+// close messages
+# define CLOSEPOLLHUP		"POLLHUP."
+# define CLOSENODATA		"No data received."
 
 // ConfigFile
 # define I_CF_CONFIGIMPORT	"Info: ConfigFile: " << _servers.size() << " distinct"<< (_serverConfigs.size() == 1 ? " Server object" : " Server objects") <<" created using " << configPath << "."
@@ -104,5 +113,10 @@
 
 # define I_CONNECTIONLIMIT		"Info: Server: Connection limit reached."
 # define I_CLOSENODATA			"Info: Server: Connection closed (no data received)."
+
+// Client
+# define E_C_OFSTREAM			"Error: Client: ofstream failed."
+# define E_C_IFSTREAM			"Error: Client: ifstream failed."
+
 
 #endif

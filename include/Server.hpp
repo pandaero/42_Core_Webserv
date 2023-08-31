@@ -12,7 +12,7 @@ class	Server
 		int	 fd();
 		void whoIsI();
 		void startListening(std::vector<pollfd>&);
-		void acceptConnections();
+		void acceptConnections(int);
 		void handleConnections();
 
 	private:
@@ -102,8 +102,6 @@ class	Server
 		clientVec_it					_clientIt;
 		std::vector<Client>				_clients;
 		std::vector<pollfd>*			_pollVector;
-
-		int								_bytesReceived;
 };
 
 #endif

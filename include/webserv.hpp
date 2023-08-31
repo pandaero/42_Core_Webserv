@@ -36,10 +36,12 @@
 # include "ServerConfig.hpp"
 # include "Server.hpp"
 # include "ConfigFile.hpp"
+# include "Matriarch.hpp"
+
+// global vars
+volatile sig_atomic_t sigInt;
 
 // main.cpp
-void 		launchServers(std::vector<Server>&, std::vector<pollfd>&);
-const char*	pathConfigFile(int, char**);
 void		sigHandler(int);
 bool		poll_(std::vector<pollfd>&);
 void		shutdown(std::vector<pollfd>&);
