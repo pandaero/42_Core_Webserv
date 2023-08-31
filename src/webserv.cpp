@@ -8,6 +8,14 @@ bool isAlnumStr(const std::string& input)
 	return true;
 }
 
+bool isAlnumStrPlus(const std::string& input, const std::string& allowedChars)
+{
+	for (std::string::const_iterator it = input.begin(); it != input.end(); it++)
+		if (!isalnum(*it) && allowedChars.find(*it) == std::string::npos)
+			return false;
+	return true;
+}
+
 std::string trim(std::string& input)
 {
 	size_t	start = input.find_first_not_of(WHITESPACE);

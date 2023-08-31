@@ -6,40 +6,50 @@
 class ServerConfig
 {
 	public:
-		ServerConfig();
 		ServerConfig(std::string, strMap*);
-		ServerConfig(const ServerConfig&);
 
-		ServerConfig& operator=(const ServerConfig&);
-		
-		void	applySettings(std::string);
-		void	whoIsI();
-		
-		strMap		getConfigPairs() const;
+		strVec		getNames() const;
+		in_addr_t	getHost() const;
+		in_port_t	getPort() const;
+		std::string	getRoot() const;
+		bool		getDefaultDirlisting() const;
+		uint64_t	getClientMaxBody() const;
+		size_t		getMaxConnections() const;
+		std::string	getStandardFile() const;
 		intStrMap	getStatusPagePaths() const;
 		strLocMap	getLocations() const;
 		strMap		getCgiPaths() const;
 		strMap*		getMIMETypes() const;
-		strVec		getNames() const;
+		servConfVec	getAltConfigs() const;
 
-		std::vector<ServerConfig>	getAltConfigs() const;
-		void						addAltConfig(const ServerConfig&);
+		void		addAltConfig(const ServerConfig&);
 
 	private:
-		void		parseDefaultErrorPages(std::string&);
-		void 		parseUserErrorPages(std::string&);
-		void		parseLocations(std::string&);
-		void		parseDefaultCgi(std::string&);
-		void		parseUserCgi(std::string&);
-		void		parseNames(std::string&);
+		void parseNames(std::string&);
+		void parseHost(std::string&);
+		void parsePort(std::string&);
+		void parseRoot(std::string&);
+		void parseDirListing(std::string&);
+		void parseClientMaxBody(std::string&);
+		void parseMaxConnections(std::string&);
+		void parseStandardFile(std::string&);
+		void parseStatusPagePaths(std::string&);
+		void parseLocations(std::string&);
+		void parseCgiPaths(std::string&);
 		
-		strVec						_names;
-		std::vector<ServerConfig>	_altConfigs;
-		strMap						_configPairs;
-		intStrMap					_statusPagePaths;
-		strLocMap					_locations;
-		strMap						_cgiPaths;
-		strMap*						_mimeTypes;
+		strVec			_names;
+		in_addr_t		_host;
+		in_port_t		_port;
+		std::string		_root;
+		bool			_defaultDirListing;
+		uint64_t		_clientMaxBody;
+		size_t			_maxConnections;
+		std::string		_standardFile;
+		intStrMap		_statusPagePaths;
+		strLocMap		_locations;
+		strMap			_cgiPaths;
+		servConfVec		_altConfigs;
+		strMap*			_mimeTypes;
 };
 
 #endif

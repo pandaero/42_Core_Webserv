@@ -7,7 +7,6 @@ class ConfigFile
 {
 	public:
 		ConfigFile(const char*);
-		~ConfigFile();
 
 		std::vector<ServerConfig>	getConfigs() const;
 		std::vector<Server>&		getServers();
@@ -19,7 +18,6 @@ class ConfigFile
 		bool						combineSharedNetAddr(const ServerConfig&, size_t);
 		bool						sharedNetAddr(const ServerConfig&, const ServerConfig&);
 		
-		ServerConfig*				_defaultServerConfig;
 		std::vector<ServerConfig>	_serverConfigs;
 		std::vector<Server>			_servers;
 		strMap						_mimeTypes;

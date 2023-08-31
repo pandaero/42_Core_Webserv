@@ -3,8 +3,10 @@
 Server::Server(const ServerConfig& config)
 {	
 	_server_fd = -1;
-	setHost(config.getConfigPairs()[HOST]);
-	setPort(config.getConfigPairs()[PORT]);
+	_serverAddress.sin_family = AF_INET;
+	_serverAddress.sin_addr.s_addr = config.getHost();
+	_serverAddress.sin_port = config.getPort();
+
 	_configs = config.getAltConfigs();
 	_configs.insert(_configs.begin(), config);
 	applyHostConfig(config);	
@@ -12,32 +14,27 @@ Server::Server(const ServerConfig& config)
 
 void Server::applyHostConfig(const ServerConfig& config)
 {
-	strMap configPairs = config.getConfigPairs();
-	
-	// Set main values stored in configPairs
-	setClientMaxBody(configPairs[CLIMAXBODY]);
-	setMaxConnections(configPairs[MAXCONNS]); // not being used for now
-	setDefaultDirListing(configPairs[DIRLISTING]);
-	
-	// Copy remaining values directly to server variables 
-	_root = configPairs[ROOT];
-	_standardFile = configPairs[STDFILE];
 	_names = config.getNames();
+	_root = config.getRoot();
+	_defaultDirListing = config.getDefaultDirlisting();
+	_clientMaxBody = config.getClientMaxBody();
+	_maxConnections = config.getMaxConnections();
+	_standardFile = config.getStandardFile();
 	_statusPagePaths = config.getStatusPagePaths();
 	_locations = config.getLocations();
 	_cgiPaths = config.getCgiPaths();
 	_mimeTypes = config.getMIMETypes();
 }
 
-int Server::fd()
-{
-	return _server_fd;
-}
-
 Server::~Server()
 {
 	if (_server_fd != -1)
 		std::cout << "Server destructor on listening fd " << _server_fd << "." << std::endl;
+}
+
+int Server::fd()
+{
+	return _server_fd;
 }
 
 void Server::whoIsI()
@@ -133,7 +130,7 @@ void Server::acceptConnections()
 		newClient.fd = new_sock;
 		_clients.push_back(newClient);
 
-		addPollStruct(new_sock, true);
+		addPollStruct(new_sock, POLLIN | POLLHUP);
 		/* pollfd new_pollStruct;
 		new_pollStruct.fd = new_sock;
 		new_pollStruct.events = POLLIN | POLLHUP;
@@ -290,8 +287,11 @@ void Server::handleSession()
 	// write data of interest to the log
 	std::string logPath = "system/logs/" + _clientIt->sessionId + ".log";
 	std::ofstream logFile(logPath.c_str(), std::ios::app);
-	if (logFile.is_open())
+	if (logFile)
+	{
 		logFile << currentTime() << "\t" << inet_ntoa(_clientIt->address.sin_addr) << "\t" << _clientIt->method << " " << _clientIt->URL << "\n";
+		logFile.close();
+	}
 	else
 		std::cerr << "Could not open log file for tracking of session " << _clientIt->sessionId << std::endl;
 	
@@ -323,7 +323,7 @@ void Server::handleGet()
 {
 	if (_clientIt->state > handleRequest)
 		return;
-	if (cgiRequest())
+	if (_clientIt->cgiRequest)
 	{
 		cgiChildGET();
 		return;
@@ -419,22 +419,38 @@ void Server::recvResponseBody_CGI()
 	{
 		close(_clientIt->parentToChild[1]);
 		
-		if (childSuccess())
+		if (childFinished())
 			sendFile_200("");
 		else
 			sendStatusPage(500);
 	}
 }
 
-bool Server::childSuccess()
+bool Server::childFinished()
 {
 	int status;
-	waitpid(_clientIt->cgiPid, &status, 0); //WNOHANG terminate in case of child hanging
-	if (!WIFEXITED(status) || WEXITSTATUS(status) != 0) // WIFEXITED(status) is only true if child terminated of its own accord
+	
+	int childDone = waitpid(_clientIt->cgiPid, &status, WNOHANG);
+	if (childDone == 0) // child still running
+	{
+		if (_clientIt->childBirth + 10 < time(NULL))
+		{
+			std::cerr << E_CHILDTIMEOUT << std::endl;
+			close(_clientIt->childToParent[0]);
+			removePollStruct(_clientIt->childToParent[0]);
+			sendStatusPage(500);
+			throw std::runtime_error(__FUNCTION__);
+		}
+		return false;
+
+	}
+	if (childDone == -1 || WIFEXITED(status) == 0 || WEXITSTATUS(status) != 0) // WIFEXITED(status) returns 0 if child did not exit normally
 	{
 		std::cerr << E_CHILD << std::endl;
 		close(_clientIt->childToParent[0]);
-		return false;
+		removePollStruct(_clientIt->childToParent[0]);
+		sendStatusPage(500);
+		throw std::runtime_error(__FUNCTION__);
 	}
 	return true;
 }
@@ -511,6 +527,12 @@ bool Server::responseHead()
 		return true;
 	ANNOUNCEME_FD
 
+	if (_clientIt->cgiRequest)
+	{
+		if (!childFinished())
+			return false;
+	}
+
 	std::string head = buildResponseHead();
 
 	if (send(_clientIt->fd, head.c_str(), head.size(), 0) <= 0)
@@ -534,12 +556,10 @@ void Server::cgiSendError(const char* msg)
 
 void Server::sendResponseBody_CGI()
 {
-	char buffer[SEND_CHUNK_SIZE];
-	
-	pollfd* pollStruct = getPollStruct(_clientIt->childToParent[0]);
-
-	if (!(pollStruct->revents & POLLIN))
+	if (!(getPollStruct(_clientIt->childToParent[0])->revents & POLLIN))
 		return;
+
+	char buffer[SEND_CHUNK_SIZE];
 	
 	int bytesRead = read(_clientIt->childToParent[0], buffer, SEND_CHUNK_SIZE);
 	if (bytesRead == -1)
@@ -561,6 +581,7 @@ void Server::sendResponseBody_CGI()
 		if (send(_clientIt->fd, "0\r\n\r\n", 5, 0) <= 0) // send chunk transfer end chunk
 			cgiSendError(E_SEND);
 		close(_clientIt->childToParent[0]);
+		removePollStruct(_clientIt->childToParent[0]);
 		closeClient("Sending complete (chunked transfer from pipe).");
 		return;
 	}
@@ -807,7 +828,7 @@ void Server::closeClient(const char* msg)
 		std::cout << "closeClient on fd " << _clientIt->fd << ": " << msg << std::endl;
 	close(_clientIt->fd);
 
-	removePollStruct(int fd)
+	removePollStruct(_clientIt->fd);
 
 	/* std::vector<pollfd>::iterator it = _pollVector->begin();
 	
@@ -1011,55 +1032,6 @@ bool Server::dirListing(const std::string& path)
 	return true;
 }
 
-void Server::setHost(std::string input)
-{	
-	if (input == "ANY")
-		_serverAddress.sin_addr.s_addr = INADDR_ANY;
-	else
-	{
-		_serverAddress.sin_addr.s_addr = inet_addr(input.c_str());
-		if (_serverAddress.sin_addr.s_addr == INADDR_NONE)
-			throw std::runtime_error(E_HOSTADDRVAL + input + '\n');
-	}
-	_serverAddress.sin_family = AF_INET;
-}
-
-void Server::setPort(std::string input)
-{
-	if (input.find_first_not_of("0123456789") != std::string::npos)
-		throw std::runtime_error(E_PORTINPUT + input + '\n');
-	uint16_t temp = (uint16_t) atoi(input.c_str());
-	if (temp > (uint16_t) 65534)
-		throw std::runtime_error(E_PORTVAL + input + '\n');
-	_serverAddress.sin_port = htons(temp);
-}
-
-void Server::setClientMaxBody(std::string input)
-{
-	if (input.find_first_not_of("0123456789") != std::string::npos)
-			throw std::runtime_error(E_MAXCLIENTBODYINPUT + input + '\n');
-	_clientMaxBody = atol(input.c_str());
-	if (_clientMaxBody > MAX_MAXCLIENTBODY)
-		throw std::runtime_error(E_MAXCLIENTBODYVAL + input + '\n');
-}
-
-void Server::setMaxConnections(std::string input)
-{
-	if (input.find_first_not_of("0123456789") != std::string::npos)
-			throw std::runtime_error(E_MAXCONNINPUT + input + '\n');
-	_maxConnections = atoi(input.c_str());
-	if (_maxConnections > MAX_MAXCONNECTIONS)
-		throw std::runtime_error(E_MAXCONNVAL + input + '\n');
-}
-
-void Server::setDefaultDirListing(std::string input)
-{
-	if (input == "yes")
-		_defaultDirListing = true;
-	else
-		_defaultDirListing = false;
-}
-
 std::string Server::buildCookie(const std::string& key, const std::string& value, int expiration, const std::string& path)
 {
 	std::stringstream cookie;
@@ -1203,20 +1175,11 @@ void Server::buildCGIvars()
 	_clientIt->env.push_back(NULL);
 }
 
-void Server::addPollinStruct(int fd)
+void Server::addPollStruct(int fd, short flags)
 {
 	pollfd new_pollStruct;
 	new_pollStruct.fd = fd;
-	new_pollStruct.events = POLLIN | POLLHUP;
-	new_pollStruct.revents = 0;
-	_pollVector->push_back(new_pollStruct);
-}
-
-void Server::addPolloutStruct(int fd)
-{
-	pollfd new_pollStruct;
-	new_pollStruct.fd = fd;
-	new_pollStruct.events = POLLOUT | POLLHUP;
+	new_pollStruct.events = flags;
 	new_pollStruct.revents = 0;
 	_pollVector->push_back(new_pollStruct);
 }
@@ -1241,7 +1204,7 @@ void Server::cgiChildGET()
 		return;
 	}
 	
-	addPollinStruct(_clientIt->childToParent[0]);
+	addPollStruct(_clientIt->childToParent[0], POLLIN);
 
 	_clientIt->cgiPid = fork();
 	if (_clientIt->cgiPid == -1)
@@ -1254,13 +1217,13 @@ void Server::cgiChildGET()
 	{
 		for (std::vector<pollfd>::iterator it = _pollVector->begin(); it != _pollVector->end(); ++it)
 			close(it->fd);
+		//close(_clientIt->childToParent[0]); its already in the pollvector
 		
 		if (dup2(_clientIt->childToParent[1], STDOUT_FILENO) == -1)
 		{
 			std::cerr << E_DUP2 << std::endl;
 			exit(EXIT_FAILURE);
 		}
-		close(_clientIt->childToParent[0]);
 		
 		execve(_cgiExecPath.c_str(), _clientIt->argv.data(), _clientIt->env.data());
 		std::cerr << E_EXECVE << std::endl;
@@ -1270,10 +1233,7 @@ void Server::cgiChildGET()
 	else
 	{
 		close(_clientIt->childToParent[1]);
-		_clientIt->childLaunched = true;
-		if (childSuccess())
-			sendFile_200("");
-		else
-			sendStatusPage(500);
+		sendFile_200("");
+		_clientIt->childBirth = time(NULL);
 	}
 }

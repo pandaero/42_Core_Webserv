@@ -19,7 +19,7 @@
 # define SYS_SCRIPT_PHP		"system/cgi/php"
 # define SITE_LOGPAGE		"websites/site/sessionlog.html"
 
-// ===== ===== ===== ===== SIZE Descriptions ===== ===== ===== =====
+// numericals
 # define RECV_CHUNK_SIZE		8192
 # define SEND_CHUNK_SIZE		8192
 # define MAX_MAXCLIENTBODY		4294967295 //2^32 - 1 -> max size_t @ 32 bit
@@ -27,73 +27,64 @@
 # define MAX_BACKLOG			100
 # define MAX_HEADERSIZE			8192
 
-// ===== ===== ===== ===== CONFIGURATION ELEMENT IDENTIFIERS ===== ===== ===== =====
-# define SERVER		"server"
-# define SERVERNAME	"server_name"
-# define HOST		"host"
-# define PORT		"listen"
-# define ROOT		"root"
-# define CLIMAXBODY	"client_max_body"
-# define BACKLOG	"backlog"
-# define MAXCONNS	"max_connections"
-# define STDFILE	"standard_file"
-# define UPLOADDIR	"upload_dir"
+// configuration element identifiers
+# define SERVER				"server"
+# define SERVERNAME			"server_name"
+# define HOST				"host"
+# define PORT				"listen"
+# define ROOT				"root"
+# define CLIMAXBODY			"client_max_body"
+# define BACKLOG			"backlog"
+# define MAXCONNS			"max_connections"
+# define STDFILE			"standard_file"
+# define UPLOADDIR			"upload_dir"
+# define ERRORPAGETITLE		"error_pages"
+# define ERRPAGEDEFAULT		"default"
+# define LOCATIONTITLE		"location"
+# define DIRLISTING			"dir_listing"
+# define REDIRECTION		"http_redirect"
+# define METHODS			"methods"
+# define GET				"GET"
+# define POST				"POST"
+# define DELETE				"DELETE"
+# define CGITITLE			"cgi"
 
-// ===== ===== ===== ===== CONFIGURATION SUB-ELEMENT IDENTIFIERS ===== ===== ===== =====
-// error_page
-# define ERRORPAGETITLE	"error_pages"
-# define ERRPAGEDEFAULT	"default"
-// location
-# define LOCATIONTITLE	"location"
-# define DIRLISTING		"dir_listing"
-# define REDIRECTION	"http_redirect"
-# define METHODS		"methods"
-# define GET			"GET"
-# define POST			"POST"
-# define DELETE			"DELETE"
-// cgi
-# define CGITITLE		"cgi"
-# define PYTHON			"py"
-# define PHP			"php"
+// main
+# define E_POLL				"Error: main: poll()"
 
-// ===== ===== ===== ===== ERROR MESSAGES ===== ===== ===== =====
-// Main
-# define E_POLL				"Error: main: poll()\n"
-
-// Global functions
+// global functions
 # define E_INVALIDBRACE		"Error: webserv: getInstruction: Invalid use of curly brace: "
 # define E_INVALIDENDTOKEN	"Error: webserv: getInstruction: Missing end token ('{', '}' or ';'): "
 
 // ConfigFile
-# define I_DEFAULTIMPORT	"Info: ConfigFile: Default ServerConfig successfully imported from "
-# define I_CONFIGIMPORT		"Info: ConfigFile: " << _servers.size() << " distinct"<< (_serverConfigs.size() == 1 ? " Server object" : " Server objects") <<" created using " << userConfigPath << "."
-# define E_ELMNTDECL		"Error: ConfigFile: Invalid element declaration, (only \"server\" allowed): "
+# define I_CF_CONFIGIMPORT	"Info: ConfigFile: " << _servers.size() << " distinct"<< (_serverConfigs.size() == 1 ? " Server object" : " Server objects") <<" created using " << configPath << "."
+# define E_CF_ELMNTDECL		"Error: ConfigFile: Invalid element declaration, (only \"server\" allowed): "
+# define E_CF_NOSERVER		"Error: ConfigFile: No valid server configs found."
+# define E_CF_MANYSERVER	"Error: ConfigFile: Too many server configs found. Maximum of 10 allowed."
 
 // ServerConfig
-# define E_FILEOPEN			"Error: ServerConfig: Could not open config file: "
-# define E_NOSERVER			"Error: ServerConfig: No valid server configs found."
-# define E_MANYSERVER		"Error: ServerConfig: Too many server configs found. Maximum of 10 allowed."
-# define E_SUBELEMNT		"Error: ServerConfig: Second level subelements not allowed: "
-# define E_INVALERRNUM		"Error: ServerConfig: Invalid HTML response code (range is from 100 to 599): "
+# define E_SC_FILEOPEN		"Error: ServerConfig: Could not open config file: "
+# define E_SC_SUBELEMNT		"Error: ServerConfig: Second level subelements not allowed: "
+# define E_SC_INVALERRNUM	"Error: ServerConfig: Invalid HTML response code (range is from 100 to 599): "
+# define E_SC_HOSTADDRVAL	"Error: ServerConfig: Invalid address value. Cannot convert to IP address: "
+# define E_SC_PORTINPUT		"Error: ServerConfig: Invalid characters in port input. Only numerical allowed: "
+# define E_SC_PORTVAL		"Error: ServerConfig: Invalid port number. Must be from 0 to 65535: "
+# define E_SC_HOSTADDRVAL	"Error: ServerConfig: Invalid address value. Cannot convert to IP address: "
+# define E_SC_ROOTINPUT		"Error: ServerConfig: Invalid characters in root input: "
+# define E_SC_MAXCLBODINPUT	"Error: ServerConfig: Invalid characters in max client body input: "
+# define E_SC_MAXCLBODHIGH	"Error: ServerConfig: Invalid client max body size (too high): "
+# define E_SC_MAXCONNINPUT	"Error: ServerConfig: Invalid characters in max connections input. Only numerical allowed: "
+# define E_SC_MAXCONNVAL	"Error: ServerConfig: Invalid size of max connections: "
+# define E_SC_STDFILEINPUT	"Error: ServerConfig: Invalid characters in standard-file input: "
 
-# define I_INVALIDKEY		"Info: ServerConfig: Unrecognized identifier in config file: "
-# define I_INVALIDVALUE		"Info: ServerConfig: Unrecognized value in config file: "
-# define I_INVALERRPAGE		"Info: ServerConfig: Skipping invalid error page key-value pair."
-# define I_INVALIDHEADER	"Info: ServerConfig: Elements between valid subelement headers and beginning of subelement (opening curly brace) will be ignored: "
-# define I_INVALSERVERNAME	"Info: ServerConfig: Skipping invalid server name: "
-# define I_NONDIRPATH		"Info: ServerConfig: Path does not end with a directory (no trailing '/'): "
+# define I_SC_INVALIDVALUE	"Info: ServerConfig: Unrecognized or invalid value in config file: "
+# define I_SC_INVALIDKEY	"Info: ServerConfig: Unrecognized identifier in config file: "
+# define I_SC_MISSINGVAL	"Info: ServerConfig: Missing value for key: "
+# define I_SC_INVALSTATPAGE	"Info: ServerConfig: Skipping invalid status page key-value pair."
+# define I_SC_INVALSERVNAME	"Info: ServerConfig: Skipping invalid server name: "
+# define I_SC_NONDIRPATH	"Info: ServerConfig: Path does not end with a directory (no trailing '/'): "
 
 // Server
-# define E_HOSTADDRINPUT		"Error: Server: Invalid characters in host address input. Only numerical and dot allowed: "
-# define E_HOSTADDRVAL			"Error: Server: Invalid address value. Cannot convert to IP address: "
-# define E_PORTINPUT			"Error: Server: Invalid characters in port input. Only numerical allowed: "
-# define E_PORTVAL				"Error: Server: Invalid port number. Must be from 0 to 65535: "
-# define E_MAXCLIENTBODYINPUT	"Error: Server: Invalid characters in client max body size input. Only numerical allowed: "
-# define E_MAXCLIENTBODYVAL		"Error: Server: Invalid client max body size: "
-# define E_MAXCONNINPUT			"Error: Server: Invalid characters in max connections input. Only numerical allowed: "
-# define E_MAXCONNVAL			"Error: Server: Invalid size of max connections: "
-# define E_BACKLOGINPUT			"Error: Server: Invalid characters in backlog input. Only numerical allowed: "
-# define E_BACKLOGVAL			"Error: Server: Invalid size of back log: "
 # define E_ACCEPT				"Error: Server: accept()"
 # define E_LISTEN				"Error: Server: listen()"
 # define E_RECV					"Error: Server: recv()"
@@ -109,9 +100,9 @@
 # define E_FCNTL				"Error: Server: fcntl()."
 # define E_CHILD				"Error: Server: child exited with error or was terminated."
 # define E_IFSTREAM				"Error: Server: ifstream object"
+# define E_CHILDTIMEOUT			"Error: Server: child timed out."
 
 # define I_CONNECTIONLIMIT		"Info: Server: Connection limit reached."
 # define I_CLOSENODATA			"Info: Server: Connection closed (no data received)."
-# define I_REQUESTHEADERROR		"Info: Server: Connection closed by request head handler: "
 
 #endif

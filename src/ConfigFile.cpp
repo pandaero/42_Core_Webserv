@@ -1,36 +1,21 @@
 #include "../include/ConfigFile.hpp"
 
-ConfigFile::ConfigFile(const char* userConfigPath)
+ConfigFile::ConfigFile(const char* configPath)
 {
 	std::string	configData;
 	
-	// All Server objects receive a pointer to the string map initialized here to select MIME types.
 	setMIMEtypes();
 	
-	/*
-	Parse default ServerConfig object from internal default config file.
-	This default config file is effectively part of the code:
-	The key value pairs in it will all be accepted; they define the 
-	framework for the parsing of the user supplied config files.
-	Interesting idea, but wouldn't do it again.
-	*/
-	_defaultServerConfig = NULL;
-	configData = loadFile(SYS_DEFAULTCONF);
-	_defaultServerConfig = new ServerConfig(getServerConfigElement(configData), &_mimeTypes);
-	std::cout << I_DEFAULTIMPORT << SYS_DEFAULTCONF << std::endl;
-	
-	// parse intended ServerConfig objects from client supplied config file
-	configData = loadFile(userConfigPath);
+	configData = loadFile(configPath);
 	while (!configData.empty())
 	{
-		ServerConfig newConfig(*_defaultServerConfig);
-		newConfig.applySettings(getServerConfigElement(configData));
+		ServerConfig newConfig(getServerConfigElement(configData), &_mimeTypes);
 		_serverConfigs.push_back(newConfig);
 	}
 	if (_serverConfigs.empty())
-		throw std::runtime_error(E_NOSERVER);
+		throw std::runtime_error(E_CF_NOSERVER);
 	if (_serverConfigs.size() > 10)
-		throw std::runtime_error(E_MANYSERVER);
+		throw std::runtime_error(E_CF_MANYSERVER);
 	
 	// check for multiple "servers" on the same host:port combination
 	for (size_t i = 0; i < _serverConfigs.size(); ++i)
@@ -41,13 +26,7 @@ ConfigFile::ConfigFile(const char* userConfigPath)
 	// need another loop to add to _servers, because the ServerConfig has to be finalized first 
 	for (size_t i = 0; i < _serverConfigs.size(); ++i)
 		_servers.push_back(Server(_serverConfigs[i]));
-	std::cout << I_CONFIGIMPORT << std::endl;
-}
-
-ConfigFile::~ConfigFile()
-{
-	if (_defaultServerConfig)
-		delete _defaultServerConfig;
+	std::cout << I_CF_CONFIGIMPORT << std::endl;
 }
 
 std::vector<ServerConfig> ConfigFile::getConfigs() const
@@ -69,7 +48,7 @@ std::string ConfigFile::loadFile(const char* path)
 	if (!infile)
 	{
 		std::string invalidpath(path);
-		throw std::runtime_error(E_FILEOPEN + invalidpath + '\n');
+		throw std::runtime_error(E_SC_FILEOPEN + invalidpath + '\n');
 	}
 
 	while (std::getline(infile, line))
@@ -92,7 +71,7 @@ std::string ConfigFile::getServerConfigElement(std::string& configData)
 	
 	elementTitle = splitEraseTrimChars(configData, "{");
 	if (elementTitle != SERVER)
-		throw std::runtime_error(E_ELMNTDECL + elementTitle + '\n');
+		throw std::runtime_error(E_CF_ELMNTDECL + elementTitle + '\n');
 	return getInstruction(configData);
 }
 
@@ -113,8 +92,7 @@ bool ConfigFile::sharedNetAddr(const ServerConfig& a, const ServerConfig& b)
 {
 	if (&a == &b)
 		return false;
-	if (a.getConfigPairs()[HOST] == b.getConfigPairs()[HOST]
-		&& a.getConfigPairs()[PORT] == b.getConfigPairs()[PORT])
+	if (a.getHost() == b.getHost() && a.getPort() == b.getPort())
 		return true;
 	return false;
 }

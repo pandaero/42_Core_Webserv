@@ -38,5 +38,7 @@ typedef	std::map<int, std::string>						intStrMap;
 typedef	std::map<int, std::string>::iterator			intStrMap_it;
 typedef std::vector<Client>								clientVec;
 typedef std::vector<Client>::iterator					clientVec_it;
+typedef std::vector<ServerConfig>						servConfVec;
+
 
 #endif

@@ -17,11 +17,13 @@ class	Client
 		void			whoIsI();
 		
 		int				fd;
-		std::string		buffer;
-		std::string		bufferCopy;
-		int				statusCode;
 		sockaddr_in		address;
 		
+		std::string		buffer;
+		std::string		bufferCopy;
+		std::string		sendBuffer;
+		
+		int				statusCode;
 		std::string		sendPath;
 		bool			dirListing;
 		std::string		standardFile;
@@ -51,6 +53,7 @@ class	Client
 		bool			append;
 		bool			setCookie;
 		bool			cgiRequest;
+		time_t			childBirth;
 
 		// CGI helpers
 		strVec				envVec;

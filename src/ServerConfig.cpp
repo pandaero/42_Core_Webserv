@@ -1,173 +1,160 @@
 #include "../include/ServerConfig.hpp"
 
-ServerConfig::ServerConfig()
-{}
-
-/*
-This constructor is only called when reading the default config.
-The key values contained in the passed string will all be accepted,
-forming the template to check against when parsing user supplied config
-files.
-This approach was interesting to implement, but would not recommend.
-It is only useful if the key value pairs are constantly changing.
-
-Note: parseLocation has only one version for default and client parsing
-because it performs its own and rigid input checks.
-*/
-ServerConfig::ServerConfig(std::string defaultConfigStr, strMap* mimeTypes)
+ServerConfig::ServerConfig(std::string configStr, strMap* mimeTypes)
 {
 	std::string	instruction, key;
 	
-	while (!defaultConfigStr.empty())
-	{
-		instruction = getInstruction(defaultConfigStr);
-		key = splitEraseTrimChars(instruction, " \t\v\r\n{");
-		if (key == ERRORPAGETITLE)
-			parseDefaultErrorPages(instruction);
-		else if (key == LOCATIONTITLE)
-			parseLocations(instruction);
-		else if (key == CGITITLE)
-			parseDefaultCgi(instruction);
-		else
-			_configPairs.insert(make_pair(key, instruction));
-	}
 	_mimeTypes = mimeTypes;
-	_names.push_back(_configPairs[SERVERNAME]);
-}
 
-ServerConfig::ServerConfig(const ServerConfig& src)
-{
-	*this = src;
-}
-
-ServerConfig& ServerConfig::operator=(const ServerConfig& src)
-{
-	_names = src._names;
-	_altConfigs = src._altConfigs;
-	_configPairs = src._configPairs;
-	_statusPagePaths = src._statusPagePaths;
-	_locations = src._locations;
-	_cgiPaths = src._cgiPaths;
-	_mimeTypes = src._mimeTypes;
-	return *this;
-}
-
-void ServerConfig::applySettings(std::string userConfigStr)
-{
-	std::string	instruction, key;
-	strMap_it	iter;
-	
-	while (!userConfigStr.empty())
+	while (!configStr.empty())
 	{
-		instruction = getInstruction(userConfigStr);
+		instruction = getInstruction(configStr);
 		key = splitEraseTrimChars(instruction, " \t\v\r\n{");
-		if (key == ERRORPAGETITLE)
-			parseUserErrorPages(instruction);
+		
+		// vars directly in server block
+		if (key == SERVERNAME)
+			parseNames(instruction);
+		else if (key == HOST)
+			parseHost(instruction);
+		else if (key == PORT)
+			parsePort(instruction);
+		else if (key == ROOT)
+			parseRoot(instruction);
+		else if (key == DIRLISTING)
+			parseDirListing(instruction);
+		else if (key == CLIMAXBODY)
+			parseClientMaxBody(instruction);
+		else if (key == MAXCONNS)
+			parseMaxConnections(instruction);
+		else if (key == STDFILE)
+			parseStandardFile(instruction);
+		
+		// subelement blocks
+		else if (key == ERRORPAGETITLE)
+			parseStatusPagePaths(instruction);
 		else if (key == LOCATIONTITLE)
 			parseLocations(instruction);
 		else if (key == CGITITLE)
-			parseUserCgi(instruction);
-		else if (key == SERVERNAME)
-			parseNames(instruction);
-		else 
-		{
-			iter = _configPairs.find(key);
-			if (iter != _configPairs.end())
-				iter->second = instruction;
-			else
-				std::cerr << I_INVALIDKEY << key << std::endl;
-		}
-	}
-	if (_configPairs.find(ROOT) != _configPairs.end())
-	{
-		if (*(_configPairs[ROOT].end() - 1) != '/')
-			std::cerr << I_NONDIRPATH << _configPairs[ROOT] << std::endl;
+			parseCgiPaths(instruction);
+		else
+			std::cerr << I_SC_INVALIDKEY << key << std::endl;
 	}
 }
 
-void ServerConfig::whoIsI()
+strVec ServerConfig::getNames() const { return _names; }
+
+in_addr_t ServerConfig::getHost() const { return _host; }
+
+in_port_t ServerConfig::getPort() const { return _port; }
+
+std::string ServerConfig::getRoot() const { return _root; }
+
+bool ServerConfig::getDefaultDirlisting() const { return _defaultDirListing; }
+
+uint64_t ServerConfig::getClientMaxBody() const { return _clientMaxBody; }
+
+size_t ServerConfig::getMaxConnections() const { return _maxConnections; }
+
+std::string ServerConfig::getStandardFile() const { return _standardFile; }
+
+intStrMap ServerConfig::getStatusPagePaths() const { return _statusPagePaths; }
+
+strLocMap ServerConfig::getLocations() const { return _locations; }
+
+strMap ServerConfig::getCgiPaths() const { return _cgiPaths; }
+
+strMap*	ServerConfig::getMIMETypes() const { return _mimeTypes; }
+
+std::vector<ServerConfig> ServerConfig::getAltConfigs() const { return _altConfigs; }
+
+void ServerConfig::parseNames(std::string& input)
 {
-	std::cout << "*****_configPairs*****\n";
-	if (!_configPairs.empty())
+	std::string name;
+
+	while (!input.empty())
 	{
-		for (strMap_it it = _configPairs.begin(); it != _configPairs.end(); it++)
-			std::cout << it->first << "\t\t" << it->second << '\n';
+		name = splitEraseTrimChars(input, WHITESPACE);
+		if (isAlnumStrPlus(name, "._-/"))
+			_names.push_back(name);
+		else
+			std::cerr << I_SC_INVALSERVNAME << name << std::endl;
 	}
-	std::cout << "*****_errorPages*****\n";
-	if (!_statusPagePaths.empty())
+	if (_names.empty())
+		_names.push_back("default");
+}
+
+void ServerConfig::parseHost(std::string& input)
+{
+	if (input == "ANY")
+		_host = INADDR_ANY;
+	else
 	{
-		for (intStrMap_it it = _statusPagePaths.begin(); it != _statusPagePaths.end(); it++)
-			std::cout << it->first << "\t\t" << it->second << '\n';
-	}
-	if (!_locations.empty())
-	{
-		std::cout << "*****_locations*****\n";
-		for (strLocMap_it it = _locations.begin(); it != _locations.end(); it++)
-			std::cout << it->first << "\t\t" << "methods: " << (it->second.get == true ? "get" : "") << (it->second.post == true ? " post" : "") << (it->second.delete_ == true ? " delete" : "") << ". alt_location: " << it->second.http_redir << ". dir_listing: " << it->second.dir_listing << '\n';
-	}
-	if (!_cgiPaths.empty())
-	{
-		std::cout << "*****_cgiPaths*****\n";
-		for (strMap_it it = _cgiPaths.begin(); it != _cgiPaths.end(); it++)
-			std::cout << it->first << "\t\t" << it->second  << std::endl;
+		_host = inet_addr(input.c_str());
+		if (_host == INADDR_NONE)
+			throw std::runtime_error(E_SC_HOSTADDRVAL + input + '\n');
 	}
 }
 
-strMap ServerConfig::getConfigPairs() const
+void ServerConfig::parsePort(std::string& input)
 {
-	return _configPairs;
+	if (input.find_first_not_of("0123456789") != std::string::npos)
+		throw std::runtime_error(E_SC_PORTINPUT + input + '\n');
+	_port = (uint16_t)atoi(input.c_str());
+	if (_port > (uint16_t)65534)
+		throw std::runtime_error(E_SC_PORTVAL + input + '\n');
+	_port = htons(_port);
+
 }
 
-intStrMap ServerConfig::getStatusPagePaths() const
+void ServerConfig::parseRoot(std::string& input)
 {
-	return _statusPagePaths;
+	if (!isAlnumStrPlus(input, "._-/"))
+		throw std::runtime_error(E_SC_ROOTINPUT + input + '\n');
+	_root = input;
+
+	if (*(_root.end() - 1) != '/')
+		std::cerr << I_SC_NONDIRPATH << _root << std::endl;
 }
 
-strLocMap ServerConfig::getLocations() const
+void ServerConfig::parseDirListing(std::string& input)
 {
-	return _locations;
-}
-
-strMap ServerConfig::getCgiPaths() const
-{
-	return _cgiPaths;
-}
-
-strMap*	ServerConfig::getMIMETypes() const
-{
-	return _mimeTypes;
-}
-
-strVec ServerConfig::getNames() const
-{
-	return _names;
-}
-
-void ServerConfig::parseDefaultErrorPages(std::string& defaultErrorPages)
-{
-	std::string	key, value;
-	strVec		lineStrings;
-
-	while (!defaultErrorPages.empty())
+	if (input == "yes")
+		_defaultDirListing = true;
+	else
 	{
-		lineStrings = splitEraseStrVec(defaultErrorPages, WHITESPACE, ";");
-		if (lineStrings.size() < 2)
-		{
-			std::cerr << I_INVALERRPAGE << std::endl;
-			continue;
-		}
-		value = lineStrings.back();
-		lineStrings.pop_back();
-		while (!lineStrings.empty())
-		{
-			key = lineStrings.back();
-			lineStrings.pop_back();
-			_statusPagePaths.insert(std::make_pair(atoi(key.c_str()), value));	
-		}
-	}	
+		_defaultDirListing = false;
+		if (input != "no")
+			std::cerr << I_SC_INVALIDVALUE << input << std::endl;
+	}
 }
 
-void ServerConfig::parseUserErrorPages(std::string& userErrorPages)
+void ServerConfig::parseClientMaxBody(std::string& input)
+{
+	if (input.find_first_not_of("0123456789") != std::string::npos)
+			throw std::runtime_error(E_SC_MAXCLBODINPUT + input + '\n');
+	std::istringstream iss(input);
+	iss >> _clientMaxBody;
+	if (_clientMaxBody > (uint64_t)MAX_MAXCLIENTBODY)
+		throw std::runtime_error(E_SC_MAXCLBODHIGH + input + '\n');
+}
+
+void ServerConfig::parseMaxConnections(std::string& input)
+{
+	if (input.find_first_not_of("0123456789") != std::string::npos)
+			throw std::runtime_error(E_SC_MAXCONNINPUT + input + '\n');
+	_maxConnections = atoi(input.c_str());
+	if (_maxConnections > MAX_MAXCONNECTIONS)
+		throw std::runtime_error(E_SC_MAXCONNVAL + input + '\n');
+}
+
+void ServerConfig::parseStandardFile(std::string& input)
+{
+	if (!isAlnumStrPlus(input, "._-/"))
+		throw std::runtime_error(E_SC_STDFILEINPUT + input + '\n');
+	_standardFile = input;
+}
+
+void ServerConfig::parseStatusPagePaths(std::string& userErrorPages)
 {
 	std::string		key, value;
 	strVec			lineStrings;
@@ -176,6 +163,11 @@ void ServerConfig::parseUserErrorPages(std::string& userErrorPages)
 	while (!userErrorPages.empty())
 	{
 		lineStrings = splitEraseStrVec(userErrorPages, WHITESPACE, ";");
+		if (lineStrings.size() < 2)
+		{
+			std::cerr << I_SC_MISSINGVAL << lineStrings[0] << std::endl;
+			continue;
+		}
 		value = lineStrings.back();
 		lineStrings.pop_back();
 		while (!lineStrings.empty())
@@ -187,7 +179,7 @@ void ServerConfig::parseUserErrorPages(std::string& userErrorPages)
 			else if (code > 99 && code < 600)
 				_statusPagePaths.insert(std::make_pair(code, value));
 			else
-				std::cerr << I_INVALIDKEY << key << std::endl;
+				std::cerr << I_SC_INVALSTATPAGE << key << std::endl;
 			lineStrings.pop_back();
 		}
 	}
@@ -200,8 +192,8 @@ void ServerConfig::parseLocations(std::string& locationElement)
 	s_locInfo		locInfo;
 	
 	path = splitEraseTrimChars(locationElement, WHITESPACE);
-	if (path[path.size() - 1] != '/')
-			std::cerr << I_NONDIRPATH << path << std::endl;
+	if (*(path.end() - 1) != '/')
+			std::cerr << I_SC_NONDIRPATH << path << std::endl;
 
 	while (!locationElement.empty())
 	{
@@ -227,7 +219,7 @@ void ServerConfig::parseLocations(std::string& locationElement)
 			if (instruction == "yes" || instruction == "no")
 				locInfo.dir_listing = instruction;
 			else
-				std::cerr << I_INVALIDVALUE << instruction << std::endl;
+				std::cerr << I_SC_INVALIDVALUE << instruction << std::endl;
 		}
 		else if (key == REDIRECTION)
 			locInfo.http_redir = instruction;
@@ -236,27 +228,12 @@ void ServerConfig::parseLocations(std::string& locationElement)
 		else if (key == STDFILE)
 			locInfo.std_file = instruction;
 		else
-			std::cerr << I_INVALIDKEY << key << std::endl;
+			std::cerr << I_SC_INVALIDKEY << key << std::endl;
 	}
 	_locations.insert(std::make_pair(path, locInfo));
 }
 
-// could get rid of this in a future refactor. just take everything the user inputs.
-// just take care of execve fails, but that should already be handled by the normal execve error handling
-void ServerConfig::parseDefaultCgi(std::string& defaultCgiElement)
-{
-	std::string	instruction, key;
-	
-	while (!defaultCgiElement.empty())
-	{
-		instruction = getInstruction(defaultCgiElement);
-		key = splitEraseTrimChars(instruction, WHITESPACE);
-		_cgiPaths.insert(std::make_pair(key, instruction));
-	}
-}
-
-// modified this to accept any new user configs - makes sense once you understand CGI
-void ServerConfig::parseUserCgi(std::string& userCgiElement)
+void ServerConfig::parseCgiPaths(std::string& userCgiElement)
 {
 	std::string	instruction, key;
 	strMap_it	iter;
@@ -265,6 +242,11 @@ void ServerConfig::parseUserCgi(std::string& userCgiElement)
 	{
 		instruction = getInstruction(userCgiElement);
 		key = splitEraseTrimChars(instruction, WHITESPACE);
+		if (instruction.empty())
+		{
+			std::cerr << I_SC_MISSINGVAL << key << std::endl;
+			continue;
+		}
 		iter = _cgiPaths.find(key);
 		if (iter != _cgiPaths.end())
 			iter->second = instruction;
@@ -273,32 +255,7 @@ void ServerConfig::parseUserCgi(std::string& userCgiElement)
 	}
 }
 
-void ServerConfig::parseNames(std::string& input)
-{
-	std::string name;
-	strVec temp;
-
-	while (!input.empty())
-	{
-		name = splitEraseTrimChars(input, WHITESPACE);
-		for (std::string::const_iterator it = name.begin(); it != name.end(); it++)
-			if (!isalnum(*it) && *it != '.' && *it != '_')
-			{
-				std::cerr << I_INVALSERVERNAME << name << std::endl;
-				continue;
-			}
-		temp.push_back(name);
-	}
-	if (!temp.empty())
-		_names = temp;
-}
-
 void ServerConfig::addAltConfig(const ServerConfig& altConfig)
 {
 	_altConfigs.push_back(altConfig);
-}
-
-std::vector<ServerConfig> ServerConfig::getAltConfigs() const
-{
-	return _altConfigs;
 }

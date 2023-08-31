@@ -42,7 +42,7 @@ class	Server
 		void cgiPost_launchChild();
 		void cgiSendError(const char*);
 		void buildCGIvars();
-		bool childSuccess();
+		bool childFinished();
 		void doTheCGI();
 
 		void			closePipes(pid_t, int[2]);
@@ -72,21 +72,14 @@ class	Server
 		std::string 	prependRoot(const std::string&);
 		std::string		ifDirAppendSlash(const std::string&);
 
+		// poll struct management
 		pollfd*			getPollStruct(int);
-		void			addPollinStruct(int);
-		void			addPolloutStruct(int);
+		void			addPollStruct(int, short);
 		void			removePollStruct(int);
 
 
 		std::string		mimeType(const std::string&);
 		bool			dirListing(const std::string&);
-
-		// setters
-		void			setHost(std::string);
-		void			setPort(std::string);
-		void			setClientMaxBody(std::string);
-		void			setMaxConnections(std::string); //unused
-		void			setDefaultDirListing(std::string);
 
 		int								_server_fd;
 		std::vector<std::string>		_names;
