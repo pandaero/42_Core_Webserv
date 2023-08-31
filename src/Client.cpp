@@ -78,6 +78,7 @@ void Client::sendStatusPage(int code)
 	}
 	else
 		generateStatusPage(code);
+	outgoingData();
 }
 
 void Client::sendFile_200(std::string sendPath)
@@ -87,6 +88,7 @@ void Client::sendFile_200(std::string sendPath)
 	_pollStruct.events = POLLOUT | POLLHUP;
 	_sendPath = sendPath;
 	_sendFile = true;
+	outgoingData();
 }
 
 void Client::sendEmptyStatus(int code)
@@ -96,6 +98,7 @@ void Client::sendEmptyStatus(int code)
 	_pollStruct.events = POLLOUT | POLLHUP;
 	_sendPath.clear(); // should be empty anyway, but structural symmetry
 	_sendFile = true; // will not do anything cause empty sendPath
+	outgoingData();
 }
 
 std::string Client::dataToSend()
@@ -109,6 +112,23 @@ void Client::outgoingData()
 	{
 		// if cgi child finished?
 		_sendStream << buildResponseHead();
+		_state = send_respBody;
+		return;
+	}
+	if (_state == send_respBody)
+	{
+		if (_sendFile)
+		{
+			// send sendPath
+		}
+		else
+		{
+			char buffer[SEND_CHUNK_SIZE];
+			_pageBuffer.read(buffer, SEND_CHUNK_SIZE);
+			_sendStream.write(buffer, _pageBuffer.gcount());
+			// if buffer is not done, gotta get rid of read shit
+		}
+
 
 	}
 }
@@ -131,9 +151,19 @@ std::string Client::buildResponseHead()
 			ss_header << "content-type: " << mimeType(_sendPath) << "\r\n";
 	}
 	if (_setCookie)
-		ss_header << buildCookie(SESSIONID, _sessionId, 3600, "/") << "\r\n";
+		ss_header << cookie(SESSIONID, _sessionId, 3600, "/") << "\r\n";
 	ss_header << "\r\n";
 	return ss_header.str();
+}
+
+std::string Client::cookie(const std::string& key, const std::string& value, int expiration, const std::string& path)
+{
+	std::stringstream cookie;
+	cookie << "set-cookie: " << key << "=" << value << ";";
+	if (expiration >= 0)
+		cookie << "max-age=" << expiration << ";";
+	cookie << "path=" << path << ";";
+	return cookie.str();
 }
 
 

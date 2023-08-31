@@ -22,6 +22,13 @@ class	Client
 		void	sendFile_200(std::string);
 		void	sendEmptyStatus(int);
 
+		
+		
+		std::string	buildResponseHead();
+		std::string cookie(const std::string&, const std::string&, int, const std::string&)
+		
+		
+		
 		// _handlers.cpp
 		void	handleGet();
 		void	handleGetCGI();
@@ -53,7 +60,6 @@ class	Client
 		void		generateDirListingPage(const std::string&);
 		std::string mimeType(const std::string&);
 
-		std::string	buildResponseHead();
 
 
 		void		isCgiRequest();
@@ -71,6 +77,7 @@ class	Client
 		
 		std::string			_buffer;
 		std::stringstream	_sendStream;
+		std::stringstream	_pageBuffer;
 		bool				_sendFile;
 		
 		int				_statusCode;

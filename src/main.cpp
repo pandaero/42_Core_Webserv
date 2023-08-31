@@ -14,10 +14,7 @@ int main(int argc, char** argv)
 		try
 		{
 			webmother.acceptClients();
-			
-
-
-
+			webmother.handleClients();
 		}
 		catch (const std::exception& e)
 		{
@@ -27,12 +24,8 @@ int main(int argc, char** argv)
 	webmother.shutdown();
 }
 
-
-
 void sigHandler(int sig)
 {
 	if (sig == SIGINT) // can only be SIGINT but nicer than voiding it
 		sigInt = 1;
 }
-
-

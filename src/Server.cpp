@@ -1028,7 +1028,7 @@ std::string	Server::mimeType(const std::string& filepath)
 	return true;
 } */
 
-std::string Server::buildCookie(const std::string& key, const std::string& value, int expiration, const std::string& path)
+/* std::string Server::buildCookie(const std::string& key, const std::string& value, int expiration, const std::string& path)
 {
 	std::stringstream cookie;
 	cookie << "set-cookie: " << key << "=" << value << ";";
@@ -1036,7 +1036,7 @@ std::string Server::buildCookie(const std::string& key, const std::string& value
 		cookie << "max-age=" << expiration << ";";
 	cookie << "path=" << path << ";";
 	return cookie.str();
-}
+} */
 
 /* void Server::generateSessionLogPage()
 {

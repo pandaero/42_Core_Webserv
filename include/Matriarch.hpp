@@ -12,10 +12,10 @@ class	Matriarch
 		void launchServers();
 		bool poll();
 		void acceptClients();
+		void handleClients();
 		void shutdown();
 
 	private:
-		void handleClients();
 		void closeClient(std::string);
 		bool receive();
 		bool send();
@@ -25,11 +25,9 @@ class	Matriarch
 		std::vector<pollfd>::iterator	getPollStruct(int fd);
 		void							addPollStruct(int fd, short flags);
 
-
-
 		ConfigFile*						_configFile;
 		std::vector<pollfd> 			_pollVector;
-		std::vector<Server>				_servers;
+		std::vector<Server>				_serverVector;
 		std::vector<Client>				_clientVector;
 		std::vector<Client>::iterator	_client;
 		std::vector<pollfd>::iterator	_pollStruct;

@@ -1,12 +1,12 @@
 #include "../include/Matriarch.hpp"
 
-Matriarch::Matriarch(int argc, char** argv): _configFile(NULL), _servers(NULL)
+Matriarch::Matriarch(int argc, char** argv): _configFile(NULL), _serverVector(NULL)
 {
 	std::string path = "system/configs/example.conf";
 	if (argc > 1)
 		path = argv[1];
 	_configFile = new ConfigFile(path.c_str());
-	_servers = _configFile->getServers(); // maybe elegantize this later
+	_serverVector = _configFile->getServers(); // maybe elegantize this later
 
 }
 
@@ -18,17 +18,17 @@ Matriarch::~Matriarch()
 
 void Matriarch::launchServers()
 {
-	for (size_t i = 0; i < _servers.size(); ++i)
+	for (size_t i = 0; i < _serverVector.size(); ++i)
 	{
 		try
 		{
-			_servers[i].whoIsI();
-			_servers[i].startListening(_pollVector); // remove from server, include in matriarch
+			_serverVector[i].whoIsI();
+			_serverVector[i].startListening(_pollVector); // remove from server, include in matriarch
 		}
 		catch (const std::exception& e)
 		{
 			std::cerr << e.what() << std::endl;
-			_servers.erase(_servers.begin() + i--);
+			_serverVector.erase(_serverVector.begin() + i--);
 		}
 	}
 }
@@ -47,9 +47,9 @@ bool Matriarch::poll()
 
 void Matriarch::acceptClients()
 {
-	for (size_t i = 0; i < _servers.size(); ++i)
+	for (size_t i = 0; i < _serverVector.size(); ++i)
 	{
-		if (_servers[i].fd() != _pollVector[i].fd)
+		if (_serverVector[i].fd() != _pollVector[i].fd)
 			std::cout << MMMMMEGAERROR << std::endl;
 		
 		if (!(_pollVector[i].revents & POLLIN))
@@ -71,14 +71,14 @@ void Matriarch::acceptClients()
 				closeFdAndThrow(new_sock);
 
 			addPollStruct(new_sock, POLLIN | POLLHUP);
-			_clientVector.push_back(Client(_servers[i].getConfig(), _pollVector.back(), addr));
+			_clientVector.push_back(Client(_serverVector[i].getConfig(), _pollVector.back(), addr));
 		}
 	}
 }
 
 void Matriarch::handleClients()
 {
-	size_t i = _servers.size();
+	size_t i = _serverVector.size();
 	while (i < _pollVector.size())
 	{
 		_client = getClient(_pollVector[i].fd);
