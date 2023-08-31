@@ -38,11 +38,11 @@
 # include "ConfigFile.hpp"
 
 // main.cpp
-void acceptConnections(std::vector<Server>&, std::vector<pollfd>&);
-void sigHandler(int);
-bool poll_(std::vector<pollfd>&);
-void shutdown(std::vector<pollfd>&);
-
+void 		launchServers(std::vector<Server>&, std::vector<pollfd>&);
+const char*	pathConfigFile(int, char**);
+void		sigHandler(int);
+bool		poll_(std::vector<pollfd>&);
+void		shutdown(std::vector<pollfd>&);
 
 // Determines whether a string contains only alphanumerical characters.
 bool isAlnumStr(const std::string &);

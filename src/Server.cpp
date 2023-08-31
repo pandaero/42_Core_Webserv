@@ -77,7 +77,6 @@ void Server::startListening(std::vector<pollfd>& pollVector)
 {
 	ANNOUNCEME
 	int		options = 1;
-	pollfd	newPollStruct;
 	
 	_server_fd = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP);
 	if (_server_fd == -1)
@@ -91,16 +90,13 @@ void Server::startListening(std::vector<pollfd>& pollVector)
 	if (listen(_server_fd, SOMAXCONN) == -1)
 		closeFdAndThrow(_server_fd);
 	
-	newPollStruct.fd = _server_fd;
-	newPollStruct.events = POLLIN;
-	newPollStruct.revents = 0;
-	pollVector.push_back(newPollStruct);
 	_pollVector = &pollVector;
+	addPollStruct(_server_fd, POLLIN);
 }
 
 /*
-currently not checking for a size restriction. Revisit this during testing.
-prolly just returns from accept with -1. 
+currently not checking for a size restriction.
+If wanted, implement like this
 if (pollVector.size() > 420)
 	{
 		std::cerr << I_CONNECTIONLIMIT << std::endl;
@@ -112,7 +108,10 @@ void Server::acceptConnections()
 	ANNOUNCEME
 	
 	if (!(getPollStruct(_server_fd)->revents & POLLIN))
+	{
+		std::cout << "Mismatch between server fd and pollvector fd. Returning from acceptConnections." std::endl;
 		return;
+	}
 	while (true)
 	{
 		Client newClient;
