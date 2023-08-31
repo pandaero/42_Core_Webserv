@@ -3,44 +3,60 @@
 
 # include "webserv.hpp"
 
-/*
-This class only gets instantiated as a private member of the Server class.
-That's why it doesn't have traditional encapsulation.
-This would be the perfect place to use the friend keyword and make everything
-private, which is however not allowed.
-*/
 class	Client
 {
 	public:
-		Client(const ServerConfig&);
+		// Client.cpp
+		Client(const ServerConfig&, pollfd&, sockaddr_in);
 
-		void whoIsI();
-		void sendStatusPage(int);
-		void incomingData();
+		void	incomingData();
+		void	appendToBuf(char*, int);
+		int		getFd();
+
 		
 	
 	private:
-		bool requestHead();
+		// Client.cpp
+		void	sendStatusPage(int);
+		void	sendFile_200(std::string);
+		void	sendEmptyStatus(int);
+
+		// _handlers.cpp
+		void	handleGet();
+		void	handleDelete();
+
+		
+		// _requestHead.cpp
+		void requestHead();
 		void parseRequestLine();
 		void parseRequestHeaders();
-		void selectServerConfig();
-
 		void handleSession();
-		void generateSessionLogPage(std::string);
-		bool requestError();
+		void selectServerConfig();
+		void updateVars();
+		void requestHeadError();
 
 
 		
-		// utils
-		std::string ifDirAppendSlash(const std::string&);
-		std::string prependRoot(const std::string&);
+		// _utils.cpp
+		std::string	ifDirAppendSlash(const std::string&);
+		std::string	prependRoot(const std::string&);
+		bool 		dirListing(const std::string&);
+		void 		whoIsI();
+		void		generateSessionLogPage(std::string);
+		void		generateStatusPage(int);
+		void		generateDirListingPage(const std::string&);
+
+		void		isCgiRequest();
+
+
 
 
 		const ServerConfig&	_config;
 		const ServerConfig*	_activeConfig;
+		pollfd&				_pollStruct;
 
 
-		int				_fd;
+		int				_fd; // delete?
 		sockaddr_in		_address;
 		
 		std::string		_buffer;
@@ -78,6 +94,7 @@ class	Client
 		time_t			_childBirth;
 
 		// CGI helpers
+		std::string			_cgiExecPath;
 		strVec				_envVec;
 		std::vector<char*>	_env;
 		strVec				_argvVec;

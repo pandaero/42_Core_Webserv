@@ -32,6 +32,11 @@ Server::~Server()
 		std::cout << "Server destructor on listening fd " << _server_fd << "." << std::endl;
 }
 
+const ServerConfig& Server::getConfig()
+{
+	return _configs[0];
+}
+
 int Server::fd()
 {
 	return _server_fd;

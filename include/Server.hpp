@@ -11,6 +11,8 @@ class	Server
 		
 		int	 fd();
 		void whoIsI();
+		const ServerConfig& getConfig();
+
 		void startListening(std::vector<pollfd>&);
 		void acceptConnections(int);
 		void handleConnections();

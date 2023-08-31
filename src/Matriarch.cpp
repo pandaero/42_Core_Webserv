@@ -57,10 +57,10 @@ void Matriarch::acceptClients()
 			
 		while (true)
 		{
-			Client newClient;
-			socklen_t clientAddrSize = sizeof(newClient.address);
+			sockaddr_in	addr;
+			socklen_t	clientAddrSize = sizeof(addr);
 		
-			int new_sock = accept(_pollVector[i].fd, (sockaddr*)&newClient.address, &clientAddrSize);
+			int new_sock = accept(_pollVector[i].fd, (sockaddr*)&addr, &clientAddrSize);
 			if (new_sock == -1)
 			{
 				if (errno == EWOULDBLOCK)
@@ -69,9 +69,9 @@ void Matriarch::acceptClients()
 			}
 			if (fcntl(new_sock, F_SETFL, O_NONBLOCK) == -1)
 				closeFdAndThrow(new_sock);
-			newClient.fd = new_sock;
-			_clientVector.push_back(newClient);
+
 			addPollStruct(new_sock, POLLIN | POLLHUP);
+			_clientVector.push_back(Client(_servers[i].getConfig(), _pollVector.back(), addr));
 		}
 	}
 }
@@ -94,65 +94,13 @@ void Matriarch::handleClients()
 		{
 			if (!receive())
 				continue;
-			if (_client->state == recv_head)
-			{
-				if (!requestHead())
-				{
-					++i;
-					continue;
-				}
-			}
+			_client->incomingData();
+			
 
 		}
 		++i;
 	}
 }
-
-
-bool Matriarch::requestHead()
-{
-	// basic format error: request line termination not found
-	if (_client->buffer.find("\r\n") == std::string::npos)
-	{
-		
-		sendStatusPage(400);
-		return false;
-	}
-	
-	parseRequestLine();
-	
-	// if buffer is empty, the request was only the request line. Not HTTP1.1 compliant, but we will accept it.
-	if (!_clientIt->buffer.empty())
-	{
-		// check for proper headers termination
-		if (_clientIt->buffer.find("\r\n\r\n") == std::string::npos)
-		{
-			if (_clientIt->buffer.size() >= MAX_HEADERSIZE) //This only makes sense if the readchunk is big enough.
-				return (sendStatusPage(431), false);
-			else
-				return (sendStatusPage(400), false); // we read the entire "headers" but they weren't properly terminated.
-		}
-		parseRequestHeaders();
-	}
-	handleSession();
-	if (requestError())
-		return false;
-	
-	// check for body
-	if (_clientIt->method != POST) // we don't process bodies of GET or DELETE requests
-		_clientIt->state = handleRequest;
-	else if (_clientIt->contentLength <= _clientIt->buffer.size()) // body is already complete in this recv (header content has already been deleted from buffer)
-		_clientIt->state = handleRequest;
-	else
-		_clientIt->state = recv_body;
-
-	selectHostConfig();
-	updateClientVars();
-	_clientIt->cgiRequest = cgiRequest();
-	_clientIt->whoIsI();
-	return true;
-}
-
 
 
 void Matriarch::closeClient(std::string msg)
@@ -169,7 +117,7 @@ clientVec_it Matriarch::getClient(int fd)
 {
 	clientVec_it it = _clientVector.begin();
 	
-	while (it != _clientVector.end() && it->fd != fd)
+	while (it != _clientVector.end() && it->getFd() != fd)
 		++it;
 	if (it == _clientVector.end())
 	{
@@ -196,13 +144,13 @@ std::vector<pollfd>::iterator Matriarch::getPollStruct(int fd)
 bool Matriarch::receive()
 {
 	char buffer[RECV_CHUNK_SIZE];
-	int bytesReceived = recv(_client->fd, buffer, RECV_CHUNK_SIZE, 0);
+	int bytesReceived = recv(_pollStruct->fd, buffer, RECV_CHUNK_SIZE, 0);
 	if (bytesReceived <= 0)
 	{
 		closeClient(CLOSENODATA);
 		return false;
 	}
-	_client->buffer.append(buffer, bytesReceived);
+	_client->appendToBuf(buffer, bytesReceived);
 	return true;
 }
 
