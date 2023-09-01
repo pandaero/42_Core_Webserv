@@ -126,7 +126,6 @@ void Client::outgoingData()
 			char buffer[SEND_CHUNK_SIZE];
 			_pageBuffer.read(buffer, SEND_CHUNK_SIZE);
 			_sendStream.write(buffer, _pageBuffer.gcount());
-			// if buffer is not done, gotta get rid of read shit
 		}
 
 
