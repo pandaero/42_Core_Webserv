@@ -34,10 +34,6 @@ class	Server
 		bool cgiRequest();
 		void handleCGI();
 		
-		void			doTheCGI();
-		
-		
-		
 		bool			sendData();
 		bool			responseHead();
 		void			sendResponseBody();
@@ -55,8 +51,6 @@ class	Server
 		strVec			buildCGIenv();
 		std::string		buildCookie(const std::string&, const std::string&, int, const std::string&);
 
-		void			manageCGIpipes_child(int[2]);
-		void			closePipes(pid_t, int[2]);
 
 		// utils
 		void			applyHostConfig(const ServerConfig&);
