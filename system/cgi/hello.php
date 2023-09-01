@@ -3,6 +3,7 @@
 <?php
 
 $request_method = getenv('REQUEST_METHOD');
+$output_file = getenv('OUTPUT_FILE');
 
 if ($request_method === 'GET')
 {
@@ -13,27 +14,19 @@ if ($request_method === 'GET')
 	parse_str($query_string, $query_vars);
 	
 	// extract value for specific keys into vars
-	$first_name = $query_vars['first_name'] ?? '';
-	$last_name = $query_vars['last_name'] ?? '';
+	$first_name = $query_vars['first_name'] ?? 'none';
+	$last_name = $query_vars['last_name'] ?? 'none';
 }
 
-if ($request_method === 'POST') {
-	// Open stdin as a file handle
-	$stdin = fopen('php://stdin', 'r');
-	
-	// Read input from stdin
-	$input_data = fgets($stdin);
-	$input_data = trim($input_data);
-	
-	// Close the file handle
-	fclose($stdin);
+if ($request_method === 'POST')
+{
+	$input_file = getenv('INPUT_FILE');
+	$input_data = file_get_contents($input_file);
 
-	// Parse the input data as query string (key=value) pairs
 	parse_str($input_data, $post_vars);
 
-	// Extract values for specific keys into variables
-	$first_name = $post_vars['first_name'] ?? '';
-	$last_name = $post_vars['last_name'] ?? '';
+	$first_name = $post_vars['first_name'] ?? 'none';
+	$last_name = $post_vars['last_name'] ?? 'none';
 }
 
 $html_content = <<<HTML
@@ -53,6 +46,6 @@ $html_content = <<<HTML
 </html>
 HTML;
 
-echo $html_content;
+file_put_contents($output_file, $html_content);
 
 ?>

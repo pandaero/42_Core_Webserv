@@ -51,7 +51,8 @@ class	Client
 		bool			setCookie;
 
 		// temp files
-		std::string		path_CGItempFile;
+		std::string		path_cgiIn;
+		std::string		path_cgiOut;
 	
 	private:
 		// nothing, cause this is a class only in name, it's more of a struct.

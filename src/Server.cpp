@@ -290,7 +290,10 @@ void Server::handleSession()
 	std::string logPath = "system/logs/" + _clientIt->sessionId + ".log";
 	std::ofstream logFile(logPath.c_str(), std::ios::app);
 	if (logFile.is_open())
+	{
 		logFile << currentTime() << " " << _clientIt->method << " " << _clientIt->URL << "\n";
+		logFile.close();
+	}
 	else
 		std::cerr << "Could not open log file for tracking of session " << _clientIt->sessionId << std::endl;
 	
@@ -363,9 +366,9 @@ void Server::handlePost()
 	if (cgiRequest())
 	{
 		std::stringstream temp;
-		temp << SYS_TEMPCGIPOST << _clientIt->fd; // cant use to_str in cpp98
-		_clientIt->path_CGItempFile = temp.str();
-		selectedPath = _clientIt->path_CGItempFile;
+		temp << SYS_TEMPCGIIN << _clientIt->fd; // cant use to_str in cpp98
+		_clientIt->path_cgiIn = temp.str();
+		selectedPath = _clientIt->path_cgiIn;
 	}
 	else 
 	{
@@ -399,8 +402,7 @@ void Server::handlePost()
 		if (cgiRequest())
 		{
 			handleCGI();
-			if (unlink(_clientIt->path_CGItempFile.c_str()) != 0)
-				std::cerr << E_TEMPFILEREMOVAL << std::endl;
+			
 		}
 		else
 			sendEmptyStatus(201);
@@ -484,6 +486,11 @@ void Server::sendResponseBody()
 	if (fileStream.eof())
 	{
 		fileStream.close();
+		if (cgiRequest())
+		{
+			if (unlink(_clientIt->path_cgiOut.c_str()) != 0)
+			std::cerr << E_TEMPFILEREMOVAL << std::endl;
+		}
 		closeClient("Server::sendResponseBody: sending complete.");
 		return;
 	}
@@ -1032,6 +1039,9 @@ strVec Server::buildCGIenv()
 	std::string userAgent;
 	if (_clientIt->headers.find("user-agent") != _clientIt->headers.end())
 		userAgent = _clientIt->headers["user-agent"];
+	
+	std::string cgiInFile = _clientIt->path_cgiIn;
+
 
 	strVec env;
 	env.push_back("SCRIPT_NAME=" + _clientIt->filename);
@@ -1045,6 +1055,8 @@ strVec Server::buildCGIenv()
 	env.push_back("SERVER_PORT=" + port.str());
 	env.push_back("PATH_INFO=" + _clientIt->updatedURL);
 	env.push_back("HTTP_USER_AGENT=" + userAgent);
+	env.push_back("INPUT_FILE=" + _clientIt->path_cgiIn);
+	env.push_back("OUTPUT_FILE=" + _clientIt->path_cgiOut);
 	return env;
 }
 
@@ -1093,20 +1105,29 @@ void Server::handleCGI()
 	argv[1] = const_cast<char*>(_clientIt->updatedURL.c_str()), // path to script, which is the requested file
 	argv[2] = NULL;
 	
+	std::stringstream temp;
+	temp << SYS_TEMPCGIOUT << _clientIt->fd << ".html"; // cant use to_str in cpp98
+	_clientIt->path_cgiOut = temp.str();
+
+		std::cout << "path_cgiout:" << _clientIt->path_cgiOut << std::endl;
+
+	std::ofstream cgiOutFile(_clientIt->path_cgiOut.c_str());
+	if (!cgiOutFile)
+	{
+		cgiOutFile.close();
+		sendStatusPage(500);
+		return;
+	}
+	
 	strVec envVec = buildCGIenv(); // this vector allocates for the strings
 	std::vector<char*>env; // this will hold the char* to the strings and can be passed to execve
 	for (size_t i = 0; i < envVec.size(); ++i)
 		env.push_back(const_cast<char*>(envVec[i].c_str()));
 	env.push_back(NULL);
 
-	int pipeFd[2];
-	if (pipe(pipeFd) == -1)
-	{
-		std::cerr << E_PIPE << std::endl;
-		sendStatusPage(500);
-		return;
-	}
 
+	// create information file for child
+	
 	pid_t cgiPid = fork();
 	if (cgiPid == -1)
 	{
@@ -1116,60 +1137,29 @@ void Server::handleCGI()
 	}
 	if (cgiPid == 0)
 	{
-		manageCGIpipes_child(pipeFd);
 		execve(_cgiExecPath.c_str(), argv, env.data());
-		
 		std::cerr << E_EXECVE << std::endl;
-		closePipes(cgiPid, pipeFd);
 		exit(EXIT_FAILURE);
 	}
 	else
 	{
-		// write end of pipe not needed if GET
-		if (_clientIt->method == GET)
-			close(pipeFd[1]);
-		else
-		{
-			std::ifstream cgiFile(_clientIt->path_CGItempFile.c_str());
-			if (!cgiFile)
-			{
-				std::cerr << E_TEMPFILEOPEN << std::endl;
-				closePipes(cgiPid, pipeFd);
-				sendStatusPage(500);
-				return;
-			}
-			std::stringstream fileContent;
-			fileContent << cgiFile.rdbuf();
-			write(pipeFd[1], fileContent.str().c_str(), fileContent.str().size()); // Write POST data to child's stdin 
-			close(pipeFd[1]);
-			pipeFd[1] = -1; // because later calls to closePipes() might close stuff if that fd was already reassigned.
-		}
+		
 		int status;
 		waitpid(cgiPid, &status, 0); //WNOHANG?
 		// terminate in case of child hanging
 		if (!WIFEXITED(status) || WEXITSTATUS(status) != 0) // WIFEXITED(status) is only true if child terminated of its own accord
 		{
 			std::cerr << E_CHILD << std::endl;
-			closePipes(cgiPid, pipeFd);
 			sendStatusPage(500);
 			return;
+		}
+		sendFile200(_clientIt->path_cgiOut);
+
+		if (_clientIt->method == POST)
+		{
+			if (unlink(_clientIt->path_cgiIn.c_str()) != 0)
+				std::cerr << E_TEMPFILEREMOVAL << std::endl;
 		}
 
-		std::ofstream cgiPage(SYS_CGIPAGE, std::ios::binary | std::ios::trunc);
-		if (!cgiPage)
-		{
-			std::cerr << E_TEMPFILE << std::endl;
-			cgiPage.close();
-			closePipes(cgiPid, pipeFd);
-			sendStatusPage(500);
-			return;
-		}
-		
-		char buffer[4096];
-		size_t bytesRead;
-		while ((bytesRead = read(pipeFd[0], buffer, sizeof(buffer))) > 0)
-			cgiPage.write(buffer, bytesRead);
-		closePipes(cgiPid, pipeFd);
-		sendFile200(SYS_CGIPAGE);
 	}
 }

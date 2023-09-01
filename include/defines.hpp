@@ -12,7 +12,8 @@
 
 // paths
 # define SYS_CGIPAGE		"system/cgi.html"
-# define SYS_TEMPCGIPOST	"system/temp/cgiPost_fd"
+# define SYS_TEMPCGIIN		"system/temp/cgiIn_fd"
+# define SYS_TEMPCGIOUT		"system/temp/cgiOut_fd"
 # define SYS_DIRLISTPAGE	"system/dirListing.html"
 # define SYS_ERRPAGE		"system/errorPage.html"
 # define SYS_DEFAULTCONF	"system/default.conf"
