@@ -53,7 +53,7 @@ class	Client
 		// temp files
 		std::string		path_cgiIn;
 		std::string		path_cgiOut;
-	
+
 	private:
 		// nothing, cause this is a class only in name, it's more of a struct.
 		// It only ever gets instantiated as a private member of the Server class.

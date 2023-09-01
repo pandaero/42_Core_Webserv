@@ -28,6 +28,7 @@
 # define MAX_MAXCONNECTIONS		1000
 # define MAX_BACKLOG			100
 # define MAX_HEADERSIZE			8192
+# define CGI_TIMEOUT			3
 
 // ===== ===== ===== ===== CONFIGURATION ELEMENT IDENTIFIERS ===== ===== ===== =====
 # define SERVER		"server"

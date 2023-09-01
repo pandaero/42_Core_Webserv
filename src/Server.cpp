@@ -972,10 +972,16 @@ void Server::handleCGI()
 	}
 	else
 	{
-		
 		int status;
-		waitpid(cgiPid, &status, 0); //WNOHANG?
-		// terminate in case of child hanging
+		//waitpid(cgiPid, &status, 0); //WNOHANG?
+		
+		time_t childBirth = time(NULL);
+		
+		while (childBirth + CGI_TIMEOUT > time(NULL))
+		{
+			if (waitpid(cgiPid, &status, WNOHANG) != 0)
+				break;
+		}
 		if (!WIFEXITED(status) || WEXITSTATUS(status) != 0) // WIFEXITED(status) is only true if child terminated of its own accord
 		{
 			std::cerr << E_CHILD << std::endl;
